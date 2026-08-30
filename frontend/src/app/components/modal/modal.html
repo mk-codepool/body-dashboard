@@ -1,0 +1,54 @@
+@if (isOpen()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" [attr.aria-label]="title()">
+      
+      <!-- Nagłówek Modala -->
+      <header class="modal-header">
+        <div class="modal-header-left">
+          <div class="modal-title-group">
+            <div class="modal-title-row">
+              <div class="modal-icon-indicator">
+                <span class="modal-dot"></span>
+              </div>
+              <h2 class="modal-title">{{ title() }}</h2>
+              @if (badge()) {
+                <span class="modal-badge font-mono">{{ badge() }}</span>
+              }
+            </div>
+            @if (subtitle()) {
+              <p class="modal-subtitle">{{ subtitle() }}</p>
+            }
+          </div>
+        </div>
+
+        <div class="modal-header-right">
+          <!-- Custom Akcje Modala przekazane przez projekcję -->
+          <div class="modal-actions-container">
+            <ng-content select="[modal-actions]" />
+          </div>
+
+          <!-- Przycisk Zamknięcia -->
+          @if (showClose()) {
+            <button 
+              type="button" 
+              class="modal-close-btn" 
+              (click)="closeModal()" 
+              title="Zamknij (Esc)"
+              aria-label="Zamknij okno">
+              <svg class="close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          }
+        </div>
+      </header>
+
+      <!-- Ciało Modala (Przewijalny obszar zawartości) -->
+      <div class="modal-body">
+        <ng-content />
+      </div>
+
+    </div>
+  </div>
+}

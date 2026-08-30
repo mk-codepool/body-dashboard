@@ -1,6 +1,6 @@
 # Body Dashboard
 
-Zintegrowane środowisko dla aplikacji **Angular (frontend)**, **NestJS (backend)** oraz **Launchera (orchestrator)** z dashboardem zarządzającym.
+Zintegrowane środowisko dla aplikacji **Angular (frontend)**, **NestJS (backend)** oraz **Launchera (orchestrator)** z modularnym gridem biometrii ciała i trwałym zapisem danych w plikach JSON.
 
 ---
 
@@ -10,18 +10,25 @@ Zintegrowane środowisko dla aplikacji **Angular (frontend)**, **NestJS (backend
 body-dashboard/
 ├── start.js               # Główny punkt startowy - uruchamia Launcher (`node start`)
 ├── package.json           # Skrypty pomocnicze całego projektu
+├── AGENTS.md              # Wytyczne deweloperskie i architektoniczne
 │
 ├── frontend/              # Aplikacja frontendowa Angular v22
 │   ├── src/
-│   │   ├── app/           # Komponenty ze Standalone Components, Signal API i integracją HTTP
+│   │   ├── app/           # Komponenty Standalone, Signal API, Grid 2D
+│   │   │   ├── services/  # DashboardLayoutService, MeasurementsService
+│   │   │   └── dashboard/ # Modularny Grid Biometrii, Wykresy SVG Bezier
 │   │   └── ...
 │   └── package.json
 │
 ├── backend/               # Aplikacja backendowa NestJS
+│   ├── data/              # Trwałe pliki JSON (layout.json, measurements.json)
 │   ├── src/
+│   │   ├── storage/       # StorageService (zarządzanie plikami JSON)
+│   │   ├── layout/        # Endpointy /api/layout (GET, PUT, POST /reset)
+│   │   ├── measurements/  # Endpointy /api/measurements (CRUD pomiarów)
 │   │   ├── app.controller.ts  # Endpointy /, /api/health, /api/info
 │   │   ├── app.service.ts
-│   │   └── main.ts            # Konfiguracja CORS i serwera
+│   │   └── main.ts        # Konfiguracja CORS i serwera
 │   └── package.json
 │
 └── launcher/              # Moduł Launchera i Dashboardu
@@ -38,7 +45,7 @@ body-dashboard/
 
 ## 🚀 Uruchamianie
 
-Wystarczy wywołać prostą komendę w katalogu głównym:
+Wystarczy wywołać komendę w katalogu głównym:
 
 ```bash
 node start
@@ -51,7 +58,6 @@ npm start
 
 > **Automatyczny start w przeglądarce**: Po uruchomieniu, launcher automatycznie otworzy Dashboard w domyślnej przeglądarce pod adresem `http://localhost:4000`.
 
-
 ---
 
 ## 🌐 Dostępne Porty i Usługi
@@ -59,8 +65,8 @@ npm start
 | Usługa | URL | Opis |
 |---|---|---|
 | **Launcher Web Dashboard** | [http://localhost:4000](http://localhost:4000) | Panel kontrolny, metryki, logi na żywo (SSE), restartowanie usług |
-| **Angular Frontend** | [http://localhost:4200](http://localhost:4200) | Interfejs użytkownika z weryfikacją połączenia do API |
-| **NestJS Backend** | [http://localhost:3000](http://localhost:3000) | REST API z endpointami `/api/health` oraz `/api/info` |
+| **Angular Frontend** | [http://localhost:4200](http://localhost:4200) | Interfejs użytkownika z modularną siatką 2D, trybem edycji i wykresem biometrii |
+| **NestJS Backend** | [http://localhost:3000](http://localhost:3000) | REST API z endpointami `/api/layout`, `/api/measurements`, `/api/health`, `/api/info` |
 
 ---
 

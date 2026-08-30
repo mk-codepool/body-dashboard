@@ -17,10 +17,17 @@ body-dashboard/
 │   ├── src/app/
 │   │   ├── app.ts         # Root component z <router-outlet /> i górną belką
 │   │   ├── app.routes.ts  # Konfiguracja routingu (trasa domyślna -> Dashboard)
+│   │   ├── services/      # Serwisy: DashboardLayoutService, MeasurementsService
 │   │   └── dashboard/     # Główny kontener Modularnego Grida Biometrii
 │   └── package.json       # Port: 4200
 ├── backend/               # Aplikacja NestJS (REST API)
-│   ├── src/               # Kontrolery, serwisy, sondy health check
+│   ├── data/              # Trwałe pliki JSON (layout.json, measurements.json)
+│   ├── src/
+│   │   ├── storage/       # StorageService - obsługa plików JSON z auto-inicjalizacją
+│   │   ├── layout/        # LayoutController, LayoutService (/api/layout)
+│   │   ├── measurements/  # MeasurementsController, MeasurementsService (/api/measurements)
+│   │   ├── app.controller.ts  # Sondy /api/health i /api/info
+│   │   └── main.ts        # Bootstrap z CORS i portem 3000
 │   └── package.json       # Port: 3000
 └── launcher/              # Moduł Launchera i Dashboardu
     ├── src/
@@ -54,7 +61,7 @@ body-dashboard/
 - Każdy kontener posiada jawne współrzędne 2D: `col` (1-8), `row` (1+), `colSpan` i `rowSpan`.
 - Każdy kontener może być skalowany do minimum **1×1** (pojedynczy moduł siatki).
 
-### 4. Interaktywny Tryb Edycji (Lift-to-Drag & Resize)
+### 4. Interaktywny Tryb Edycji i Persystencja JSON (Lift-to-Drag, Resize & JSON Sync)
 - **Aktywacja**: Przycisk "Dostosuj pulpit" w prawej części górnej belki (`app.html` / `app.ts`) zasilany przez `DashboardLayoutService`.
 - **Siatka Blueprint w tle**: W momencie edycji i uniesienia kafelka w tle pojawia się odseparowana siatka techniczna kwadratów (`.blueprint-grid-layer`, `position: absolute`).
 - **Uniesienie i upuszczenie (Lift-to-Drag)**:
@@ -65,10 +72,13 @@ body-dashboard/
   - Uchwyt w prawym dolnym rogu (`.grid-resize-handle`, 32×32px) skaluje kontener skokowo w jednostkach siatki.
   - Lewy górny róg kontenera jest sztywno zakotwiczony.
   - Kafelek rozszerza się wyłącznie wtedy, gdy obok znajdują się puste komórki siatki.
-- **Trwałość**: Układ użytkownika jest automatycznie synchronizowany z `localStorage` (`body_dashboard_layout_v3`), a przycisk "Resetuj" przywraca układ fabryczny.
+- **Trwałość JSON i Synchronizacja API**:
+  - Układ użytkownika (`col`, `row`, `colSpan`, `rowSpan`) jest automatycznie zapisywany przez backend w pliku `backend/data/layout.json` poprzez endpoint `PUT /api/layout`.
+  - Frontend utrzymuje kopię w `localStorage` jako natychmiastowy cache i fallback w przypadku braku połączenia.
+  - Przycisk "Resetuj" wywołuje `POST /api/layout/reset` przywracając stan fabryczny w pliku JSON oraz w widoku.
 
-### 5. Główne Parametry Biometrii Ciała
-Zestaw mierzonych i prezentowanych parametrów:
+### 5. Główne Parametry Biometrii Ciała i Źródło Danych JSON
+Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/measurements.json` poprzez serwis `MeasurementsService` i endpointy `/api/measurements`:
 1. **Data i Godzina pomiaru** (`colSpan: 2, rowSpan: 1`)
 2. **Waga (kg)** (`colSpan: 2, rowSpan: 1`) z trendem vs poprzedni pomiar
 3. **Total Body Water (TBW % / L)** (`colSpan: 1, rowSpan: 2`) ze zbiornikiem poziomu
@@ -77,10 +87,20 @@ Zestaw mierzonych i prezentowanych parametrów:
 6. **Kości (Minerały kg)** (`colSpan: 1, rowSpan: 1`)
 7. **BMI** (`colSpan: 1, rowSpan: 1`)
 8. **Kcal (BMR)** (`colSpan: 1, rowSpan: 1`)
-9. **Ketony w moczu (mmol/L)** (`colSpan: 2, rowSpan: 1`) z 5-stopniowym paskiem barwnym
+9. **Ketony w moczu (mmol/L)** (`colSpan: 2, rowSpan: 1`) z 6-stopniowym selektorem (w tym stan `Brak pomiaru` / `none`)
 10. **Główny Panel Wykresów Trendu** (`colSpan: 5, rowSpan: 2`) z przełącznikiem parametrów (Pill Tabs)
 11. **Wizualizacja Sylwetki i Składu Ciała** (`colSpan: 3, rowSpan: 2`) po prawej stronie wykresu
-12. **Historia i Rejestr Pomiarów** (`colSpan: 8, rowSpan: 2`) z możliwością wyboru rekordu
+12. **Historia i Rejestr Pomiarów** (`colSpan: 8, rowSpan: 2`) z możliwością wyboru rekordu i przyciskiem otwierania pełnego rejestru w Modalu
+
+### 6. Reużywalny Pełnoekranowy Komponent Modala (`ModalComponent`) & Rejestr Pomiarów
+- **Ścieżka**: `frontend/src/app/components/modal/modal.ts` (oraz `modal.html`, `modal.css`).
+- **Standard**: Standalone Component z sygnałami (`isOpen = input<boolean>()`, `title = input<string>()`, `subtitle = input<string>()`, `badge = input<string>()`, `closed = output<void>()`).
+- **Układ**: Pełny ekran (`100vw` x `100vh`), treść o pełnej szerokości (`width: 100%`) z `scrollbar-gutter: stable`, zapobiegającym nachodzeniu na pasek przewijania.
+- **Nagłówek**: Tytuł i wskaźnik po lewej, slot projekcji `<ng-content select="[modal-actions]" />` na przyciski akcji (np. `+ Nowy wpis`, zwijanie formularza, zapis/aktualizacja) oraz przycisk zamknięcia `✕` (obsługa klawisza `Escape` przez `@HostListener`).
+- **Obsługa Edycji i Nowego Wpisu**:
+  - Dedykowany przycisk edycji (ikona ołówka `.table-btn-edit`) w tabeli modala ładuje wybrany rekord i przełącza formularz w tryb `EDYCJA WPISU #...` z podświetleniem wiersza `.row-editing`.
+  - Przycisk `+ Nowy wpis` w nagłówku modala resetuje formularz, przełącza z trybu edycji na nowy wpis oraz automatycznie pobiera wartości startowe z **poprzedniego (najnowszego) pomiaru**.
+- **Obsługa zerowych statystyk (Zero State)**: Aplikacja i komponenty wykresów są w pełni zabezpieczone obiektem `EMPTY_MEASUREMENT` przed brakiem danych (`history() === []`) oraz dzieleniem przez zero przy 0 i 1 wpisie, wyświetlając dedykowane placeholdery `@empty`.
 
 ---
 
@@ -105,16 +125,22 @@ Zestaw mierzonych i prezentowanych parametrów:
 ### Frontend (Angular)
 - **Komponenty**: Wyłącznie Standalone Components (brak `NgModule`).
 - **Stan reaktywny**: Używaj `signal()`, `computed()`, `effect()` zamiast klasycznych `BehaviorSubject`.
+- **Serwisy Danych**:
+  - `DashboardLayoutService`: zarządza siatką, trybem edycji i synchronizacją z `/api/layout`.
+  - `MeasurementsService`: zarządza danymi biometrycznymi i synchronizacją z `/api/measurements` (w tym pełna obsługa dodawania, usuwania i pustej bazy `[]`).
 - **Wykresy i Wizualizacje**: Wykresy wektorowe SVG z krzywymi Beziera i gradientami (brak ciężkich zewnętrznych bibliotek).
-- **Komunikacja HTTP**: Konfiguracja przez `provideHttpClient()` w `app.config.ts`.
+- **Komunikacja HTTP**: Konfiguracja przez `provideHttpClient()` w `app.config.ts`, obsługa błędów za pomocą operatora `catchError` z biblioteki RxJS.
 - **CORS**: NestJS jest skonfigurowany pod kątem zapytań z portu `4200` i `4000`.
 
 ### Backend (NestJS)
 - **Moduły i importy**: Projekt korzysta z ESM (`"type": "module"`), importy relatywne w TypeScript muszą posiadać rozszerzenie `.js` (np. `import { AppModule } from './app.module.js'`).
+- **Persystencja JSON**:
+  - Dane przechowywane są w plikach JSON w `backend/data/` (`layout.json`, `measurements.json`).
+  - `StorageService` automatycznie tworzy katalog i inicjalizuje pliki danymi domyślnymi, jeśli jeszcze nie istnieją.
+- **Dekoratory i Isolated Modules**: Przy wstrzykiwaniu obiektów w `@Body()` należy stosować odpowiednie DTO lub `any` i importować interfejsy z `import type`, aby uniknąć błędów metadanych w trybie ESM (`TS1272`).
 - **Health Checks**: Każdy nowy kluczowy serwis powinien być uwzględniony w sondzie `/api/health`.
 - **CORS**: W `main.ts` zawsze musi być włączony `app.enableCors()`.
 
 ### Launcher
 - **Zero zewnętrznych zależności**: Launcher opiera się na wbudowanych modułach Node.js (`node:http`, `node:child_process`, `node:fs`, `node:events`).
 - **Graceful Shutdown**: Launcher zamyka procesy potomne na Windows przez `taskkill /pid <PID> /T /F`.
-

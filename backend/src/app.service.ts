@@ -26,9 +26,17 @@ export class AppService {
         { path: '/', method: 'GET', description: 'Greeting endpoint' },
         { path: '/api/health', method: 'GET', description: 'Health check probe' },
         { path: '/api/info', method: 'GET', description: 'API service information' },
+        { path: '/api/layout', method: 'GET', description: 'Get dashboard widgets layout configuration' },
+        { path: '/api/layout', method: 'PUT', description: 'Update and persist dashboard widgets layout' },
+        { path: '/api/layout/reset', method: 'POST', description: 'Reset layout to defaults in JSON' },
+        { path: '/api/measurements', method: 'GET', description: 'Get list of all biometric measurements' },
+        { path: '/api/measurements', method: 'POST', description: 'Create and persist new measurement' },
+        { path: '/api/measurements/:id', method: 'GET', description: 'Get single measurement by ID' },
+        { path: '/api/measurements/:id', method: 'PUT', description: 'Update measurement by ID' },
+        { path: '/api/measurements/:id', method: 'DELETE', description: 'Delete measurement by ID' },
+        { path: '/api/measurements/reset', method: 'POST', description: 'Reset measurements to defaults in JSON' },
       ],
       environment: process.env.NODE_ENV || 'development',
     };
   }
 }
-

@@ -2,14 +2,14 @@
 name: body-dashboard-workflow
 description: >-
   Przewodnik i instrukcja pracy z projektem body-dashboard. Używaj przy uruchamianiu,
-  rozwijaniu endpointów NestJS, komponentów Angular, modularnego grida biometrii oraz rozbudowie launchera.
+  rozwijaniu endpointów NestJS, komponentów Angular, modularnego grida biometrii, persystencji JSON oraz rozbudowie launchera.
 ---
 
 # Workflow Projektu Body Dashboard
 
 Niniejszy skill zawiera procedury i instrukcje krok po kroku dotyczące pracy ze stosem technologicznym projektu:
-- **Frontend**: Angular 22 (Standalone + Signals, Dark Minimalist Grid System)
-- **Backend**: NestJS (ESM + TypeScript)
+- **Frontend**: Angular 22 (Standalone + Signals, Dark Minimalist Grid System, RxJS HttpClient)
+- **Backend**: NestJS (ESM + TypeScript, JSON Data Storage)
 - **Launcher**: Wbudowany menedżer procesów z Web Dashboardem i SSE
 
 ---
@@ -41,7 +41,9 @@ node start
 
 - **Katalog**: `frontend/`
 - **Root komponent**: `frontend/src/app/app.ts` (host dla górnej belki z przyciskiem "Dostosuj pulpit" i `<router-outlet />`)
-- **Serwis układu**: `frontend/src/app/services/dashboard-layout.service.ts` (reaktywne zarządzanie pozycjami 2D, trybem edycji, kolizjami `canPlaceWidget` i zapisem w `localStorage`)
+- **Serwisy Danych**:
+  - `frontend/src/app/services/dashboard-layout.service.ts`: reaktywne zarządzanie pozycjami 2D, trybem edycji, sprawdzaniem kolizji `canPlaceWidget`, auto-synchronizacją z `PUT /api/layout` i fallbackiem do `localStorage`.
+  - `frontend/src/app/services/measurements.service.ts`: pobieranie i modyfikacja pomiarów biometrii (`history`), integracja z `/api/measurements`.
 - **Routing**: `frontend/src/app/app.routes.ts` (domyślna trasa `''` kieruje do `DashboardComponent`)
 - **Główny kontener widoku**: `frontend/src/app/dashboard/dashboard.ts`
 - **Konwencje i Standardy Grida 2D**:
@@ -63,39 +65,52 @@ node start
     6. Kości (`1x1`)
     7. BMI (`1x1`)
     8. Kcal / BMR (`1x1`)
-    9. Ketony w moczu (`2x1`) z 5-stopniowym testem paskowym
+    9. Ketony w moczu (`2x1`) z 6-stopniowym testem paskowym (w tym stan `Brak pomiaru`)
     10. Główny Panel Trendów (`5x2`) z przełącznikiem zakładek (Pill Tabs)
     11. Kształt i Skład Ciała (`3x2`) po prawej stronie wykresu
-    12. Historia Pomiarów (`8x2`)
+    12. Historia Pomiarów (`8x2`) z przyciskiem "+ Dodaj pomiar" otwierającym modal
+  - **Reużywalny Komponent Modala (`ModalComponent`) & Rejestr Pomiarów**:
+    - Lokalizacja: `frontend/src/app/components/modal/`
+    - Standalone Component oparty o sygnały (`isOpen`, `title`, `subtitle`, `badge`, `closed`).
+    - Pełny ekran (`100vw` x `100vh`), treść pełnej szerokości (`width: 100%`) z `scrollbar-gutter: stable`.
+    - Prawa strona nagłówka: slot projekcji `[modal-actions]` (w tym przycisk `+ Nowy wpis` z auto-pobieraniem domyślnych wartości z poprzedniego pomiaru) + przycisk zamknięcia `✕` (skrót `Escape`).
+    - Tryb edycji: przycisk ołówka `.table-btn-edit` w tabeli ładuje wpis i przełącza formularz w tryb `EDYCJA WPISU #...` z podświetleniem `.row-editing`.
+  - **Obsługa Zerowych Statystyk (Zero State & Safe Charts)**:
+    - Obiekt `EMPTY_MEASUREMENT` zabezpiecza obliczenia przed `undefined` przy pustej bazie `history() === []`.
+    - Silnik wykresów generuje linię bazową dla 1 rekordu oraz dedykowany box stanu pustego (`.empty-chart-box`) dla 0 rekordów.
+    - Tabele wykorzystują bloki `@empty` z informacją o braku danych.
   - **Silnik Wykresów**: Lekkie, bezbiblioteczne wykresy SVG z płynnymi krzywymi Beziera, poświatą neonową i gradientami.
   - **Stan reaktywny**: Wyłącznie `signal()`, `computed()` i `effect()`.
 
 ---
 
-## 3. Rozwijanie Backendu (NestJS)
+## 3. Rozwijanie Backendu (NestJS) & Persystencji JSON
 
 - **Katalog**: `backend/`
+- **Katalog danych**: `backend/data/` (pliki `layout.json` i `measurements.json`)
 - **Główny moduł**: `backend/src/app.module.ts`
+- **Architektura Modułów**:
+  - `backend/src/storage/storage.service.ts`: centralny serwis obsługujący asynchroniczny odczyt/zapis plików JSON i auto-inicjalizację danymi domyślnymi.
+  - `backend/src/layout/`: kontroler i serwis dla `/api/layout` (`GET`, `PUT`, `POST /reset`).
+  - `backend/src/measurements/`: kontroler i serwis dla `/api/measurements` (`GET`, `POST`, `GET /:id`, `PUT /:id`, `DELETE /:id`, `POST /reset`).
 - **Konwencja importów**: Ponieważ projekt działa w trybie ESM (`"type": "module"`), wszystkie importy relatywne muszą zawierać rozszerzenie `.js` w plikach `.ts`, np.:
   ```typescript
-  import { AppService } from './app.service.js';
+  import { StorageService } from '../storage/storage.service.js';
+  import type { MeasurementRecord } from '../storage/storage.service.js';
   ```
-- **Dodawanie nowego endpointu**:
-  1. Zdefiniuj metodę w serwisie (`app.service.ts`).
-  2. Dodaj dekorator `@Get('api/twoja-trasa')` w kontrolerze (`app.controller.ts`).
-  3. Zaktualizuj listę w `/api/info` jeśli endpoint powinien być widoczny w dashboardzie Angular.
 
 ---
 
 ## 4. Budowanie i Weryfikacja
 
-Weryfikacja poprawności kompilacji:
+Weryfikacja kompilacji i testów jednostkowych:
 
 ```powershell
-# Frontend
-npm.cmd --prefix frontend run build
+# Testy jednostkowe
+npm.cmd --prefix backend test
+npm.cmd --prefix frontend test -- --watch=false
 
-# Backend
+# Budowanie produkcyjne
 npm.cmd --prefix backend run build
+npm.cmd --prefix frontend run build
 ```
-

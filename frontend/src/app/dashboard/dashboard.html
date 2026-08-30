@@ -384,38 +384,45 @@
 
             <!-- Duży wektorowy wykres SVG -->
             <div class="main-svg-chart-container">
-              <svg class="main-chart-svg" [attr.viewBox]="'0 0 ' + mainChartData().width + ' ' + mainChartData().height" preserveAspectRatio="none">
-                <!-- Poziome linie siatki pomocniczej -->
-                <line x1="35" y1="25" x2="605" y2="25" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
-                <line x1="35" y1="90" x2="605" y2="90" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
-                <line x1="35" y1="155" x2="605" y2="155" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
+              @if (!hasMeasurements()) {
+                <div class="empty-chart-box">
+                  <span class="empty-chart-title">BRAK PUNKTÓW POMIAROWYCH</span>
+                  <span class="empty-chart-desc text-muted">Zarejestruj pierwszy pomiar biometrii za pomocą przycisku poniżej, aby wygenerować analizę trendu.</span>
+                </div>
+              } @else {
+                <svg class="main-chart-svg" [attr.viewBox]="'0 0 ' + mainChartData().width + ' ' + mainChartData().height" preserveAspectRatio="none">
+                  <!-- Poziome linie siatki pomocniczej -->
+                  <line x1="35" y1="25" x2="605" y2="25" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
+                  <line x1="35" y1="90" x2="605" y2="90" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
+                  <line x1="35" y1="155" x2="605" y2="155" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
 
-                <!-- Etykiety min / max osi Y -->
-                <text x="30" y="30" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="end">{{ mainChartData().maxVal }}</text>
-                <text x="30" y="158" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="end">{{ mainChartData().minVal }}</text>
+                  <!-- Etykiety min / max osi Y -->
+                  <text x="30" y="30" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="end">{{ mainChartData().maxVal }}</text>
+                  <text x="30" y="158" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="end">{{ mainChartData().minVal }}</text>
 
-                <!-- Obszar gradientu pod wykresem -->
-                <path [attr.d]="mainChartData().areaPath" [attr.fill]="'url(#' + activeParamMeta().gradientId + ')'" />
+                  <!-- Obszar gradientu pod wykresem -->
+                  <path [attr.d]="mainChartData().areaPath" [attr.fill]="'url(#' + activeParamMeta().gradientId + ')'" />
 
-                <!-- Główna linia wykresu -->
-                <path [attr.d]="mainChartData().linePath" fill="none" [attr.stroke]="activeParamMeta().color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                  <!-- Główna linia wykresu -->
+                  <path [attr.d]="mainChartData().linePath" fill="none" [attr.stroke]="activeParamMeta().color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
 
-                <!-- Punkty pomiarowe z poświatą i etykietami -->
-                @for (pt of mainChartData().points; track pt.date) {
-                  <g class="chart-point-group">
-                    <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="5" [attr.fill]="activeParamMeta().color" fill-opacity="0.3" />
-                    <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3" [attr.fill]="activeParamMeta().color" stroke="#08090d" stroke-width="1.5" />
-                    
-                    <text [attr.x]="pt.x" y="172" fill="#64748b" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">
-                      {{ pt.date }}
-                    </text>
-                    
-                    <text [attr.x]="pt.x" [attr.y]="pt.y - 8" fill="#f1f5f9" font-size="9" font-weight="600" font-family="'JetBrains Mono', monospace" text-anchor="middle">
-                      {{ pt.val }}
-                    </text>
-                  </g>
-                }
-              </svg>
+                  <!-- Punkty pomiarowe z poświatą i etykietami -->
+                  @for (pt of mainChartData().points; track pt.date) {
+                    <g class="chart-point-group">
+                      <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="5" [attr.fill]="activeParamMeta().color" fill-opacity="0.3" />
+                      <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3" [attr.fill]="activeParamMeta().color" stroke="#08090d" stroke-width="1.5" />
+                      
+                      <text [attr.x]="pt.x" y="172" fill="#64748b" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">
+                        {{ pt.date }}
+                      </text>
+                      
+                      <text [attr.x]="pt.x" [attr.y]="pt.y - 8" fill="#f1f5f9" font-size="9" font-weight="600" font-family="'JetBrains Mono', monospace" text-anchor="middle">
+                        {{ pt.val }}
+                      </text>
+                    </g>
+                  }
+                </svg>
+              }
             </div>
           }
 
@@ -492,7 +499,20 @@
                 <span class="cell-title">HISTORIA I REJESTR POMIARÓW CIAŁA</span>
                 <span class="cell-subtitle">Kliknij wiersz aby załadować wybrany punkt czasowy na kafelki</span>
               </div>
-              <span class="badge font-mono">{{ history().length }} WPISY</span>
+              <div class="header-right-actions">
+                <button 
+                  type="button" 
+                  class="btn-open-modal"
+                  (click)="openAddMeasurementModal()"
+                  title="Otwórz pełny rejestr i dodaj nowy pomiar">
+                  <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  <span>Dodaj pomiar</span>
+                </button>
+                <span class="badge font-mono">{{ history().length }} WPISY</span>
+              </div>
             </div>
             <div class="cell-body table-responsive">
               <table class="measurements-table">
@@ -524,6 +544,12 @@
                       <td class="font-mono text-amber">{{ item.kcal }}</td>
                       <td class="font-mono text-pink">{{ item.urineKetones }}</td>
                     </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="10" class="empty-table-msg font-mono text-muted text-center">
+                        Brak zarejestrowanych pomiarów. Kliknij "+ Dodaj pomiar" powyżej, aby wprowadzić pierwszy wpis.
+                      </td>
+                    </tr>
                   }
                 </tbody>
               </table>
@@ -549,4 +575,393 @@
     }
 
   </div>
+
+  <!-- REUŻYWALNY MODAL: REJESTR I DODAWANIE POMIARÓW BIOMETRII -->
+  <app-modal
+    [isOpen]="isMeasurementModalOpen()"
+    title="REJESTR I HISTORIA POMIARÓW BIOMETRII"
+    subtitle="Zarządzanie wpisami, szczegółowa analiza oraz wprowadzanie nowych pomiarów ciała"
+    [badge]="'ZAPISANE: ' + history().length"
+    (closed)="closeMeasurementModal()">
+
+    <!-- Custom Akcje w Nagłówku Modala (Prawa strona) -->
+    <div modal-actions class="modal-header-btns">
+      <button 
+        type="button" 
+        class="modal-btn btn-secondary"
+        [class.btn-active-new]="!isEditing()"
+        (click)="resetToNewEntry()"
+        title="Przełącz na tworzenie nowego wpisu (domyślne wartości z poprzedniego pomiaru)">
+        <svg class="modal-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        <span>+ Nowy wpis</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="modal-btn btn-secondary" 
+        (click)="toggleFormExpanded()"
+        [title]="isFormExpanded() ? 'Zwiń sekcję formularza' : 'Rozwiń sekcję formularza'">
+        <svg class="modal-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          @if (isFormExpanded()) {
+            <polyline points="18 15 12 9 6 15" />
+          } @else {
+            <polyline points="6 9 12 15 18 9" />
+          }
+        </svg>
+        <span>{{ isFormExpanded() ? 'Zwiń formularz' : 'Rozwiń formularz' }}</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="modal-btn btn-primary" 
+        (click)="saveMeasurement()">
+        <svg class="modal-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+          <polyline points="17 21 17 13 7 13 7 21" />
+          <polyline points="7 3 7 8 15 8" />
+        </svg>
+        <span>{{ isEditing() ? 'Zaktualizuj wpis' : 'Zapisz pomiar' }}</span>
+      </button>
+    </div>
+
+    <!-- Zawartość Modala -->
+    <div class="measurement-modal-content">
+
+      <!-- Komunikat Sukcesu -->
+      @if (formSuccessMessage()) {
+        <div class="modal-alert-success">
+          <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{{ formSuccessMessage() }}</span>
+        </div>
+      }
+
+      <!-- Sekcja Formularza Dodawania / Edycji Pomiaru -->
+      @if (isFormExpanded()) {
+        <section class="modal-section form-card" [class.is-edit-mode-card]="isEditing()">
+          <div class="section-header">
+            <div class="section-title-box">
+              @if (isEditing()) {
+                <span class="section-badge badge-amber font-mono">EDYCJA WPISU #{{ editingRecordIndex() }}</span>
+                <h3 class="section-title">Edytuj parametry wybranego punktu pomiarowego</h3>
+              } @else {
+                <span class="section-badge font-mono">NOWY WPIS</span>
+                <h3 class="section-title">Wprowadź dane z wagi biometrycznej</h3>
+              }
+            </div>
+            <div class="section-header-right">
+              @if (isEditing()) {
+                <button type="button" class="btn-switch-new font-mono" (click)="resetToNewEntry()">
+                  + Przełącz na nowy wpis
+                </button>
+              } @else {
+                <span class="section-hint text-muted">Domyślne wartości pochodzą z poprzedniego wpisu</span>
+              }
+            </div>
+          </div>
+
+          <form (ngSubmit)="saveMeasurement()" class="measurement-form">
+            <div class="form-grid">
+              
+              <!-- Data -->
+              <div class="form-group">
+                <label class="form-label" for="m-date">Data pomiaru</label>
+                <div class="input-wrap">
+                  <input 
+                    id="m-date" 
+                    type="date" 
+                    class="form-input font-mono" 
+                    [ngModel]="newEntryDate()" 
+                    (ngModelChange)="newEntryDate.set($event)" 
+                    name="mDate" 
+                    required />
+                </div>
+              </div>
+
+              <!-- Godzina -->
+              <div class="form-group">
+                <label class="form-label" for="m-time">Godzina</label>
+                <div class="input-wrap">
+                  <input 
+                    id="m-time" 
+                    type="time" 
+                    class="form-input font-mono" 
+                    [ngModel]="newEntryTime()" 
+                    (ngModelChange)="newEntryTime.set($event)" 
+                    name="mTime" 
+                    required />
+                </div>
+              </div>
+
+              <!-- Waga -->
+              <div class="form-group highlight-cyan">
+                <label class="form-label" for="m-weight">Waga całkowita (kg)</label>
+                <div class="input-wrap with-suffix">
+                  <input 
+                    id="m-weight" 
+                    type="number" 
+                    step="0.1" 
+                    class="form-input font-mono text-cyan font-bold" 
+                    [ngModel]="newEntryWeight()" 
+                    (ngModelChange)="onWeightChange($event)" 
+                    name="mWeight" 
+                    required />
+                  <span class="input-suffix">kg</span>
+                </div>
+              </div>
+
+              <!-- TBW -->
+              <div class="form-group highlight-blue">
+                <label class="form-label" for="m-tbw">Total Body Water (TBW %)</label>
+                <div class="input-wrap with-suffix">
+                  <input 
+                    id="m-tbw" 
+                    type="number" 
+                    step="0.1" 
+                    class="form-input font-mono text-blue" 
+                    [ngModel]="newEntryTBW()" 
+                    (ngModelChange)="newEntryTBW.set($event)" 
+                    name="mTBW" 
+                    required />
+                  <span class="input-suffix">%</span>
+                </div>
+              </div>
+
+              <!-- Overfat -->
+              <div class="form-group highlight-amber">
+                <label class="form-label" for="m-fat">Tkanka tłuszczowa (Overfat %)</label>
+                <div class="input-wrap with-suffix">
+                  <input 
+                    id="m-fat" 
+                    type="number" 
+                    step="0.1" 
+                    class="form-input font-mono text-amber" 
+                    [ngModel]="newEntryOverfat()" 
+                    (ngModelChange)="newEntryOverfat.set($event)" 
+                    name="mFat" 
+                    required />
+                  <span class="input-suffix">%</span>
+                </div>
+              </div>
+
+              <!-- Mięśnie -->
+              <div class="form-group highlight-emerald">
+                <label class="form-label" for="m-muscle">Masa mięśniowa (kg)</label>
+                <div class="input-wrap with-suffix">
+                  <input 
+                    id="m-muscle" 
+                    type="number" 
+                    step="0.1" 
+                    class="form-input font-mono text-emerald" 
+                    [ngModel]="newEntryMuscle()" 
+                    (ngModelChange)="newEntryMuscle.set($event)" 
+                    name="mMuscle" 
+                    required />
+                  <span class="input-suffix">kg</span>
+                </div>
+              </div>
+
+              <!-- Kości -->
+              <div class="form-group highlight-purple">
+                <label class="form-label" for="m-bones">Masa mineralna kości (kg)</label>
+                <div class="input-wrap with-suffix">
+                  <input 
+                    id="m-bones" 
+                    type="number" 
+                    step="0.1" 
+                    class="form-input font-mono text-purple" 
+                    [ngModel]="newEntryBones()" 
+                    (ngModelChange)="newEntryBones.set($event)" 
+                    name="mBones" 
+                    required />
+                  <span class="input-suffix">kg</span>
+                </div>
+              </div>
+
+              <!-- BMI -->
+              <div class="form-group">
+                <label class="form-label" for="m-bmi">Wskaźnik BMI</label>
+                <div class="input-wrap">
+                  <input 
+                    id="m-bmi" 
+                    type="number" 
+                    step="0.1" 
+                    class="form-input font-mono text-cyan" 
+                    [ngModel]="newEntryBmi()" 
+                    (ngModelChange)="newEntryBmi.set($event)" 
+                    name="mBmi" 
+                    required />
+                </div>
+              </div>
+
+              <!-- Kcal (BMR) -->
+              <div class="form-group">
+                <label class="form-label" for="m-kcal">Zapotrzebowanie BMR (Kcal)</label>
+                <div class="input-wrap with-suffix">
+                  <input 
+                    id="m-kcal" 
+                    type="number" 
+                    step="1" 
+                    class="form-input font-mono text-amber" 
+                    [ngModel]="newEntryKcal()" 
+                    (ngModelChange)="newEntryKcal.set($event)" 
+                    name="mKcal" 
+                    required />
+                  <span class="input-suffix">kcal</span>
+                </div>
+              </div>
+
+              <!-- Ketony w moczu -->
+              <div class="form-group ketone-select-group">
+                <label class="form-label">Ketony w moczu (Test paskowy)</label>
+                <div class="ketone-pills-row">
+                  @for (opt of ketoneOptions; track opt.level) {
+                    <button 
+                      type="button" 
+                      class="ketone-pill-btn"
+                      [class.active]="newEntryKetoneLevel() === opt.level"
+                      [style.--pill-color]="opt.color"
+                      (click)="newEntryKetoneLevel.set(opt.level)">
+                      <span class="pill-dot" [style.background-color]="opt.color"></span>
+                      <span class="pill-title">{{ opt.label }}</span>
+                      <span class="pill-val font-mono">{{ opt.value > 0 ? opt.value + ' mmol/L' : 'Brak pomiaru' }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Notatki / Okoliczności -->
+              <div class="form-group full-width-field">
+                <label class="form-label" for="m-notes">Notatki / Okoliczności pomiaru</label>
+                <input 
+                  id="m-notes" 
+                  type="text" 
+                  class="form-input" 
+                  placeholder="np. Na czczo po przebudzeniu, po treningu..." 
+                  [ngModel]="newEntryNotes()" 
+                  (ngModelChange)="newEntryNotes.set($event)" 
+                  name="mNotes" />
+              </div>
+
+            </div>
+
+            <div class="form-actions-footer">
+              @if (isEditing()) {
+                <button type="button" class="cancel-edit-btn" (click)="resetToNewEntry()">
+                  <span>Anuluj edycję</span>
+                </button>
+              }
+              <button type="submit" class="submit-entry-btn" [class.btn-update]="isEditing()">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>{{ isEditing() ? 'Zaktualizuj wpis w rejestrze' : 'Zapisz pomiar w rejestrze' }}</span>
+              </button>
+            </div>
+          </form>
+        </section>
+      }
+
+      <!-- Sekcja Pełnej Tabeli Historii -->
+      <section class="modal-section history-table-card">
+        <div class="section-header">
+          <div class="section-title-box">
+            <span class="section-badge">REJESTR</span>
+            <h3 class="section-title">Zarejestrowane punkty pomiarowe</h3>
+          </div>
+          <div class="section-meta font-mono">
+            <span>Łącznie wpisów: {{ history().length }}</span>
+          </div>
+        </div>
+
+        <div class="table-responsive full-modal-table">
+          <table class="measurements-table modal-view-table">
+            <thead>
+              <tr>
+                <th>Lp.</th>
+                <th>Data</th>
+                <th>Godzina</th>
+                <th>Waga</th>
+                <th>TBW (%)</th>
+                <th>Overfat (%)</th>
+                <th>Mięśnie (kg)</th>
+                <th>Kości (kg)</th>
+                <th>BMI</th>
+                <th>BMR (kcal)</th>
+                <th>Ketony</th>
+                <th>Notatki</th>
+                <th class="text-right">Akcje</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of history(); track item.id; let idx = $index) {
+                <tr [class.selected]="idx === selectedIndex()" [class.row-editing]="editingRecordId() === item.id">
+                  <td class="font-mono text-muted">#{{ history().length - idx }}</td>
+                  <td class="font-mono text-cyan font-bold">{{ item.date }}</td>
+                  <td class="font-mono text-secondary">{{ item.time }}</td>
+                  <td class="font-mono font-bold text-primary">{{ item.weight }} kg</td>
+                  <td class="font-mono text-blue">{{ item.totalBodyWater }}%</td>
+                  <td class="font-mono text-orange">{{ item.overfat }}%</td>
+                  <td class="font-mono text-emerald">{{ item.muscleMass }} kg</td>
+                  <td class="font-mono text-purple">{{ item.boneMass }} kg</td>
+                  <td class="font-mono text-cyan">{{ item.bmi }}</td>
+                  <td class="font-mono text-amber">{{ item.kcal }}</td>
+                  <td>
+                    <span class="ketone-tag" [class]="'level-' + (item.ketoneLevel || 'none')">
+                      {{ item.urineKetones || 'Brak pomiaru' }}
+                    </span>
+                  </td>
+                  <td class="notes-cell text-muted">{{ item.notes || '-' }}</td>
+                  <td class="actions-cell text-right">
+                    <div class="action-buttons-inline">
+                      <button 
+                        type="button" 
+                        class="table-btn-select"
+                        [class.is-active]="idx === selectedIndex()"
+                        (click)="selectMeasurement(idx)"
+                        title="Załaduj ten pomiar na główny pulpit">
+                        {{ idx === selectedIndex() ? '● Aktywny' : 'Wybierz' }}
+                      </button>
+                      <button 
+                        type="button" 
+                        class="table-btn-edit"
+                        [class.is-editing]="editingRecordId() === item.id"
+                        (click)="startEditingRecord(item, $event)"
+                        title="Edytuj ten wpis pomiarowy">
+                        <svg class="icon-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
+                      <button 
+                        type="button" 
+                        class="table-btn-delete"
+                        (click)="deleteMeasurementRecord(item.id, $event)"
+                        title="Usuń ten wpis">
+                        <svg class="icon-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="13" class="empty-table-msg font-mono text-muted text-center">
+                    Brak zarejestrowanych pomiarów w bazie danych. Wprowadź dane w formularzu powyżej i kliknij "Zapisz pomiar".
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </app-modal>
 </div>

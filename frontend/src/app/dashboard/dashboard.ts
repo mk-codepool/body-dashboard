@@ -1,23 +1,9 @@
 import { Component, signal, computed, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DashboardLayoutService, DashboardWidgetConfig } from '../services/dashboard-layout.service';
-
-export interface MeasurementRecord {
-  id: string;
-  date: string;
-  time: string;
-  weight: number; // kg
-  totalBodyWater: number; // %
-  overfat: number; // %
-  muscleMass: number; // kg
-  boneMass: number; // kg
-  bmi: number;
-  kcal: number; // BMR
-  urineKetones: string;
-  ketoneValue: number; // mmol/L do wykresu
-  ketoneLevel: 'negative' | 'trace' | 'low' | 'moderate' | 'high';
-  notes?: string;
-}
+import { MeasurementsService, MeasurementRecord } from '../services/measurements.service';
+import { ModalComponent } from '../components/modal/modal';
 
 export type ChartParamKey = 
   | 'weight' 
@@ -55,15 +41,33 @@ export interface BodyCompartmentItem {
   color: string;
 }
 
+export const EMPTY_MEASUREMENT: MeasurementRecord = {
+  id: '',
+  date: '-',
+  time: '--:--',
+  weight: 0,
+  totalBodyWater: 0,
+  overfat: 0,
+  muscleMass: 0,
+  boneMass: 0,
+  bmi: 0,
+  kcal: 0,
+  urineKetones: 'Brak danych',
+  ketoneValue: 0,
+  ketoneLevel: 'negative',
+  notes: 'Brak danych pomiarowych'
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, ModalComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
 export class DashboardComponent {
   readonly layoutService = inject(DashboardLayoutService);
+  readonly measurementsService = inject(MeasurementsService);
 
   // Metadane wszystkich mierzonych parametrów
   readonly paramList: ParamMeta[] = [
@@ -80,140 +84,47 @@ export class DashboardComponent {
   // Aktywny parametr w głównym panelu wykresów
   readonly activeParamKey = signal<ChartParamKey>('weight');
 
-  // Bogaty zestaw ostatnich 7 pomiarów (posortowanych chronologicznie od najstarszego do najnowszego dla wykresów)
-  readonly history = signal<MeasurementRecord[]>([
-    {
-      id: 'm1',
-      date: '2026-08-30',
-      time: '07:30',
-      weight: 78.4,
-      totalBodyWater: 59.2,
-      overfat: 15.8,
-      muscleMass: 62.5,
-      boneMass: 3.4,
-      bmi: 23.7,
-      kcal: 1845,
-      urineKetones: '0.5 mmol/L (Ślad)',
-      ketoneValue: 0.5,
-      ketoneLevel: 'trace',
-      notes: 'Pomiar na czczo po przebudzeniu'
-    },
-    {
-      id: 'm2',
-      date: '2026-08-29',
-      time: '07:35',
-      weight: 78.8,
-      totalBodyWater: 58.7,
-      overfat: 16.1,
-      muscleMass: 62.3,
-      boneMass: 3.4,
-      bmi: 23.9,
-      kcal: 1840,
-      urineKetones: 'Negatywny (< 0.5 mmol/L)',
-      ketoneValue: 0.1,
-      ketoneLevel: 'negative'
-    },
-    {
-      id: 'm3',
-      date: '2026-08-28',
-      time: '07:20',
-      weight: 79.1,
-      totalBodyWater: 58.4,
-      overfat: 16.4,
-      muscleMass: 62.1,
-      boneMass: 3.4,
-      bmi: 24.0,
-      kcal: 1835,
-      urineKetones: 'Negatywny (< 0.5 mmol/L)',
-      ketoneValue: 0.1,
-      ketoneLevel: 'negative'
-    },
-    {
-      id: 'm4',
-      date: '2026-08-27',
-      time: '07:40',
-      weight: 79.5,
-      totalBodyWater: 58.0,
-      overfat: 16.7,
-      muscleMass: 61.9,
-      boneMass: 3.3,
-      bmi: 24.1,
-      kcal: 1830,
-      urineKetones: 'Negatywny (< 0.5 mmol/L)',
-      ketoneValue: 0.0,
-      ketoneLevel: 'negative'
-    },
-    {
-      id: 'm5',
-      date: '2026-08-26',
-      time: '07:25',
-      weight: 79.7,
-      totalBodyWater: 57.8,
-      overfat: 16.9,
-      muscleMass: 61.8,
-      boneMass: 3.3,
-      bmi: 24.2,
-      kcal: 1828,
-      urineKetones: '1.5 mmol/L (Lekka)',
-      ketoneValue: 1.5,
-      ketoneLevel: 'low'
-    },
-    {
-      id: 'm6',
-      date: '2026-08-25',
-      time: '07:15',
-      weight: 80.1,
-      totalBodyWater: 57.5,
-      overfat: 17.2,
-      muscleMass: 61.6,
-      boneMass: 3.3,
-      bmi: 24.3,
-      kcal: 1825,
-      urineKetones: 'Negatywny (< 0.5 mmol/L)',
-      ketoneValue: 0.1,
-      ketoneLevel: 'negative'
-    },
-    {
-      id: 'm7',
-      date: '2026-08-24',
-      time: '07:30',
-      weight: 80.4,
-      totalBodyWater: 57.2,
-      overfat: 17.5,
-      muscleMass: 61.5,
-      boneMass: 3.3,
-      bmi: 24.4,
-      kcal: 1820,
-      urineKetones: 'Negatywny (< 0.5 mmol/L)',
-      ketoneValue: 0.0,
-      ketoneLevel: 'negative'
-    }
-  ]);
+  // Pomiary biometryczne zasilane przez serwis backendowy
+  readonly history = this.measurementsService.history;
+
+  // Czy istnieją jakiekolwiek zapisane pomiary
+  readonly hasMeasurements = computed(() => this.history().length > 0);
 
   // Indeks aktywnego rekordu wybranego na kafelkach
   readonly selectedIndex = signal<number>(0);
 
-  // Aktywny rekord
-  readonly current = computed(() => this.history()[this.selectedIndex()] || this.history()[0]);
+  // Aktywny rekord (zabezpieczony przed pustą tablicą)
+  readonly current = computed(() => {
+    const list = this.history();
+    if (list.length === 0) return EMPTY_MEASUREMENT;
+    return list[this.selectedIndex()] || list[0] || EMPTY_MEASUREMENT;
+  });
 
   // Poprzedni pomiar
-  readonly previous = computed(() => this.history()[this.selectedIndex() + 1]);
+  readonly previous = computed(() => {
+    const list = this.history();
+    if (list.length <= 1) return null;
+    return list[this.selectedIndex() + 1] || null;
+  });
 
   // Obliczenia różnic / trendów
   readonly weightDelta = computed(() => {
+    if (!this.hasMeasurements()) return null;
     const prev = this.previous();
-    if (!prev) return null;
+    if (!prev || prev.weight === 0) return null;
     const diff = this.current().weight - prev.weight;
     return Math.round(diff * 10) / 10;
   });
 
   readonly waterLiters = computed(() => {
     const m = this.current();
+    if (!m.weight || m.weight === 0) return 0;
     return Math.round((m.weight * (m.totalBodyWater / 100)) * 10) / 10;
   });
 
   readonly musclePercent = computed(() => {
     const m = this.current();
+    if (!m.weight || m.weight === 0) return 0;
     return Math.round((m.muscleMass / m.weight) * 1000) / 10;
   });
 
@@ -221,6 +132,15 @@ export class DashboardComponent {
   readonly bodyComposition = computed<BodyCompartmentItem[]>(() => {
     const m = this.current();
     const w = m.weight;
+    if (!w || w === 0) {
+      return [
+        { id: 'water', label: 'Woda (TBW)', percent: 0, kg: 0, color: '#3b82f6' },
+        { id: 'muscle', label: 'Mięśnie & Białko', percent: 0, kg: 0, color: '#10b981' },
+        { id: 'fat', label: 'Tłuszcz (Fat)', percent: 0, kg: 0, color: '#f59e0b' },
+        { id: 'bones', label: 'Kości (Minerały)', percent: 0, kg: 0, color: '#a855f7' }
+      ];
+    }
+
     const waterPct = m.totalBodyWater;
     const waterKg = Math.round((w * (waterPct / 100)) * 10) / 10;
 
@@ -241,7 +161,6 @@ export class DashboardComponent {
     ];
   });
 
-
   // Dane posortowane chronologicznie do renderowania wykresów (od najstarszego do najnowszego)
   readonly chronologicalHistory = computed(() => {
     return [...this.history()].reverse();
@@ -261,7 +180,20 @@ export class DashboardComponent {
     const height = 180;
     const padding = { top: 25, right: 35, bottom: 25, left: 35 };
 
-    const values = records.map(r => Number(r[key]));
+    if (records.length === 0) {
+      return {
+        width,
+        height,
+        points: [],
+        linePath: '',
+        areaPath: '',
+        minVal: 0,
+        maxVal: 0,
+        delta: 0
+      };
+    }
+
+    const values = records.map(r => Number(r[key]) || 0);
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values);
     const range = (maxVal - minVal) === 0 ? 1 : (maxVal - minVal);
@@ -269,21 +201,24 @@ export class DashboardComponent {
     const plotWidth = width - padding.left - padding.right;
 
     const points: ChartPoint[] = records.map((r, i) => {
-      const val = Number(r[key]);
-      const x = padding.left + (i / (records.length - 1)) * plotWidth;
+      const val = Number(r[key]) || 0;
+      const x = records.length > 1
+        ? padding.left + (i / (records.length - 1)) * plotWidth
+        : width / 2;
       const y = height - padding.bottom - ((val - minVal) / range) * plotHeight;
       return {
         x: Math.round(x * 10) / 10,
         y: Math.round(y * 10) / 10,
         val,
-        date: r.date.substring(5), // np. "08-30"
+        date: r.date && r.date !== '-' ? r.date.substring(5) : '-',
         formatted: `${val} ${meta.unit}`
       };
     });
 
-    // Płynna linia SVG
     let linePath = '';
-    if (points.length > 0) {
+    if (points.length === 1) {
+      linePath = `M ${padding.left} ${points[0].y} L ${width - padding.right} ${points[0].y}`;
+    } else if (points.length > 1) {
       linePath = `M ${points[0].x} ${points[0].y}`;
       for (let i = 1; i < points.length; i++) {
         const p0 = points[i - 1];
@@ -293,9 +228,8 @@ export class DashboardComponent {
       }
     }
 
-    // Zamknięty obszar gradientu pod wykresem
-    const areaPath = linePath
-      ? `${linePath} L ${points[points.length - 1].x} ${height - padding.bottom} L ${points[0].x} ${height - padding.bottom} Z`
+    const areaPath = linePath && points.length > 0
+      ? `${linePath} L ${points.length > 1 ? points[points.length - 1].x : width - padding.right} ${height - padding.bottom} L ${points.length > 1 ? points[0].x : padding.left} ${height - padding.bottom} Z`
       : '';
 
     return {
@@ -306,14 +240,16 @@ export class DashboardComponent {
       areaPath,
       minVal,
       maxVal,
-      delta: Math.round((values[values.length - 1] - values[0]) * 10) / 10
+      delta: records.length > 1 ? Math.round((values[values.length - 1] - values[0]) * 10) / 10 : 0
     };
   });
 
   // Generator małych wykresów typu Sparkline dla pojedynczych kafelków
   getSparkline(key: ChartParamKey, width = 100, height = 32): { line: string; area: string } {
     const records = this.chronologicalHistory();
-    const values = records.map(r => Number(r[key]));
+    if (records.length === 0) return { line: '', area: '' };
+
+    const values = records.map(r => Number(r[key]) || 0);
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = (max - min) === 0 ? 1 : (max - min);
@@ -321,14 +257,19 @@ export class DashboardComponent {
     const plotH = height - pad * 2;
     const plotW = width - pad * 2;
 
+    if (records.length === 1) {
+      const y = Math.round(height / 2);
+      const line = `M ${pad} ${y} L ${width - pad} ${y}`;
+      const area = `${line} L ${width - pad} ${height} L ${pad} ${height} Z`;
+      return { line, area };
+    }
+
     const pts = records.map((r, i) => {
-      const val = Number(r[key]);
+      const val = Number(r[key]) || 0;
       const x = pad + (i / (records.length - 1)) * plotW;
       const y = height - pad - ((val - min) / range) * plotH;
       return { x: Math.round(x), y: Math.round(y) };
     });
-
-    if (pts.length === 0) return { line: '', area: '' };
 
     let line = `M ${pts[0].x} ${pts[0].y}`;
     for (let i = 1; i < pts.length; i++) {
@@ -348,6 +289,186 @@ export class DashboardComponent {
 
   selectMeasurement(index: number): void {
     this.selectedIndex.set(index);
+  }
+
+  // --- MODAL REJESTRU I DODAWANIA/EDYCJI POMIARÓW BIOMETRII ---
+  readonly isMeasurementModalOpen = signal<boolean>(false);
+  readonly isFormExpanded = signal<boolean>(true);
+  readonly formSuccessMessage = signal<string>('');
+  readonly editingRecordId = signal<string | null>(null);
+  readonly isEditing = computed(() => this.editingRecordId() !== null);
+
+  readonly editingRecordIndex = computed(() => {
+    const id = this.editingRecordId();
+    if (!id) return null;
+    const idx = this.history().findIndex(m => m.id === id);
+    return idx !== -1 ? this.history().length - idx : null;
+  });
+
+  // Pola formularza pomiaru
+  readonly newEntryDate = signal<string>('');
+  readonly newEntryTime = signal<string>('');
+  readonly newEntryWeight = signal<number>(78.5);
+  readonly newEntryTBW = signal<number>(59.0);
+  readonly newEntryOverfat = signal<number>(15.8);
+  readonly newEntryMuscle = signal<number>(62.5);
+  readonly newEntryBones = signal<number>(3.4);
+  readonly newEntryBmi = signal<number>(23.7);
+  readonly newEntryKcal = signal<number>(1845);
+  readonly newEntryKetoneLevel = signal<'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high'>('none');
+  readonly newEntryNotes = signal<string>('');
+
+  readonly ketoneOptions: { level: 'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high'; label: string; text: string; value: number; color: string }[] = [
+    { level: 'none', label: 'Brak pomiaru', text: 'Brak pomiaru', value: 0, color: '#64748b' },
+    { level: 'negative', label: 'Negatywny', text: 'Negatywny (< 0.5 mmol/L)', value: 0.1, color: '#94a3b8' },
+    { level: 'trace', label: 'Ślad', text: '0.5 mmol/L (Ślad)', value: 0.5, color: '#ec4899' },
+    { level: 'low', label: 'Lekka', text: '1.5 mmol/L (Lekka)', value: 1.5, color: '#f43f5e' },
+    { level: 'moderate', label: 'Umiarkowana', text: '4.0 mmol/L (Umiarkowana)', value: 4.0, color: '#e11d48' },
+    { level: 'high', label: 'Wysoka', text: '8.0+ mmol/L (Wysoka)', value: 8.0, color: '#be123c' }
+  ];
+
+  openAddMeasurementModal(): void {
+    this.resetToNewEntry();
+    this.isMeasurementModalOpen.set(true);
+  }
+
+  closeMeasurementModal(): void {
+    this.isMeasurementModalOpen.set(false);
+  }
+
+  toggleFormExpanded(): void {
+    this.isFormExpanded.update(v => !v);
+  }
+
+  resetToNewEntry(): void {
+    this.editingRecordId.set(null);
+    this.isFormExpanded.set(true);
+
+    const now = new Date();
+    const latest = this.history()[0];
+
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+
+    this.newEntryDate.set(`${yyyy}-${mm}-${dd}`);
+    this.newEntryTime.set(`${hh}:${min}`);
+
+    // Domyślne dane to te z poprzedniego/najnowszego wpisu
+    if (latest && latest.weight > 0) {
+      this.newEntryWeight.set(latest.weight);
+      this.newEntryTBW.set(latest.totalBodyWater);
+      this.newEntryOverfat.set(latest.overfat);
+      this.newEntryMuscle.set(latest.muscleMass);
+      this.newEntryBones.set(latest.boneMass);
+      this.newEntryBmi.set(latest.bmi);
+      this.newEntryKcal.set(latest.kcal);
+      this.newEntryKetoneLevel.set(latest.ketoneLevel || 'none');
+      this.newEntryNotes.set('');
+    } else {
+      this.newEntryWeight.set(75.0);
+      this.newEntryTBW.set(58.0);
+      this.newEntryOverfat.set(16.0);
+      this.newEntryMuscle.set(60.0);
+      this.newEntryBones.set(3.3);
+      this.newEntryBmi.set(22.6);
+      this.newEntryKcal.set(1800);
+      this.newEntryKetoneLevel.set('none');
+      this.newEntryNotes.set('');
+    }
+
+    this.formSuccessMessage.set('');
+  }
+
+  startEditingRecord(record: MeasurementRecord, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    this.editingRecordId.set(record.id);
+    this.isFormExpanded.set(true);
+
+    this.newEntryDate.set(record.date);
+    this.newEntryTime.set(record.time);
+    this.newEntryWeight.set(record.weight);
+    this.newEntryTBW.set(record.totalBodyWater);
+    this.newEntryOverfat.set(record.overfat);
+    this.newEntryMuscle.set(record.muscleMass);
+    this.newEntryBones.set(record.boneMass);
+    this.newEntryBmi.set(record.bmi);
+    this.newEntryKcal.set(record.kcal);
+    this.newEntryKetoneLevel.set(record.ketoneLevel || 'none');
+    this.newEntryNotes.set(record.notes || '');
+
+    this.formSuccessMessage.set('');
+  }
+
+  onWeightChange(weight: number): void {
+    this.newEntryWeight.set(weight);
+    // Automatyczne przeliczenie BMI przy wzroście referencyjnym ok. 182 cm
+    const heightM = 1.82;
+    const calcBmi = Math.round((weight / (heightM * heightM)) * 10) / 10;
+    this.newEntryBmi.set(calcBmi);
+  }
+
+  async saveMeasurement(): Promise<void> {
+    const selectedKetone = this.ketoneOptions.find(k => k.level === this.newEntryKetoneLevel()) || this.ketoneOptions[0];
+
+    const payload: Omit<MeasurementRecord, 'id'> = {
+      date: this.newEntryDate() || new Date().toISOString().split('T')[0],
+      time: this.newEntryTime() || '08:00',
+      weight: Number(this.newEntryWeight()) || 0,
+      totalBodyWater: Number(this.newEntryTBW()) || 0,
+      overfat: Number(this.newEntryOverfat()) || 0,
+      muscleMass: Number(this.newEntryMuscle()) || 0,
+      boneMass: Number(this.newEntryBones()) || 0,
+      bmi: Number(this.newEntryBmi()) || 0,
+      kcal: Number(this.newEntryKcal()) || 0,
+      urineKetones: selectedKetone.text,
+      ketoneValue: selectedKetone.value,
+      ketoneLevel: selectedKetone.level,
+      notes: this.newEntryNotes()
+    };
+
+    const editId = this.editingRecordId();
+    if (editId) {
+      await this.measurementsService.updateMeasurement(editId, payload);
+      this.formSuccessMessage.set(`Wpis #${this.editingRecordIndex() || ''} został pomyślnie zaktualizowany!`);
+      setTimeout(() => {
+        this.formSuccessMessage.set('');
+      }, 4000);
+    } else {
+      const saved = await this.measurementsService.addMeasurement(payload);
+      if (saved) {
+        this.selectedIndex.set(0);
+        this.formSuccessMessage.set('Nowy rekord pomiarowy został pomyślnie dodany i utrwalony w bazie!');
+        setTimeout(() => {
+          this.formSuccessMessage.set('');
+        }, 4000);
+      }
+    }
+  }
+
+  // Alias dla kompatybilności
+  async saveNewMeasurement(): Promise<void> {
+    return this.saveMeasurement();
+  }
+
+  async deleteMeasurementRecord(id: string, event?: Event): Promise<void> {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (confirm('Czy na pewno chcesz usunąć ten wpis pomiarowy z bazy?')) {
+      if (this.editingRecordId() === id) {
+        this.editingRecordId.set(null);
+      }
+      await this.measurementsService.deleteMeasurement(id);
+      if (this.selectedIndex() >= this.history().length) {
+        this.selectedIndex.set(Math.max(0, this.history().length - 1));
+      }
+    }
   }
 
   // Blueprint Grid - kafelki podkładowe dla siatki (8 kolumn x 10 wierszy)

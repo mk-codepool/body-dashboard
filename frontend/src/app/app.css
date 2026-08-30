@@ -248,8 +248,7 @@
 .main-content {
   flex: 1;
   height: calc(100vh - var(--header-height));
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   position: relative;
 }
 

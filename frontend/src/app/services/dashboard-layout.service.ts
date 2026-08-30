@@ -1,4 +1,7 @@
-import { Injectable, signal, effect } from '@angular/core';
+import { Injectable, signal, effect, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 export interface DashboardWidgetConfig {
   id: string;
@@ -221,14 +224,57 @@ const STORAGE_KEY = 'body_dashboard_layout_v3';
   providedIn: 'root'
 })
 export class DashboardLayoutService {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = 'http://localhost:3000/api/layout';
+
   readonly isEditMode = signal<boolean>(false);
   readonly widgets = signal<DashboardWidgetConfig[]>(this.loadInitialWidgets());
+  readonly isSyncing = signal<boolean>(false);
+
+  private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
+    this.loadFromBackend();
+
     effect(() => {
       const currentWidgets = this.widgets();
       this.saveToStorage(currentWidgets);
+      this.scheduleBackendSync(currentWidgets);
     });
+  }
+
+  async loadFromBackend(): Promise<void> {
+    try {
+      const remoteWidgets = await firstValueFrom(
+        this.http.get<DashboardWidgetConfig[]>(this.apiUrl).pipe(
+          catchError(() => of(null))
+        )
+      );
+      if (Array.isArray(remoteWidgets) && remoteWidgets.length > 0) {
+        this.widgets.set(remoteWidgets);
+        this.saveToStorage(remoteWidgets);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private scheduleBackendSync(widgets: DashboardWidgetConfig[]): void {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+    this.saveTimeout = setTimeout(async () => {
+      try {
+        this.isSyncing.set(true);
+        await firstValueFrom(
+          this.http.put<DashboardWidgetConfig[]>(this.apiUrl, widgets).pipe(
+            catchError(() => of(null))
+          )
+        );
+      } finally {
+        this.isSyncing.set(false);
+      }
+    }, 400);
   }
 
   toggleEditMode(): void {
@@ -306,20 +352,31 @@ export class DashboardLayoutService {
     }
   }
 
-  resetToDefault(): void {
-    this.widgets.set(
-      DEFAULT_WIDGETS.map(w => ({
-        ...w,
-        col: w.defaultCol,
-        row: w.defaultRow,
-        colSpan: w.defaultColSpan,
-        rowSpan: w.defaultRowSpan
-      }))
-    );
+  async resetToDefault(): Promise<void> {
+    const defaults = DEFAULT_WIDGETS.map(w => ({
+      ...w,
+      col: w.defaultCol,
+      row: w.defaultRow,
+      colSpan: w.defaultColSpan,
+      rowSpan: w.defaultRowSpan
+    }));
+
+    this.widgets.set(defaults);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {
       // ignore
+    }
+
+    try {
+      this.isSyncing.set(true);
+      await firstValueFrom(
+        this.http.post<DashboardWidgetConfig[]>(`${this.apiUrl}/reset`, {}).pipe(
+          catchError(() => of(null))
+        )
+      );
+    } finally {
+      this.isSyncing.set(false);
     }
   }
 
