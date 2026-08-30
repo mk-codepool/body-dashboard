@@ -28,17 +28,30 @@ export interface ParamMeta {
 export interface ChartPoint {
   x: number;
   y: number;
+  xPct: number;
+  yPct: number;
   val: number;
   date: string;
   formatted: string;
 }
 
 export interface BodyCompartmentItem {
-  id: string;
+  id: 'bones' | 'muscle' | 'fat' | 'water';
   label: string;
   percent: number;
   kg: number;
   color: string;
+}
+
+export interface SilhouetteLayerData {
+  id: 'bones' | 'muscle' | 'fat' | 'water';
+  label: string;
+  percent: number;
+  kg: number;
+  color: string;
+  strokeWidth: number;
+  headRadius: number;
+  layerThickness: number;
 }
 
 export const EMPTY_MEASUREMENT: MeasurementRecord = {
@@ -74,8 +87,8 @@ export class DashboardComponent {
     { key: 'weight', label: 'Waga', unit: 'kg', color: '#06b6d4', gradientId: 'grad-weight' },
     { key: 'totalBodyWater', label: 'Total Body Water', unit: '%', color: '#3b82f6', gradientId: 'grad-tbw' },
     { key: 'overfat', label: 'Overfat (Tłuszcz)', unit: '%', color: '#f59e0b', gradientId: 'grad-fat' },
-    { key: 'muscleMass', label: 'Mięśnie', unit: 'kg', color: '#10b981', gradientId: 'grad-muscle' },
-    { key: 'boneMass', label: 'Kości', unit: 'kg', color: '#a855f7', gradientId: 'grad-bones' },
+    { key: 'muscleMass', label: 'Mięśnie', unit: '%', color: '#10b981', gradientId: 'grad-muscle' },
+    { key: 'boneMass', label: 'Kości', unit: '%', color: '#a855f7', gradientId: 'grad-bones' },
     { key: 'bmi', label: 'BMI', unit: '', color: '#0ea5e9', gradientId: 'grad-bmi' },
     { key: 'kcal', label: 'Kcal (BMR)', unit: 'kcal', color: '#f97316', gradientId: 'grad-kcal' },
     { key: 'ketoneValue', label: 'Ketony w moczu', unit: 'mmol/L', color: '#ec4899', gradientId: 'grad-ketones' }
@@ -122,43 +135,94 @@ export class DashboardComponent {
     return Math.round((m.weight * (m.totalBodyWater / 100)) * 10) / 10;
   });
 
-  readonly musclePercent = computed(() => {
+  readonly muscleKg = computed(() => {
     const m = this.current();
     if (!m.weight || m.weight === 0) return 0;
-    return Math.round((m.muscleMass / m.weight) * 1000) / 10;
+    return Math.round((m.weight * (m.muscleMass / 100)) * 10) / 10;
   });
 
-  // Skład ciała w podziale 4-kompartmentowym (Woda, Tłuszcz, Białko/Mięśnie, Minerały kości)
+  readonly boneKg = computed(() => {
+    const m = this.current();
+    if (!m.weight || m.weight === 0) return 0;
+    return Math.round((m.weight * (m.boneMass / 100)) * 10) / 10;
+  });
+
+  // Interaktywny hover nad warstwą sylwetki
+  readonly hoveredLayer = signal<string | null>(null);
+
+  setHoveredLayer(id: string | null): void {
+    this.hoveredLayer.set(id);
+  }
+
+  // Skład ciała w podziale 4-kompartmentowym: Kości -> Mięśnie -> Tłuszcz -> Woda
   readonly bodyComposition = computed<BodyCompartmentItem[]>(() => {
     const m = this.current();
     const w = m.weight;
     if (!w || w === 0) {
       return [
-        { id: 'water', label: 'Woda (TBW)', percent: 0, kg: 0, color: '#3b82f6' },
-        { id: 'muscle', label: 'Mięśnie & Białko', percent: 0, kg: 0, color: '#10b981' },
+        { id: 'bones', label: 'Kości (Minerały)', percent: 0, kg: 0, color: '#ffffff' },
+        { id: 'muscle', label: 'Mięśnie & Białko', percent: 0, kg: 0, color: '#ef4444' },
         { id: 'fat', label: 'Tłuszcz (Fat)', percent: 0, kg: 0, color: '#f59e0b' },
-        { id: 'bones', label: 'Kości (Minerały)', percent: 0, kg: 0, color: '#a855f7' }
+        { id: 'water', label: 'Woda (TBW)', percent: 0, kg: 0, color: '#06b6d4' }
       ];
     }
 
-    const waterPct = m.totalBodyWater;
-    const waterKg = Math.round((w * (waterPct / 100)) * 10) / 10;
+    const bonePct = m.boneMass;
+    const boneKg = Math.round((w * (bonePct / 100)) * 10) / 10;
 
     const fatPct = m.overfat;
     const fatKg = Math.round((w * (fatPct / 100)) * 10) / 10;
 
-    const boneKg = m.boneMass;
-    const bonePct = Math.round((boneKg / w) * 1000) / 10;
+    const waterPct = m.totalBodyWater;
+    const waterKg = Math.round((w * (waterPct / 100)) * 10) / 10;
 
-    const leanDryKg = Math.max(0, Math.round((w - waterKg - fatKg - boneKg) * 10) / 10);
-    const leanDryPct = Math.max(0, Math.round((100 - waterPct - fatPct - bonePct) * 10) / 10);
+    const musclePct = m.muscleMass;
+    const muscleKg = Math.round((w * (musclePct / 100)) * 10) / 10;
 
     return [
-      { id: 'water', label: 'Woda (TBW)', percent: waterPct, kg: waterKg, color: '#3b82f6' },
-      { id: 'muscle', label: 'Mięśnie & Białko', percent: leanDryPct, kg: leanDryKg, color: '#10b981' },
+      { id: 'bones', label: 'Kości (Minerały)', percent: bonePct, kg: boneKg, color: '#ffffff' },
+      { id: 'muscle', label: 'Mięśnie & Białko', percent: musclePct, kg: muscleKg, color: '#ef4444' },
       { id: 'fat', label: 'Tłuszcz (Fat)', percent: fatPct, kg: fatKg, color: '#f59e0b' },
-      { id: 'bones', label: 'Kości (Minerały)', percent: bonePct, kg: boneKg, color: '#a855f7' }
+      { id: 'water', label: 'Woda (TBW)', percent: waterPct, kg: waterKg, color: '#06b6d4' }
     ];
+  });
+
+  // Koncentryczne warstwy sylwetki człowieka (obrysy Painter's Algorithm: Woda -> Tłuszcz -> Mięśnie -> Kości)
+  readonly silhouetteLayers = computed(() => {
+    const comp = this.bodyComposition();
+    const bones = comp.find(c => c.id === 'bones') || comp[0];
+    const muscle = comp.find(c => c.id === 'muscle') || comp[1];
+    const fat = comp.find(c => c.id === 'fat') || comp[2];
+    const water = comp.find(c => c.id === 'water') || comp[3];
+
+    // Cienki, bazowy rdzeń szkieletu kości (statyczna wąska linia 2px)
+    const baseBoneStroke = 2;
+    // Maksymalny budżet promieniowego pogrubiania obrysów (K)
+    const maxExpansionBudget = 38;
+
+    const m = this.current();
+    const hasData = m.weight > 0;
+
+    const tMuscle = hasData ? Math.max(2, Math.round(((muscle.percent || 25) / 100) * maxExpansionBudget * 10) / 10) : 6.0;
+    const tFat = hasData ? Math.max(2, Math.round(((fat.percent || 20) / 100) * maxExpansionBudget * 10) / 10) : 10.0;
+    const tWater = hasData ? Math.max(2, Math.round(((water.percent || 50) / 100) * maxExpansionBudget * 10) / 10) : 20.5;
+
+    const strokeBones = baseBoneStroke;
+    const strokeMuscle = Math.round((strokeBones + 2 * tMuscle) * 10) / 10;
+    const strokeFat = Math.round((strokeMuscle + 2 * tFat) * 10) / 10;
+    const strokeWater = Math.round((strokeFat + 2 * tWater) * 10) / 10;
+
+    const rBones = 4.5;
+    const rMuscle = Math.round((rBones + tMuscle) * 10) / 10;
+    const rFat = Math.round((rMuscle + tFat) * 10) / 10;
+    const rWater = Math.round((rFat + tWater) * 10) / 10;
+
+    return {
+      bones: { ...bones, strokeWidth: strokeBones, headRadius: rBones, layerThickness: baseBoneStroke },
+      muscle: { ...muscle, strokeWidth: strokeMuscle, headRadius: rMuscle, layerThickness: tMuscle },
+      fat: { ...fat, strokeWidth: strokeFat, headRadius: rFat, layerThickness: tFat },
+      water: { ...water, strokeWidth: strokeWater, headRadius: rWater, layerThickness: tWater }
+    };
   });
 
   // Dane posortowane chronologicznie do renderowania wykresów (od najstarszego do najnowszego)
@@ -171,76 +235,119 @@ export class DashboardComponent {
     return this.paramList.find(p => p.key === this.activeParamKey()) || this.paramList[0];
   });
 
-  // Obliczanie wektorów głównego wykresu SVG
+  // Obliczanie wektorów głównego wykresu SVG i punktów overlay HTML
   readonly mainChartData = computed(() => {
     const records = this.chronologicalHistory();
     const key = this.activeParamKey();
     const meta = this.activeParamMeta();
-    const width = 640;
-    const height = 180;
-    const padding = { top: 25, right: 35, bottom: 25, left: 35 };
 
     if (records.length === 0) {
       return {
-        width,
-        height,
-        points: [],
+        points: [] as ChartPoint[],
         linePath: '',
         areaPath: '',
         minVal: 0,
         maxVal: 0,
-        delta: 0
+        minValFormatted: '0',
+        maxValFormatted: '0',
+        midValFormatted: '0',
+        delta: 0,
+        isSingle: false
+      };
+    }
+
+    if (records.length === 1) {
+      const val = Number(records[0][key]) || 0;
+      const displayMin = val > 0 ? Math.round((val * 0.9) * 10) / 10 : 0;
+      const displayMax = val > 0 ? Math.round((val * 1.1) * 10) / 10 : 10;
+      const midVal = val;
+      const pts: ChartPoint[] = [{
+        x: 500,
+        y: 500,
+        xPct: 50,
+        yPct: 50,
+        val,
+        date: records[0].date && records[0].date !== '-' ? records[0].date.substring(5) : '-',
+        formatted: `${val} ${meta.unit}`
+      }];
+
+      return {
+        points: pts,
+        linePath: 'M 0 500 L 1000 500',
+        areaPath: 'M 0 500 L 1000 500 L 1000 1000 L 0 1000 Z',
+        minVal: displayMin,
+        maxVal: displayMax,
+        minValFormatted: `${displayMin} ${meta.unit}`,
+        maxValFormatted: `${displayMax} ${meta.unit}`,
+        midValFormatted: `${midVal} ${meta.unit}`,
+        delta: 0,
+        isSingle: true
       };
     }
 
     const values = records.map(r => Number(r[key]) || 0);
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values);
-    const range = (maxVal - minVal) === 0 ? 1 : (maxVal - minVal);
-    const plotHeight = height - padding.top - padding.bottom;
-    const plotWidth = width - padding.left - padding.right;
+    
+    let displayMin = minVal;
+    let displayMax = maxVal;
+    if (minVal === maxVal) {
+      displayMin = minVal > 0 ? Math.round((minVal * 0.9) * 10) / 10 : 0;
+      displayMax = maxVal > 0 ? Math.round((maxVal * 1.1) * 10) / 10 : 10;
+    } else {
+      const margin = (maxVal - minVal) * 0.15;
+      displayMin = Math.round((minVal - margin) * 10) / 10;
+      displayMax = Math.round((maxVal + margin) * 10) / 10;
+    }
+
+    const range = displayMax - displayMin || 1;
+    const midVal = Math.round(((displayMin + displayMax) / 2) * 10) / 10;
+
+    const leftPadPct = 8;
+    const rightPadPct = 8;
+    const availableWidthPct = 100 - leftPadPct - rightPadPct;
+    const topPadPct = 14;
+    const bottomPadPct = 14;
+    const availableHeightPct = 100 - topPadPct - bottomPadPct;
 
     const points: ChartPoint[] = records.map((r, i) => {
       const val = Number(r[key]) || 0;
-      const x = records.length > 1
-        ? padding.left + (i / (records.length - 1)) * plotWidth
-        : width / 2;
-      const y = height - padding.bottom - ((val - minVal) / range) * plotHeight;
+      const xPct = leftPadPct + (i / (records.length - 1)) * availableWidthPct;
+      const yPct = (100 - bottomPadPct) - ((val - displayMin) / range) * availableHeightPct;
+      const svgX = xPct * 10;
+      const svgY = yPct * 10;
       return {
-        x: Math.round(x * 10) / 10,
-        y: Math.round(y * 10) / 10,
+        x: Math.round(svgX * 10) / 10,
+        y: Math.round(svgY * 10) / 10,
+        xPct: Math.round(xPct * 10) / 10,
+        yPct: Math.round(yPct * 10) / 10,
         val,
         date: r.date && r.date !== '-' ? r.date.substring(5) : '-',
         formatted: `${val} ${meta.unit}`
       };
     });
 
-    let linePath = '';
-    if (points.length === 1) {
-      linePath = `M ${padding.left} ${points[0].y} L ${width - padding.right} ${points[0].y}`;
-    } else if (points.length > 1) {
-      linePath = `M ${points[0].x} ${points[0].y}`;
-      for (let i = 1; i < points.length; i++) {
-        const p0 = points[i - 1];
-        const p1 = points[i];
-        const cx = (p0.x + p1.x) / 2;
-        linePath += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`;
-      }
+    let linePath = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const p0 = points[i - 1];
+      const p1 = points[i];
+      const cx = (p0.x + p1.x) / 2;
+      linePath += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`;
     }
 
-    const areaPath = linePath && points.length > 0
-      ? `${linePath} L ${points.length > 1 ? points[points.length - 1].x : width - padding.right} ${height - padding.bottom} L ${points.length > 1 ? points[0].x : padding.left} ${height - padding.bottom} Z`
-      : '';
+    const areaPath = `${linePath} L ${points[points.length - 1].x} 1000 L ${points[0].x} 1000 Z`;
 
     return {
-      width,
-      height,
       points,
       linePath,
       areaPath,
-      minVal,
-      maxVal,
-      delta: records.length > 1 ? Math.round((values[values.length - 1] - values[0]) * 10) / 10 : 0
+      minVal: displayMin,
+      maxVal: displayMax,
+      minValFormatted: `${displayMin} ${meta.unit}`,
+      maxValFormatted: `${displayMax} ${meta.unit}`,
+      midValFormatted: `${midVal} ${meta.unit}`,
+      delta: Math.round((values[values.length - 1] - values[0]) * 10) / 10,
+      isSingle: false
     };
   });
 
@@ -311,7 +418,7 @@ export class DashboardComponent {
   readonly newEntryWeight = signal<number>(78.5);
   readonly newEntryTBW = signal<number>(59.0);
   readonly newEntryOverfat = signal<number>(15.8);
-  readonly newEntryMuscle = signal<number>(62.5);
+  readonly newEntryMuscle = signal<number>(38.5);
   readonly newEntryBones = signal<number>(3.4);
   readonly newEntryBmi = signal<number>(23.7);
   readonly newEntryKcal = signal<number>(1845);
@@ -371,7 +478,7 @@ export class DashboardComponent {
       this.newEntryWeight.set(75.0);
       this.newEntryTBW.set(58.0);
       this.newEntryOverfat.set(16.0);
-      this.newEntryMuscle.set(60.0);
+      this.newEntryMuscle.set(38.0);
       this.newEntryBones.set(3.3);
       this.newEntryBmi.set(22.6);
       this.newEntryKcal.set(1800);

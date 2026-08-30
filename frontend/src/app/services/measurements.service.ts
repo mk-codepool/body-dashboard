@@ -10,13 +10,13 @@ export interface MeasurementRecord {
   weight: number; // kg
   totalBodyWater: number; // %
   overfat: number; // %
-  muscleMass: number; // kg
-  boneMass: number; // kg
+  muscleMass: number; // %
+  boneMass: number; // %
   bmi: number;
-  kcal: number; // BMR
+  kcal: number;
   urineKetones: string;
-  ketoneValue: number; // mmol/L do wykresu
-  ketoneLevel: 'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high';
+  ketoneValue: number;
+  ketoneLevel?: 'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high';
   notes?: string;
 }
 
@@ -28,7 +28,7 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     weight: 78.4,
     totalBodyWater: 59.2,
     overfat: 15.8,
-    muscleMass: 62.5,
+    muscleMass: 40.2,
     boneMass: 3.4,
     bmi: 23.7,
     kcal: 1845,
@@ -44,7 +44,7 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     weight: 78.8,
     totalBodyWater: 58.7,
     overfat: 16.1,
-    muscleMass: 62.3,
+    muscleMass: 40.1,
     boneMass: 3.4,
     bmi: 23.9,
     kcal: 1840,
@@ -59,7 +59,7 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     weight: 79.1,
     totalBodyWater: 58.4,
     overfat: 16.4,
-    muscleMass: 62.1,
+    muscleMass: 39.9,
     boneMass: 3.4,
     bmi: 24.0,
     kcal: 1835,
@@ -74,7 +74,7 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     weight: 79.5,
     totalBodyWater: 58.0,
     overfat: 16.7,
-    muscleMass: 61.9,
+    muscleMass: 39.8,
     boneMass: 3.3,
     bmi: 24.1,
     kcal: 1830,
@@ -89,7 +89,7 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     weight: 79.7,
     totalBodyWater: 57.8,
     overfat: 16.9,
-    muscleMass: 61.8,
+    muscleMass: 39.7,
     boneMass: 3.3,
     bmi: 24.2,
     kcal: 1828,
@@ -104,7 +104,7 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     weight: 80.1,
     totalBodyWater: 57.5,
     overfat: 17.2,
-    muscleMass: 61.6,
+    muscleMass: 39.5,
     boneMass: 3.3,
     bmi: 24.3,
     kcal: 1825,
@@ -119,7 +119,7 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     weight: 80.4,
     totalBodyWater: 57.2,
     overfat: 17.5,
-    muscleMass: 61.5,
+    muscleMass: 39.4,
     boneMass: 3.3,
     bmi: 24.4,
     kcal: 1820,

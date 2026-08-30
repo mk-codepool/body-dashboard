@@ -61,13 +61,13 @@ node start
     2. Waga w kg (`2x1`) z automatyczną deltą
     3. Total Body Water TBW (`1x2`) z symulacją zbiornika wody
     4. Overfat / Tkanka tłuszczowa (`1x1`)
-    5. Mięśnie (`1x1`)
-    6. Kości (`1x1`)
+    5. Mięśnie (% / kg) (`1x1`) z dynamicznym przeliczeniem na kg
+    6. Kości / Masa mineralna (% / kg) (`1x1`) z dynamicznym przeliczeniem na kg
     7. BMI (`1x1`)
     8. Kcal / BMR (`1x1`)
     9. Ketony w moczu (`2x1`) z 6-stopniowym testem paskowym (w tym stan `Brak pomiaru`)
     10. Główny Panel Trendów (`5x2`) z przełącznikiem zakładek (Pill Tabs)
-    11. Kształt i Skład Ciała (`3x2`) po prawej stronie wykresu
+    11. Kształt i Skład Ciała (`3x2`) po prawej stronie wykresu – koncentryczne fizyczne otoczki (Kości: biały rdzeń 2px + pełna kropka głowy, Mięśnie: czerwona otoczka, Tłuszcz: żółta otoczka, Woda: niebieska otoczka) z dynamicznym skalowaniem grubości 1:1
     12. Historia Pomiarów (`8x2`) z przyciskiem "+ Dodaj pomiar" otwierającym modal
   - **Reużywalny Komponent Modala (`ModalComponent`) & Rejestr Pomiarów**:
     - Lokalizacja: `frontend/src/app/components/modal/`
@@ -75,11 +75,14 @@ node start
     - Pełny ekran (`100vw` x `100vh`), treść pełnej szerokości (`width: 100%`) z `scrollbar-gutter: stable`.
     - Prawa strona nagłówka: slot projekcji `[modal-actions]` (w tym przycisk `+ Nowy wpis` z auto-pobieraniem domyślnych wartości z poprzedniego pomiaru) + przycisk zamknięcia `✕` (skrót `Escape`).
     - Tryb edycji: przycisk ołówka `.table-btn-edit` w tabeli ładuje wpis i przełącza formularz w tryb `EDYCJA WPISU #...` z podświetleniem `.row-editing`.
+  - **Silnik Wykresów (SVG Canvas + HTML Overlay)**:
+    - **Hybrydowa konstrukcja**: Wykresy wektorowe SVG (`viewBox="0 0 1000 1000"`, `preserveAspectRatio="none"`, `vector-effect="non-scaling-stroke"`) odpowiadają za płynne krzywe Beziera i stałą grubość linii (2.5px), natomiast warstwa HTML Overlay (`left: xPct%`, `top: yPct%`) odpowiada za etykiety wartości, daty i znaczniki punktów, eliminując spłaszczanie/zwężanie czcionki `JetBrains Mono` oraz deformację punktów w owale.
+    - **Pasek zakładek (Param Tabs)**: Posiada horyzontalny scroll (`overflow-x: auto`) ze schowanym scrollbarem, zapobiegając rozbijaniu się na wiele wierszy i ucinaniu wykresu przy wąskich kafelkach.
+    - **Obsługa Stanu Bazowego (1 wpis)**: Punkt zostaje wyśrodkowany (50%, 50%) z pulsującym radarem, etykietą wartości, poziomą linią referencyjną `stroke-dasharray="6,6"`, zakresem referencyjnym osi Y (±10%) i znacznikiem `PUNKT BAZOWY (1 POMIAR)`.
   - **Obsługa Zerowych Statystyk (Zero State & Safe Charts)**:
     - Obiekt `EMPTY_MEASUREMENT` zabezpiecza obliczenia przed `undefined` przy pustej bazie `history() === []`.
-    - Silnik wykresów generuje linię bazową dla 1 rekordu oraz dedykowany box stanu pustego (`.empty-chart-box`) dla 0 rekordów.
+    - Silnik wykresów renderuje dedykowany box stanu pustego (`.empty-chart-box`) dla 0 rekordów.
     - Tabele wykorzystują bloki `@empty` z informacją o braku danych.
-  - **Silnik Wykresów**: Lekkie, bezbiblioteczne wykresy SVG z płynnymi krzywymi Beziera, poświatą neonową i gradientami.
   - **Stan reaktywny**: Wyłącznie `signal()`, `computed()` i `effect()`.
 
 ---

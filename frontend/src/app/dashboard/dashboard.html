@@ -228,7 +228,7 @@
             <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('muscleMass')">
               <div class="metric-big">
                 <span class="value font-mono text-emerald">{{ current().muscleMass }}</span>
-                <span class="unit">kg</span>
+                <span class="unit">%</span>
               </div>
               <div class="mini-chart-box">
                 <svg class="sparkline-svg" viewBox="0 0 100 24">
@@ -236,7 +236,7 @@
                   <path [attr.d]="getSparkline('muscleMass').line" fill="none" stroke="#10b981" stroke-width="1.8" />
                 </svg>
               </div>
-              <span class="metric-sub text-muted font-mono">{{ musclePercent() }}% masy</span>
+              <span class="metric-sub text-muted font-mono">≈ {{ muscleKg() }} kg masy</span>
             </div>
           }
 
@@ -249,7 +249,7 @@
             <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('boneMass')">
               <div class="metric-big">
                 <span class="value font-mono text-purple">{{ current().boneMass }}</span>
-                <span class="unit">kg</span>
+                <span class="unit">%</span>
               </div>
               <div class="mini-chart-box">
                 <svg class="sparkline-svg" viewBox="0 0 100 24">
@@ -257,7 +257,7 @@
                   <path [attr.d]="getSparkline('boneMass').line" fill="none" stroke="#a855f7" stroke-width="1.8" />
                 </svg>
               </div>
-              <span class="metric-sub text-muted">Masa mineralna</span>
+              <span class="metric-sub text-muted font-mono">≈ {{ boneKg() }} kg minerałów</span>
             </div>
           }
 
@@ -362,9 +362,9 @@
                 <span class="cell-subtitle">Wybierz parametr aby zobaczyć pełną historię i krzywą zmian</span>
               </div>
               <div class="chart-summary-stat font-mono">
-                <span class="stat-small-label">ZMIANA 7D:</span>
+                <span class="stat-small-label">{{ mainChartData().isSingle ? 'STAN BAZOWY:' : 'ZMIANA 7D:' }}</span>
                 <span class="stat-small-val" [class.text-emerald]="mainChartData().delta <= 0" [class.text-rose]="mainChartData().delta > 0">
-                  {{ mainChartData().delta > 0 ? '+' : '' }}{{ mainChartData().delta }} {{ activeParamMeta().unit }}
+                  {{ mainChartData().isSingle ? '1 pomiar' : (mainChartData().delta > 0 ? '+' : '') + mainChartData().delta + ' ' + activeParamMeta().unit }}
                 </span>
               </div>
             </div>
@@ -373,6 +373,7 @@
             <div class="param-tabs-container">
               @for (p of paramList; track p.key) {
                 <button 
+                  type="button"
                   class="param-tab-btn" 
                   [class.active]="activeParamKey() === p.key"
                   (click)="setChartParam(p.key)">
@@ -382,7 +383,7 @@
               }
             </div>
 
-            <!-- Duży wektorowy wykres SVG -->
+            <!-- Nowoczesny, w pełni responsywny kontener wykresu (SVG Canvas + HTML Overlay) -->
             <div class="main-svg-chart-container">
               @if (!hasMeasurements()) {
                 <div class="empty-chart-box">
@@ -390,43 +391,71 @@
                   <span class="empty-chart-desc text-muted">Zarejestruj pierwszy pomiar biometrii za pomocą przycisku poniżej, aby wygenerować analizę trendu.</span>
                 </div>
               } @else {
-                <svg class="main-chart-svg" [attr.viewBox]="'0 0 ' + mainChartData().width + ' ' + mainChartData().height" preserveAspectRatio="none">
-                  <!-- Poziome linie siatki pomocniczej -->
-                  <line x1="35" y1="25" x2="605" y2="25" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
-                  <line x1="35" y1="90" x2="605" y2="90" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
-                  <line x1="35" y1="155" x2="605" y2="155" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
+                <!-- Oś Y: Wartości min, mid, max (HTML - idealna czcionka bez zniekształceń proporcji) -->
+                <div class="chart-y-axis-labels">
+                  <span class="y-axis-val font-mono top-val">{{ mainChartData().maxValFormatted }}</span>
+                  <span class="y-axis-val font-mono mid-val">{{ mainChartData().midValFormatted }}</span>
+                  <span class="y-axis-val font-mono btm-val">{{ mainChartData().minValFormatted }}</span>
+                </div>
 
-                  <!-- Etykiety min / max osi Y -->
-                  <text x="30" y="30" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="end">{{ mainChartData().maxVal }}</text>
-                  <text x="30" y="158" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="end">{{ mainChartData().minVal }}</text>
+                <!-- Obszar graficzny z wektorami SVG i punktami HTML -->
+                <div class="chart-graph-canvas">
+                  <svg class="main-chart-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                    <!-- Poziome linie siatki pomocniczej z zachowaniem stałej grubości -->
+                    <line x1="0" y1="140" x2="1000" y2="140" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+                    <line x1="0" y1="500" x2="1000" y2="500" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+                    <line x1="0" y1="860" x2="1000" y2="860" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
 
-                  <!-- Obszar gradientu pod wykresem -->
-                  <path [attr.d]="mainChartData().areaPath" [attr.fill]="'url(#' + activeParamMeta().gradientId + ')'" />
+                    <!-- Obszar gradientu pod wykresem -->
+                    <path [attr.d]="mainChartData().areaPath" [attr.fill]="'url(#' + activeParamMeta().gradientId + ')'" />
 
-                  <!-- Główna linia wykresu -->
-                  <path [attr.d]="mainChartData().linePath" fill="none" [attr.stroke]="activeParamMeta().color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <!-- Główna linia wykresu (stała grubość 2.5px niezależnie od rozciągnięcia) -->
+                    <path 
+                      [attr.d]="mainChartData().linePath" 
+                      fill="none" 
+                      [attr.stroke]="activeParamMeta().color" 
+                      vector-effect="non-scaling-stroke"
+                      [attr.stroke-dasharray]="mainChartData().isSingle ? '6,6' : 'none'"
+                      stroke-width="2.5" 
+                      stroke-linecap="round" 
+                      stroke-linejoin="round" />
+                  </svg>
 
-                  <!-- Punkty pomiarowe z poświatą i etykietami -->
-                  @for (pt of mainChartData().points; track pt.date) {
-                    <g class="chart-point-group">
-                      <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="5" [attr.fill]="activeParamMeta().color" fill-opacity="0.3" />
-                      <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3" [attr.fill]="activeParamMeta().color" stroke="#08090d" stroke-width="1.5" />
-                      
-                      <text [attr.x]="pt.x" y="172" fill="#64748b" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">
-                        {{ pt.date }}
-                      </text>
-                      
-                      <text [attr.x]="pt.x" [attr.y]="pt.y - 8" fill="#f1f5f9" font-size="9" font-weight="600" font-family="'JetBrains Mono', monospace" text-anchor="middle">
-                        {{ pt.val }}
-                      </text>
-                    </g>
-                  }
-                </svg>
+                  <!-- Warstwa punktów i etykiet HTML (idealne koła, ostre cyfry JetBrains Mono) -->
+                  <div class="chart-points-overlay">
+                    @for (pt of mainChartData().points; track pt.date + $index) {
+                      <div class="chart-point-node" [style.left.%]="pt.xPct" [style.top.%]="pt.yPct">
+                        <!-- Poświata punktu -->
+                        <div class="point-glow-pulse" [style.background-color]="activeParamMeta().color"></div>
+                        
+                        <!-- Okrągły punkt (zawsze perfekcyjnie okrągły 8x8px) -->
+                        <div class="point-core-dot" [style.background-color]="activeParamMeta().color"></div>
+                        
+                        <!-- Etykieta z wartością (zawsze ostra i proporcjonalna) -->
+                        <div class="point-value-tag font-mono">
+                          {{ pt.val }}
+                        </div>
+
+                        <!-- Etykieta daty pod spodem -->
+                        <div class="point-date-tag font-mono">
+                          {{ pt.date }}
+                        </div>
+                      </div>
+                    }
+
+                    @if (mainChartData().isSingle) {
+                      <div class="single-point-badge font-mono">
+                        <span class="badge-dot" [style.background-color]="activeParamMeta().color"></span>
+                        <span>PUNKT BAZOWY (1 POMIAR)</span>
+                      </div>
+                    }
+                  </div>
+                </div>
               }
             </div>
           }
 
-          <!-- 11. KSZTAŁT CIAŁA I PROCENTOWY SKŁAD -->
+          <!-- 11. KSZTAŁT CIAŁA I PROCENTOWY SKŁAD (WARSTWY KONCENTRYCZNE) -->
           @case ('bodyShape') {
             <div class="cell-header">
               <div class="header-group">
@@ -439,40 +468,124 @@
             <div class="cell-body body-shape-layout-2x2">
               <div class="silhouette-column">
                 <div class="silhouette-wrapper-2x2">
-                  <svg class="body-silhouette-svg-2x2" viewBox="0 0 160 300">
+                  <svg 
+                    class="body-silhouette-svg-2x2" 
+                    viewBox="-5 -25 170 335"
+                    [class.has-hover]="hoveredLayer() !== null">
+                    
                     <defs>
-                      <clipPath id="human-body-clip-2x2">
-                        <ellipse cx="80" cy="24" rx="14" ry="18" />
-                        <path d="
-                          M 73,40 C 65,42 50,48 40,56 C 36,60 33,67 31,75 L 26,130 C 25,138 27,144 32,144 C 36,144 39,138 41,130 L 45,95 L 48,125 C 49,145 53,165 53,178 L 52,240 C 51,265 54,285 57,294 C 59,298 64,298 66,293 C 69,285 71,260 72,235 L 75,185 L 77,185 L 80,185 L 83,185 L 85,185 L 88,235 C 89,260 91,285 94,293 C 96,298 101,298 103,294 C 106,285 109,265 108,240 L 107,178 C 107,165 111,145 112,125 L 115,95 L 119,130 C 121,138 124,144 128,144 C 133,144 135,138 134,130 L 129,75 C 127,67 124,60 120,56 C 110,48 95,42 87,40 Z
-                        " />
-                      </clipPath>
+                      <filter id="silhouette-neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+
+                      <!-- Jednolity, cienki szkielet anatomiczny ciała człowieka (szyja, kręgosłup, ramiona, nogi) -->
+                      <path id="unified-human-wireframe" d="
+                        M 68,255 
+                        L 70,200 
+                        L 75,145 
+                        L 80,145 
+                        L 80,72 
+                        L 60,74 
+                        L 50,110 
+                        L 44,148 
+                        L 50,110 
+                        L 60,74 
+                        L 80,72 
+                        L 80,44 
+                        L 80,72 
+                        L 100,74 
+                        L 110,110 
+                        L 116,148 
+                        L 110,110 
+                        L 100,74 
+                        L 80,72 
+                        L 80,145 
+                        L 85,145 
+                        L 90,200 
+                        L 92,255
+                      " />
                     </defs>
 
-                    <rect x="0" y="0" width="160" height="300" fill="rgba(255,255,255,0.03)" clip-path="url(#human-body-clip-2x2)" />
-
-                    <g clip-path="url(#human-body-clip-2x2)">
-                      <rect x="0" y="0" width="160" height="26" fill="#a855f7" fill-opacity="0.88" />
-                      <rect x="0" y="26" width="160" height="50" fill="#f59e0b" fill-opacity="0.88" />
-                      <rect x="0" y="76" width="160" height="62" fill="#10b981" fill-opacity="0.88" />
-                      <rect x="0" y="138" width="160" height="162" fill="#3b82f6" fill-opacity="0.88" />
-
-                      <line x1="0" y1="26" x2="160" y2="26" stroke="#fff" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="2,2" />
-                      <line x1="0" y1="76" x2="160" y2="76" stroke="#fff" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="2,2" />
-                      <line x1="0" y1="138" x2="160" y2="138" stroke="#fff" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="2,2" />
+                    <!-- Warstwa 4: WODA (Zewnętrzny obrys, cyjan) -->
+                    <g 
+                      class="silhouette-layer layer-water"
+                      [class.is-hovered]="hoveredLayer() === 'water'"
+                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== 'water'"
+                      (mouseenter)="setHoveredLayer('water')"
+                      (mouseleave)="setHoveredLayer(null)">
+                      <circle cx="80" cy="38" [attr.r]="silhouetteLayers().water.headRadius" [attr.fill]="silhouetteLayers().water.color" />
+                      <use 
+                        href="#unified-human-wireframe"
+                        [attr.stroke]="silhouetteLayers().water.color"
+                        [attr.stroke-width]="silhouetteLayers().water.strokeWidth"
+                        fill="none"
+                        stroke-linejoin="round"
+                        stroke-linecap="round" />
                     </g>
 
-                    <ellipse cx="80" cy="24" rx="14" ry="18" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.4" />
-                    <path d="
-                      M 73,40 C 65,42 50,48 40,56 C 36,60 33,67 31,75 L 26,130 C 25,138 27,144 32,144 C 36,144 39,138 41,130 L 45,95 L 48,125 C 49,145 53,165 53,178 L 52,240 C 51,265 54,285 57,294 C 59,298 64,298 66,293 C 69,285 71,260 72,235 L 75,185 L 77,185 L 80,185 L 83,185 L 85,185 L 88,235 C 89,260 91,285 94,293 C 96,298 101,298 103,294 C 106,285 109,265 108,240 L 107,178 C 107,165 111,145 112,125 L 115,95 L 119,130 C 121,138 124,144 128,144 C 133,144 135,138 134,130 L 129,75 C 127,67 124,60 120,56 C 110,48 95,42 87,40 Z
-                    " fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.4" />
+                    <!-- Warstwa 3: TŁUSZCZ (Obrys tkanki tłuszczowej, żółty) -->
+                    <g 
+                      class="silhouette-layer layer-fat"
+                      [class.is-hovered]="hoveredLayer() === 'fat'"
+                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== 'fat'"
+                      (mouseenter)="setHoveredLayer('fat')"
+                      (mouseleave)="setHoveredLayer(null)">
+                      <circle cx="80" cy="38" [attr.r]="silhouetteLayers().fat.headRadius" [attr.fill]="silhouetteLayers().fat.color" />
+                      <use 
+                        href="#unified-human-wireframe"
+                        [attr.stroke]="silhouetteLayers().fat.color"
+                        [attr.stroke-width]="silhouetteLayers().fat.strokeWidth"
+                        fill="none"
+                        stroke-linejoin="round"
+                        stroke-linecap="round" />
+                    </g>
+
+                    <!-- Warstwa 2: MIĘŚNIE & BIAŁKO (Obrys masy mięśniowej, czerwony) -->
+                    <g 
+                      class="silhouette-layer layer-muscle"
+                      [class.is-hovered]="hoveredLayer() === 'muscle'"
+                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== 'muscle'"
+                      (mouseenter)="setHoveredLayer('muscle')"
+                      (mouseleave)="setHoveredLayer(null)">
+                      <circle cx="80" cy="38" [attr.r]="silhouetteLayers().muscle.headRadius" [attr.fill]="silhouetteLayers().muscle.color" />
+                      <use 
+                        href="#unified-human-wireframe"
+                        [attr.stroke]="silhouetteLayers().muscle.color"
+                        [attr.stroke-width]="silhouetteLayers().muscle.strokeWidth"
+                        fill="none"
+                        stroke-linejoin="round"
+                        stroke-linecap="round" />
+                    </g>
+
+                    <!-- Warstwa 1: KOŚCI (Cienki, bazowy rdzeń szkieletu, biały) -->
+                    <g 
+                      class="silhouette-layer layer-bones"
+                      [class.is-hovered]="hoveredLayer() === 'bones'"
+                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== 'bones'"
+                      (mouseenter)="setHoveredLayer('bones')"
+                      (mouseleave)="setHoveredLayer(null)">
+                      <circle cx="80" cy="38" [attr.r]="silhouetteLayers().bones.headRadius" [attr.fill]="silhouetteLayers().bones.color" />
+                      <use 
+                        href="#unified-human-wireframe"
+                        [attr.stroke]="silhouetteLayers().bones.color"
+                        [attr.stroke-width]="silhouetteLayers().bones.strokeWidth"
+                        fill="none"
+                        stroke-linejoin="round"
+                        stroke-linecap="round" />
+                    </g>
                   </svg>
                 </div>
               </div>
 
               <div class="breakdown-column-2x2">
                 @for (item of bodyComposition(); track item.id) {
-                  <div class="comp-box-2x2">
+                  <div 
+                    class="comp-box-2x2"
+                    [class.is-hovered]="hoveredLayer() === item.id"
+                    [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== item.id"
+                    (mouseenter)="setHoveredLayer(item.id)"
+                    (mouseleave)="setHoveredLayer(null)">
                     <div class="comp-box-top">
                       <div class="comp-box-title">
                         <span class="comp-dot" [style.background-color]="item.color"></span>
@@ -538,8 +651,8 @@
                       <td class="font-mono font-bold">{{ item.weight }} kg</td>
                       <td class="font-mono">{{ item.totalBodyWater }}%</td>
                       <td class="font-mono text-orange">{{ item.overfat }}%</td>
-                      <td class="font-mono text-emerald">{{ item.muscleMass }} kg</td>
-                      <td class="font-mono text-purple">{{ item.boneMass }} kg</td>
+                      <td class="font-mono text-emerald">{{ item.muscleMass }}%</td>
+                      <td class="font-mono text-purple">{{ item.boneMass }}%</td>
                       <td class="font-mono text-cyan">{{ item.bmi }}</td>
                       <td class="font-mono text-amber">{{ item.kcal }}</td>
                       <td class="font-mono text-pink">{{ item.urineKetones }}</td>
@@ -750,7 +863,7 @@
 
               <!-- Mięśnie -->
               <div class="form-group highlight-emerald">
-                <label class="form-label" for="m-muscle">Masa mięśniowa (kg)</label>
+                <label class="form-label" for="m-muscle">Masa mięśniowa (%)</label>
                 <div class="input-wrap with-suffix">
                   <input 
                     id="m-muscle" 
@@ -761,13 +874,13 @@
                     (ngModelChange)="newEntryMuscle.set($event)" 
                     name="mMuscle" 
                     required />
-                  <span class="input-suffix">kg</span>
+                  <span class="input-suffix">%</span>
                 </div>
               </div>
 
               <!-- Kości -->
               <div class="form-group highlight-purple">
-                <label class="form-label" for="m-bones">Masa mineralna kości (kg)</label>
+                <label class="form-label" for="m-bones">Masa mineralna kości (%)</label>
                 <div class="input-wrap with-suffix">
                   <input 
                     id="m-bones" 
@@ -778,7 +891,7 @@
                     (ngModelChange)="newEntryBones.set($event)" 
                     name="mBones" 
                     required />
-                  <span class="input-suffix">kg</span>
+                  <span class="input-suffix">%</span>
                 </div>
               </div>
 
@@ -888,8 +1001,8 @@
                 <th>Waga</th>
                 <th>TBW (%)</th>
                 <th>Overfat (%)</th>
-                <th>Mięśnie (kg)</th>
-                <th>Kości (kg)</th>
+                <th>Mięśnie (%)</th>
+                <th>Kości (%)</th>
                 <th>BMI</th>
                 <th>BMR (kcal)</th>
                 <th>Ketony</th>
@@ -906,8 +1019,8 @@
                   <td class="font-mono font-bold text-primary">{{ item.weight }} kg</td>
                   <td class="font-mono text-blue">{{ item.totalBodyWater }}%</td>
                   <td class="font-mono text-orange">{{ item.overfat }}%</td>
-                  <td class="font-mono text-emerald">{{ item.muscleMass }} kg</td>
-                  <td class="font-mono text-purple">{{ item.boneMass }} kg</td>
+                  <td class="font-mono text-emerald">{{ item.muscleMass }}%</td>
+                  <td class="font-mono text-purple">{{ item.boneMass }}%</td>
                   <td class="font-mono text-cyan">{{ item.bmi }}</td>
                   <td class="font-mono text-amber">{{ item.kcal }}</td>
                   <td>

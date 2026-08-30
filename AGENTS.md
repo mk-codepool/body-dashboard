@@ -83,13 +83,18 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
 2. **Waga (kg)** (`colSpan: 2, rowSpan: 1`) z trendem vs poprzedni pomiar
 3. **Total Body Water (TBW % / L)** (`colSpan: 1, rowSpan: 2`) ze zbiornikiem poziomu
 4. **Overfat (Tkanka tłuszczowa %)** (`colSpan: 1, rowSpan: 1`) z zakresem normy
-5. **Mięśnie (kg / %)** (`colSpan: 1, rowSpan: 1`)
-6. **Kości (Minerały kg)** (`colSpan: 1, rowSpan: 1`)
+5. **Mięśnie (% / kg)** (`colSpan: 1, rowSpan: 1`) z przeliczeniem na kg
+6. **Kości (Minerały % / kg)** (`colSpan: 1, rowSpan: 1`) z przeliczeniem na kg
 7. **BMI** (`colSpan: 1, rowSpan: 1`)
 8. **Kcal (BMR)** (`colSpan: 1, rowSpan: 1`)
 9. **Ketony w moczu (mmol/L)** (`colSpan: 2, rowSpan: 1`) z 6-stopniowym selektorem (w tym stan `Brak pomiaru` / `none`)
 10. **Główny Panel Wykresów Trendu** (`colSpan: 5, rowSpan: 2`) z przełącznikiem parametrów (Pill Tabs)
-11. **Wizualizacja Sylwetki i Składu Ciała** (`colSpan: 3, rowSpan: 2`) po prawej stronie wykresu
+11. **Wizualizacja Sylwetki i Składu Ciała** (`colSpan: 3, rowSpan: 2`) po prawej stronie wykresu – wielowarstwowy wektorowy model koncentrycznych otoczek (Painter's Algorithm):
+    - ⚪ **Kości (Minerały)**: Cienki biały rdzeń szkieletu (`2.0px`, `#ffffff`) z pełną, jednolitą kropką głowy w środku (brak wewnętrznych pustych warstw).
+    - 🔴 **Mięśnie & Białko**: Czerwona otoczka (`#ef4444`) otaczająca szkielet kości, o grubości proporcjonalnej do masy mięśniowej.
+    - 🟡 **Tłuszcz (Fat)**: Żółta otoczka (`#f59e0b`) otaczająca warstwę mięśni, o grubości proporcjonalnej do poziomu tkanki tłuszczowej.
+    - 🔵 **Woda (TBW)**: Niebieska zewnętrzna otoczka (`#06b6d4`) otaczająca całą sylwetkę, o grubości proporcjonalnej do nawodnienia.
+    - Dynamiczne skalowanie 1:1 grubości fizycznych otoczek $\Delta T_i$ oraz dwustronny interaktywny hover łączący sylwetkę z kafelkami składowych.
 12. **Historia i Rejestr Pomiarów** (`colSpan: 8, rowSpan: 2`) z możliwością wyboru rekordu i przyciskiem otwierania pełnego rejestru w Modalu
 
 ### 6. Reużywalny Pełnoekranowy Komponent Modala (`ModalComponent`) & Rejestr Pomiarów
@@ -100,7 +105,18 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
 - **Obsługa Edycji i Nowego Wpisu**:
   - Dedykowany przycisk edycji (ikona ołówka `.table-btn-edit`) w tabeli modala ładuje wybrany rekord i przełącza formularz w tryb `EDYCJA WPISU #...` z podświetleniem wiersza `.row-editing`.
   - Przycisk `+ Nowy wpis` w nagłówku modala resetuje formularz, przełącza z trybu edycji na nowy wpis oraz automatycznie pobiera wartości startowe z **poprzedniego (najnowszego) pomiaru**.
-- **Obsługa zerowych statystyk (Zero State)**: Aplikacja i komponenty wykresów są w pełni zabezpieczone obiektem `EMPTY_MEASUREMENT` przed brakiem danych (`history() === []`) oraz dzieleniem przez zero przy 0 i 1 wpisie, wyświetlając dedykowane placeholdery `@empty`.
+
+### 7. Responsywny Silnik Wykresów Biometrii (SVG Canvas + HTML Overlay)
+- **Architektura Hybrydowa (Brak Zniekształceń Typografii)**:
+  - **SVG Canvas**: Wektorowe tło, krzywe Beziera i linie pomocnicze renderowane w układzie współrzędnych 1000×1000 z `preserveAspectRatio="none"` i `vector-effect="non-scaling-stroke"` (gwarantuje stałą grubość linii 2.5px niezależnie od skali).
+  - **HTML Overlay**: Wszystkie etykiety wartości, daty osi X, etykiety min/mid/max osi Y oraz pulsujące punkty są pozycjonowane procentowo w HTML (`left: xPct%`, `top: yPct%`). Eliminuje to wszelkie spłaszczanie, zwężanie lub rozciąganie czcionek `JetBrains Mono` i zniekształcanie okrągłych punktów w owale przy dowolnej szerokości kafelka (1–8 kolumn).
+- **Elastyczność i Pasek Zakładek (Param Tabs)**:
+  - Pasek zakładek parametrów biometrii (`.param-tabs-container`) posiada płynne przewijanie poziome `overflow-x: auto` i stałą wysokość – nie rozbija się na wiele wierszy przy wąskich kafelkach i nie wypycha wykresu poza widok.
+  - Kontener wykresu korzysta z `flex: 1` i dynamicznie dopasowuje się do dostępnej przestrzeni.
+- **Obsługa Stanów Granicznych (Zero State & Baseline State)**:
+  - **0 pomiarów (Zero State)**: Bezpieczny obiekt `EMPTY_MEASUREMENT` oraz placeholder `.empty-chart-box` z zachętą do dodania pierwszego wpisu.
+  - **1 pomiar (Stan Bazowy)**: Pojedynczy punkt jest estetycznie wyśrodkowany (50%, 50%) z pulsującym radarem, wartością w dymku, poziomą linią referencyjną `stroke-dasharray="6,6"`, automatyczną osią referencyjną Y (±10%) oraz wskaźnikiem `PUNKT BAZOWY (1 POMIAR)`.
+  - **2+ pomiary (Trend)**: Płynna krzywa sklejania sześciennego Beziera, wypełnienie gradientowe i kalkulacja zmiany `delta` (7D).
 
 ---
 
