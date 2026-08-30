@@ -1,0 +1,552 @@
+<div class="dashboard-viewport">
+  <!-- Global SVG Gradients for Charts -->
+  <svg width="0" height="0" class="svg-defs">
+    <defs>
+      <linearGradient id="grad-weight" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0" />
+      </linearGradient>
+      <linearGradient id="grad-tbw" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
+      </linearGradient>
+      <linearGradient id="grad-fat" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0" />
+      </linearGradient>
+      <linearGradient id="grad-muscle" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#10b981" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#10b981" stop-opacity="0.0" />
+      </linearGradient>
+      <linearGradient id="grad-bones" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#a855f7" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#a855f7" stop-opacity="0.0" />
+      </linearGradient>
+      <linearGradient id="grad-bmi" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.0" />
+      </linearGradient>
+      <linearGradient id="grad-kcal" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#f97316" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#f97316" stop-opacity="0.0" />
+      </linearGradient>
+      <linearGradient id="grad-ketones" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#ec4899" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#ec4899" stop-opacity="0.0" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- Siatka Kwadratowa z dynamicznym Drag & Drop i Skalowaniem -->
+  <div class="grid-container" [class.edit-mode-active]="layoutService.isEditMode()">
+    
+    <!-- Warstwa siatki podkładowej (Blueprint Grid) widoczna w trybie edycji / podczas przeciągania -->
+    @if (layoutService.isEditMode()) {
+      <div class="blueprint-grid-layer" [class.is-dragging]="activeDragWidget() !== null">
+        @for (tile of blueprintGridTiles; track $index) {
+          <div class="blueprint-tile" [style.grid-column]="tile.col" [style.grid-row]="tile.row">
+            <span class="blueprint-plus">+</span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Cień / Wskaźnik celu upuszczenia w siatce -->
+    @if (activeDragWidget() && dragCandidateSlot()) {
+      <div 
+        class="drag-candidate-placeholder"
+        [class.is-valid]="dragCandidateSlot()!.isValid"
+        [class.is-invalid]="!dragCandidateSlot()!.isValid"
+        [style.grid-column]="dragCandidateSlot()!.col + ' / span ' + dragCandidateSlot()!.colSpan"
+        [style.grid-row]="dragCandidateSlot()!.row + ' / span ' + dragCandidateSlot()!.rowSpan"
+      >
+        <div class="placeholder-content font-mono">
+          @if (dragCandidateSlot()!.isValid) {
+            <span class="status-valid">✓ UPUŚĆ TUTAJ (KOL {{ dragCandidateSlot()!.col }}, WRS {{ dragCandidateSlot()!.row }})</span>
+          } @else {
+            <span class="status-invalid">✗ BRAK MIEJSCA</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Kafelki Dashboardu (2D Grid Positioning) -->
+    @for (widget of layoutService.widgets(); track widget.id; let i = $index) {
+      <div 
+        #cellElem
+        class="grid-cell"
+        [class.timestamp-cell]="widget.id === 'timestamp'"
+        [class.weight-cell]="widget.id === 'weight'"
+        [class.tbw-cell]="widget.id === 'tbw'"
+        [class.ketone-cell]="widget.id === 'ketones'"
+        [class.main-chart-cell]="widget.id === 'mainChart'"
+        [class.body-shape-cell]="widget.id === 'bodyShape'"
+        [class.history-cell]="widget.id === 'history'"
+        [class.is-edit-mode]="layoutService.isEditMode()"
+        [class.is-lifted]="activeDragWidget()?.id === widget.id"
+        [style.grid-column]="widget.col + ' / span ' + widget.colSpan"
+        [style.grid-row]="widget.row + ' / span ' + widget.rowSpan"
+        [style.transform]="activeDragWidget()?.id === widget.id ? 'translate3d(' + dragPointerDelta().x + 'px, ' + dragPointerDelta().y + 'px, 0) scale(1.03)' : null"
+      >
+
+        <!-- Pasek Kontrolek Edycji (widoczny w trybie edycji) -->
+        @if (layoutService.isEditMode()) {
+          <div 
+            class="edit-cell-header" 
+            (pointerdown)="onDragPointerDown(widget, $event, cellElem)"
+            title="Chwyć aby unieść i przenieść na wolne pole">
+            <div class="drag-grip">
+              <svg class="grip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="8" cy="6" r="1.5" fill="currentColor"/>
+                <circle cx="8" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="8" cy="18" r="1.5" fill="currentColor"/>
+                <circle cx="16" cy="6" r="1.5" fill="currentColor"/>
+                <circle cx="16" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="16" cy="18" r="1.5" fill="currentColor"/>
+              </svg>
+              <span class="grip-label">{{ widget.title }}</span>
+            </div>
+            
+            <div class="size-controls" (pointerdown)="$event.stopPropagation()">
+              <span class="grid-badge font-mono">{{ widget.colSpan }} × {{ widget.rowSpan }}</span>
+            </div>
+          </div>
+        }
+
+        <!-- Zawartość kafelka w zależności od typu -->
+        @switch (widget.id) {
+          
+          <!-- 1. DATA I GODZINA POMIARU -->
+          @case ('timestamp') {
+            <div class="cell-header">
+              <div class="header-group">
+                <span class="cell-title">DATA I GODZINA POMIARU</span>
+                <span class="cell-subtitle">Aktywny rekord biometrii</span>
+              </div>
+              <span class="badge font-mono">POMIAR #{{ selectedIndex() + 1 }}</span>
+            </div>
+            <div class="cell-body row-split">
+              <div class="split-col">
+                <span class="stat-label">DATA</span>
+                <span class="stat-value font-mono text-cyan">{{ current().date }}</span>
+                <span class="sub-text text-muted">{{ current().notes || 'Pomiary poranne' }}</span>
+              </div>
+              <div class="split-divider"></div>
+              <div class="split-col">
+                <span class="stat-label">GODZINA</span>
+                <span class="stat-value font-mono text-primary">{{ current().time }}</span>
+                <span class="sub-text text-emerald">● Wykonano</span>
+              </div>
+            </div>
+          }
+
+          <!-- 2. WAGA (2x1) -->
+          @case ('weight') {
+            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('weight')">
+              <span class="cell-title">WAGA CIAŁA</span>
+              @if (weightDelta() !== null) {
+                <span class="trend-badge" [class.trend-down]="weightDelta()! < 0" [class.trend-up]="weightDelta()! > 0">
+                  {{ weightDelta()! > 0 ? '+' : '' }}{{ weightDelta() }} kg
+                </span>
+              }
+            </div>
+            <div class="cell-body row-split" (click)="!layoutService.isEditMode() && setChartParam('weight')">
+              <div class="metric-hero">
+                <span class="hero-value font-mono">{{ current().weight }}</span>
+                <span class="hero-unit">kg</span>
+              </div>
+              <div class="mini-chart-box">
+                <svg class="sparkline-svg" viewBox="0 0 100 32">
+                  <path [attr.d]="getSparkline('weight').area" fill="url(#grad-weight)" />
+                  <path [attr.d]="getSparkline('weight').line" fill="none" stroke="#06b6d4" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+                <span class="sparkline-label font-mono">Trend 7 dni</span>
+              </div>
+            </div>
+          }
+
+          <!-- 3. TOTAL BODY WATER (TBW) -->
+          @case ('tbw') {
+            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('totalBodyWater')">
+              <span class="cell-title">TOTAL BODY WATER</span>
+              <span class="badge font-mono">TBW</span>
+            </div>
+            <div class="cell-body column-flow" (click)="!layoutService.isEditMode() && setChartParam('totalBodyWater')">
+              <div class="tbw-display">
+                <div class="metric-big">
+                  <span class="value font-mono text-cyan">{{ current().totalBodyWater }}</span>
+                  <span class="unit">%</span>
+                </div>
+                <span class="stat-sub text-muted font-mono">≈ {{ waterLiters() }} L wody</span>
+              </div>
+
+              <div class="mini-chart-box full-w">
+                <svg class="sparkline-svg" viewBox="0 0 100 28">
+                  <path [attr.d]="getSparkline('totalBodyWater').area" fill="url(#grad-tbw)" />
+                  <path [attr.d]="getSparkline('totalBodyWater').line" fill="none" stroke="#3b82f6" stroke-width="1.8" />
+                </svg>
+              </div>
+
+              <div class="water-tank">
+                <div class="water-fill" [style.height.%]="current().totalBodyWater"></div>
+                <div class="water-tank-target">
+                  <span class="target-line"></span>
+                  <span class="target-label">Norma: 55-65%</span>
+                </div>
+              </div>
+              <span class="stat-label text-center">Nawodnienie komórkowe</span>
+            </div>
+          }
+
+          <!-- 4. OVERFAT / TKANKA TŁUSZCZOWA -->
+          @case ('overfat') {
+            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('overfat')">
+              <span class="cell-title">OVERFAT</span>
+              <span class="tag-score font-mono">TŁUSZCZ</span>
+            </div>
+            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('overfat')">
+              <div class="metric-big">
+                <span class="value font-mono text-orange">{{ current().overfat }}</span>
+                <span class="unit">%</span>
+              </div>
+              <div class="mini-chart-box">
+                <svg class="sparkline-svg" viewBox="0 0 100 24">
+                  <path [attr.d]="getSparkline('overfat').area" fill="url(#grad-fat)" />
+                  <path [attr.d]="getSparkline('overfat').line" fill="none" stroke="#f59e0b" stroke-width="1.8" />
+                </svg>
+              </div>
+              <span class="metric-sub text-muted">Norma: 10 - 20%</span>
+            </div>
+          }
+
+          <!-- 5. MIĘŚNIE -->
+          @case ('muscleMass') {
+            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('muscleMass')">
+              <span class="cell-title">MIĘŚNIE</span>
+              <span class="tag-score font-mono">MASA</span>
+            </div>
+            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('muscleMass')">
+              <div class="metric-big">
+                <span class="value font-mono text-emerald">{{ current().muscleMass }}</span>
+                <span class="unit">kg</span>
+              </div>
+              <div class="mini-chart-box">
+                <svg class="sparkline-svg" viewBox="0 0 100 24">
+                  <path [attr.d]="getSparkline('muscleMass').area" fill="url(#grad-muscle)" />
+                  <path [attr.d]="getSparkline('muscleMass').line" fill="none" stroke="#10b981" stroke-width="1.8" />
+                </svg>
+              </div>
+              <span class="metric-sub text-muted font-mono">{{ musclePercent() }}% masy</span>
+            </div>
+          }
+
+          <!-- 6. KOŚCI -->
+          @case ('boneMass') {
+            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('boneMass')">
+              <span class="cell-title">KOŚCI</span>
+              <span class="tag-score font-mono">MINERAŁY</span>
+            </div>
+            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('boneMass')">
+              <div class="metric-big">
+                <span class="value font-mono text-purple">{{ current().boneMass }}</span>
+                <span class="unit">kg</span>
+              </div>
+              <div class="mini-chart-box">
+                <svg class="sparkline-svg" viewBox="0 0 100 24">
+                  <path [attr.d]="getSparkline('boneMass').area" fill="url(#grad-bones)" />
+                  <path [attr.d]="getSparkline('boneMass').line" fill="none" stroke="#a855f7" stroke-width="1.8" />
+                </svg>
+              </div>
+              <span class="metric-sub text-muted">Masa mineralna</span>
+            </div>
+          }
+
+          <!-- 7. BMI -->
+          @case ('bmi') {
+            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('bmi')">
+              <span class="cell-title">BMI</span>
+              <span class="tag-score font-mono">INDEX</span>
+            </div>
+            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('bmi')">
+              <div class="metric-big">
+                <span class="value font-mono text-cyan">{{ current().bmi }}</span>
+              </div>
+              <div class="mini-chart-box">
+                <svg class="sparkline-svg" viewBox="0 0 100 24">
+                  <path [attr.d]="getSparkline('bmi').area" fill="url(#grad-bmi)" />
+                  <path [attr.d]="getSparkline('bmi').line" fill="none" stroke="#0ea5e9" stroke-width="1.8" />
+                </svg>
+              </div>
+              <span class="metric-sub status-good">Waga prawidłowa</span>
+            </div>
+          }
+
+          <!-- 8. KCAL (BMR) -->
+          @case ('kcal') {
+            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('kcal')">
+              <span class="cell-title">KCAL</span>
+              <span class="tag-score font-mono">BMR</span>
+            </div>
+            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('kcal')">
+              <div class="metric-big">
+                <span class="value font-mono text-amber">{{ current().kcal }}</span>
+                <span class="unit">kcal</span>
+              </div>
+              <div class="mini-chart-box">
+                <svg class="sparkline-svg" viewBox="0 0 100 24">
+                  <path [attr.d]="getSparkline('kcal').area" fill="url(#grad-kcal)" />
+                  <path [attr.d]="getSparkline('kcal').line" fill="none" stroke="#f97316" stroke-width="1.8" />
+                </svg>
+              </div>
+              <span class="metric-sub text-muted">Zapotrzebowanie</span>
+            </div>
+          }
+
+          <!-- 9. KETONY W MOCZU -->
+          @case ('ketones') {
+            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('ketoneValue')">
+              <span class="cell-title">KETONY W MOCZU</span>
+              <span class="badge ketone-badge font-mono" [class.badge-active]="current().ketoneLevel !== 'negative'">
+                {{ current().ketoneLevel === 'negative' ? 'BRAK KETOZY' : 'KETOZA AKTYWNA' }}
+              </span>
+            </div>
+            <div class="cell-body" (click)="!layoutService.isEditMode() && setChartParam('ketoneValue')">
+              <div class="ketone-top-row">
+                <div class="ketone-value font-mono">{{ current().urineKetones }}</div>
+                <div class="mini-chart-box-inline">
+                  <svg class="sparkline-svg" viewBox="0 0 70 20">
+                    <path [attr.d]="getSparkline('ketoneValue').area" fill="url(#grad-ketones)" />
+                    <path [attr.d]="getSparkline('ketoneValue').line" fill="none" stroke="#ec4899" stroke-width="1.8" />
+                  </svg>
+                </div>
+              </div>
+              
+              <!-- Pasek kolorymetryczny testu paskowego -->
+              <div class="ketone-strip-scale">
+                <div class="strip-step step-neg" title="Negatywny (< 0.5 mmol/L)" [class.active]="current().ketoneLevel === 'negative'">
+                  <span>0</span>
+                </div>
+                <div class="strip-step step-trace" title="Ślad (0.5 - 1.5 mmol/L)" [class.active]="current().ketoneLevel === 'trace'">
+                  <span>0.5</span>
+                </div>
+                <div class="strip-step step-low" title="Niski (1.5 - 4.0 mmol/L)" [class.active]="current().ketoneLevel === 'low'">
+                  <span>1.5</span>
+                </div>
+                <div class="strip-step step-mod" title="Średni (4.0 - 8.0 mmol/L)" [class.active]="current().ketoneLevel === 'moderate'">
+                  <span>4.0</span>
+                </div>
+                <div class="strip-step step-high" title="Wysoki (> 8.0 mmol/L)" [class.active]="current().ketoneLevel === 'high'">
+                  <span>8.0+</span>
+                </div>
+              </div>
+              <div class="scale-labels">
+                <span>Negatywny</span>
+                <span>Ślad</span>
+                <span>Lekka</span>
+                <span>Optymalna</span>
+                <span>Głęboka</span>
+              </div>
+            </div>
+          }
+
+          <!-- 10. GŁÓWNY INTERAKTYWNY PANEL WYKRESÓW DLA KAŻDEGO PARAMETRU -->
+          @case ('mainChart') {
+            <div class="cell-header">
+              <div class="header-group">
+                <div class="title-with-badge">
+                  <span class="cell-title">ANALIZA TRENDU BIOMETRYCZNEGO</span>
+                  <span class="badge font-mono" [style.color]="activeParamMeta().color">
+                    {{ activeParamMeta().label }}: {{ current()[activeParamKey()] }} {{ activeParamMeta().unit }}
+                  </span>
+                </div>
+                <span class="cell-subtitle">Wybierz parametr aby zobaczyć pełną historię i krzywą zmian</span>
+              </div>
+              <div class="chart-summary-stat font-mono">
+                <span class="stat-small-label">ZMIANA 7D:</span>
+                <span class="stat-small-val" [class.text-emerald]="mainChartData().delta <= 0" [class.text-rose]="mainChartData().delta > 0">
+                  {{ mainChartData().delta > 0 ? '+' : '' }}{{ mainChartData().delta }} {{ activeParamMeta().unit }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Przełącznik parametrów (Pill Tabs) -->
+            <div class="param-tabs-container">
+              @for (p of paramList; track p.key) {
+                <button 
+                  class="param-tab-btn" 
+                  [class.active]="activeParamKey() === p.key"
+                  (click)="setChartParam(p.key)">
+                  <span class="tab-dot" [style.background-color]="p.color"></span>
+                  <span>{{ p.label }}</span>
+                </button>
+              }
+            </div>
+
+            <!-- Duży wektorowy wykres SVG -->
+            <div class="main-svg-chart-container">
+              <svg class="main-chart-svg" [attr.viewBox]="'0 0 ' + mainChartData().width + ' ' + mainChartData().height" preserveAspectRatio="none">
+                <!-- Poziome linie siatki pomocniczej -->
+                <line x1="35" y1="25" x2="605" y2="25" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
+                <line x1="35" y1="90" x2="605" y2="90" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
+                <line x1="35" y1="155" x2="605" y2="155" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
+
+                <!-- Etykiety min / max osi Y -->
+                <text x="30" y="30" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="end">{{ mainChartData().maxVal }}</text>
+                <text x="30" y="158" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="end">{{ mainChartData().minVal }}</text>
+
+                <!-- Obszar gradientu pod wykresem -->
+                <path [attr.d]="mainChartData().areaPath" [attr.fill]="'url(#' + activeParamMeta().gradientId + ')'" />
+
+                <!-- Główna linia wykresu -->
+                <path [attr.d]="mainChartData().linePath" fill="none" [attr.stroke]="activeParamMeta().color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+                <!-- Punkty pomiarowe z poświatą i etykietami -->
+                @for (pt of mainChartData().points; track pt.date) {
+                  <g class="chart-point-group">
+                    <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="5" [attr.fill]="activeParamMeta().color" fill-opacity="0.3" />
+                    <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3" [attr.fill]="activeParamMeta().color" stroke="#08090d" stroke-width="1.5" />
+                    
+                    <text [attr.x]="pt.x" y="172" fill="#64748b" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">
+                      {{ pt.date }}
+                    </text>
+                    
+                    <text [attr.x]="pt.x" [attr.y]="pt.y - 8" fill="#f1f5f9" font-size="9" font-weight="600" font-family="'JetBrains Mono', monospace" text-anchor="middle">
+                      {{ pt.val }}
+                    </text>
+                  </g>
+                }
+              </svg>
+            </div>
+          }
+
+          <!-- 11. KSZTAŁT CIAŁA I PROCENTOWY SKŁAD -->
+          @case ('bodyShape') {
+            <div class="cell-header">
+              <div class="header-group">
+                <span class="cell-title">KSZTAŁT I SKŁAD CIAŁA</span>
+                <span class="cell-subtitle font-mono">{{ current().weight }} kg = 100% MASY</span>
+              </div>
+              <span class="badge font-mono">ANATOMIA 2X2</span>
+            </div>
+
+            <div class="cell-body body-shape-layout-2x2">
+              <div class="silhouette-column">
+                <div class="silhouette-wrapper-2x2">
+                  <svg class="body-silhouette-svg-2x2" viewBox="0 0 160 300">
+                    <defs>
+                      <clipPath id="human-body-clip-2x2">
+                        <ellipse cx="80" cy="24" rx="14" ry="18" />
+                        <path d="
+                          M 73,40 C 65,42 50,48 40,56 C 36,60 33,67 31,75 L 26,130 C 25,138 27,144 32,144 C 36,144 39,138 41,130 L 45,95 L 48,125 C 49,145 53,165 53,178 L 52,240 C 51,265 54,285 57,294 C 59,298 64,298 66,293 C 69,285 71,260 72,235 L 75,185 L 77,185 L 80,185 L 83,185 L 85,185 L 88,235 C 89,260 91,285 94,293 C 96,298 101,298 103,294 C 106,285 109,265 108,240 L 107,178 C 107,165 111,145 112,125 L 115,95 L 119,130 C 121,138 124,144 128,144 C 133,144 135,138 134,130 L 129,75 C 127,67 124,60 120,56 C 110,48 95,42 87,40 Z
+                        " />
+                      </clipPath>
+                    </defs>
+
+                    <rect x="0" y="0" width="160" height="300" fill="rgba(255,255,255,0.03)" clip-path="url(#human-body-clip-2x2)" />
+
+                    <g clip-path="url(#human-body-clip-2x2)">
+                      <rect x="0" y="0" width="160" height="26" fill="#a855f7" fill-opacity="0.88" />
+                      <rect x="0" y="26" width="160" height="50" fill="#f59e0b" fill-opacity="0.88" />
+                      <rect x="0" y="76" width="160" height="62" fill="#10b981" fill-opacity="0.88" />
+                      <rect x="0" y="138" width="160" height="162" fill="#3b82f6" fill-opacity="0.88" />
+
+                      <line x1="0" y1="26" x2="160" y2="26" stroke="#fff" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="2,2" />
+                      <line x1="0" y1="76" x2="160" y2="76" stroke="#fff" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="2,2" />
+                      <line x1="0" y1="138" x2="160" y2="138" stroke="#fff" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="2,2" />
+                    </g>
+
+                    <ellipse cx="80" cy="24" rx="14" ry="18" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.4" />
+                    <path d="
+                      M 73,40 C 65,42 50,48 40,56 C 36,60 33,67 31,75 L 26,130 C 25,138 27,144 32,144 C 36,144 39,138 41,130 L 45,95 L 48,125 C 49,145 53,165 53,178 L 52,240 C 51,265 54,285 57,294 C 59,298 64,298 66,293 C 69,285 71,260 72,235 L 75,185 L 77,185 L 80,185 L 83,185 L 85,185 L 88,235 C 89,260 91,285 94,293 C 96,298 101,298 103,294 C 106,285 109,265 108,240 L 107,178 C 107,165 111,145 112,125 L 115,95 L 119,130 C 121,138 124,144 128,144 C 133,144 135,138 134,130 L 129,75 C 127,67 124,60 120,56 C 110,48 95,42 87,40 Z
+                    " fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.4" />
+                  </svg>
+                </div>
+              </div>
+
+              <div class="breakdown-column-2x2">
+                @for (item of bodyComposition(); track item.id) {
+                  <div class="comp-box-2x2">
+                    <div class="comp-box-top">
+                      <div class="comp-box-title">
+                        <span class="comp-dot" [style.background-color]="item.color"></span>
+                        <span class="comp-label-text">{{ item.label }}</span>
+                      </div>
+                      <span class="comp-box-pct font-mono" [style.color]="item.color">{{ item.percent }}%</span>
+                    </div>
+                    <div class="comp-bar-container">
+                      <div class="comp-bar-fill" [style.background-color]="item.color" [style.width.%]="item.percent"></div>
+                    </div>
+                    <div class="comp-box-bottom font-mono text-muted">
+                      <span>Masa: {{ item.kg }} kg</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- 12. HISTORIA POMIARÓW -->
+          @case ('history') {
+            <div class="cell-header">
+              <div class="header-group">
+                <span class="cell-title">HISTORIA I REJESTR POMIARÓW CIAŁA</span>
+                <span class="cell-subtitle">Kliknij wiersz aby załadować wybrany punkt czasowy na kafelki</span>
+              </div>
+              <span class="badge font-mono">{{ history().length }} WPISY</span>
+            </div>
+            <div class="cell-body table-responsive">
+              <table class="measurements-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Godzina</th>
+                    <th>Waga</th>
+                    <th>TBW</th>
+                    <th>Overfat</th>
+                    <th>Mięśnie</th>
+                    <th>Kości</th>
+                    <th>BMI</th>
+                    <th>Kcal</th>
+                    <th>Ketony</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of history(); track item.id; let rowIdx = $index) {
+                    <tr [class.selected]="rowIdx === selectedIndex()" (click)="selectMeasurement(rowIdx)">
+                      <td class="font-mono text-cyan font-semibold">{{ item.date }}</td>
+                      <td class="font-mono">{{ item.time }}</td>
+                      <td class="font-mono font-bold">{{ item.weight }} kg</td>
+                      <td class="font-mono">{{ item.totalBodyWater }}%</td>
+                      <td class="font-mono text-orange">{{ item.overfat }}%</td>
+                      <td class="font-mono text-emerald">{{ item.muscleMass }} kg</td>
+                      <td class="font-mono text-purple">{{ item.boneMass }} kg</td>
+                      <td class="font-mono text-cyan">{{ item.bmi }}</td>
+                      <td class="font-mono text-amber">{{ item.kcal }}</td>
+                      <td class="font-mono text-pink">{{ item.urineKetones }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+        <!-- Uchwyt do skokowej zmiany rozmiaru w siatce (w prawym dolnym rogu) -->
+        @if (layoutService.isEditMode()) {
+          <div 
+            class="grid-resize-handle" 
+            (pointerdown)="onResizePointerDown(widget, $event, cellElem)"
+            title="Przeciągnij aby zmienić rozmiar kafelka skokowo">
+            <svg class="resize-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+              <line x1="14" y1="6" x2="6" y2="14" stroke-width="2" stroke-linecap="round" />
+              <line x1="14" y1="10" x2="10" y2="14" stroke-width="2" stroke-linecap="round" />
+              <line x1="14" y1="2" x2="2" y2="14" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
+        }
+
+      </div>
+    }
+
+  </div>
+</div>

@@ -1,0 +1,22 @@
+{
+  "name": "body-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Body Dashboard workspace with Angular frontend, NestJS backend, and centralized Launcher",
+  "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "launcher"
+  ],
+  "scripts": {
+    "start": "node start.js",
+    "launcher": "node launcher/src/index.js",
+    "backend": "npm --prefix backend run start:dev",
+    "frontend": "npm --prefix frontend start",
+    "install:all": "npm install --workspaces"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "PolyForm-Noncommercial-1.0.0"
+}

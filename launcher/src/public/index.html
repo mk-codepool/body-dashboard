@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Launcher Hub | Body Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0a0e17;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1a2234;
+      --bg-card: rgba(23, 32, 51, 0.7);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(99, 102, 241, 0.4);
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.2);
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(10, 14, 23, 0.8);
+      backdrop-filter: blur(12px);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-text span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #34d399;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .global-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      backdrop-filter: blur(16px);
+    }
+
+    .toolbar-info h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .toolbar-info p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .btn-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    button, .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: #232d45;
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+
+    .btn-success:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.78rem;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+    }
+
+    .service-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .avatar-backend {
+      background: linear-gradient(135deg, #e0234e, #ea2840);
+      color: white;
+      box-shadow: 0 4px 15px rgba(224, 35, 78, 0.3);
+    }
+
+    .avatar-frontend {
+      background: linear-gradient(135deg, #dd0031, #c3002f);
+      color: white;
+      box-shadow: 0 4px 15px rgba(221, 0, 49, 0.3);
+    }
+
+    .service-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .service-port {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .status-RUNNING {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .status-STARTING {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+    }
+
+    .status-STOPPED {
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #94a3b8;
+    }
+
+    .status-ERROR {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 12px;
+      padding: 0.875rem;
+    }
+
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .console-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      height: 480px;
+      overflow: hidden;
+    }
+
+    .console-header {
+      background: var(--bg-surface-elevated);
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .console-tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .tab-btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .console-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .console-body {
+      flex: 1;
+      background: #080c14;
+      padding: 1rem;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.55;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .log-line {
+      display: flex;
+      gap: 0.75rem;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .log-time {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .log-tag {
+      font-weight: 600;
+      font-size: 0.75rem;
+      padding: 0.05rem 0.35rem;
+      border-radius: 4px;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .tag-backend {
+      background: rgba(224, 35, 78, 0.2);
+      color: #ff7597;
+    }
+
+    .tag-frontend {
+      background: rgba(221, 0, 49, 0.2);
+      color: #ff6b8b;
+    }
+
+    .tag-launcher {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+    }
+
+    .log-content {
+      flex: 1;
+      color: #cbd5e1;
+    }
+
+    .log-content.stderr {
+      color: #f87171;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+      </div>
+      <div class="brand-text">
+        <h1>Body Dashboard Orchestrator</h1>
+        <span>Launcher v1.0.0 • Local Environment</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        <span id="conn-status">CONNECTED (SSE)</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="global-toolbar">
+      <div class="toolbar-info">
+        <h2>System Workspace</h2>
+        <p>Manage, observe, and inspect Angular frontend and NestJS backend processes simultaneously.</p>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="triggerAction('all', 'restart')">
+          🔄 Restart All
+        </button>
+        <button class="btn btn-danger" onclick="triggerAction('all', 'stop')">
+          🛑 Stop All
+        </button>
+        <button class="btn btn-success" onclick="triggerAction('all', 'start')">
+          ⚡ Start All
+        </button>
+      </div>
+    </section>
+
+    <section class="services-grid" id="services-grid">
+      <!-- Injected by JavaScript -->
+    </section>
+
+    <section class="console-section">
+      <div class="console-header">
+        <div class="console-tabs">
+          <button class="tab-btn active" onclick="switchTab('all', this)">All Logs</button>
+          <button class="tab-btn" onclick="switchTab('backend', this)">NestJS Backend</button>
+          <button class="tab-btn" onclick="switchTab('frontend', this)">Angular Frontend</button>
+        </div>
+        <div class="console-controls">
+          <label style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+            <input type="checkbox" id="autoscroll-chk" checked> Auto-scroll
+          </label>
+          <button class="btn btn-secondary btn-sm" onclick="clearLogs()">Clear</button>
+        </div>
+      </div>
+      <div class="console-body" id="console-output"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div>Ready on <code>http://localhost:4000</code></div>
+    <div>Press <kbd>Ctrl+C</kbd> in terminal or stop services from dashboard to exit</div>
+  </footer>
+
+  <script>
+    let currentTab = 'all';
+    const logsStore = [];
+    const maxClientLogs = 1500;
+
+    function renderServices(services) {
+      const container = document.getElementById('services-grid');
+      container.innerHTML = services.map(srv => {
+        const isBackend = srv.id === 'backend';
+        const avatarClass = isBackend ? 'avatar-backend' : 'avatar-frontend';
+        const avatarText = isBackend ? 'Nest' : 'NG';
+        const statusClass = `status-${srv.status}`;
+        const isRunning = srv.status === 'RUNNING';
+        const isStopped = srv.status === 'STOPPED';
+
+        return `
+          <div class="card" id="card-${srv.id}">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="service-avatar ${avatarClass}">${avatarText}</div>
+                <div>
+                  <div class="service-name">${srv.name}</div>
+                  <div class="service-port">${srv.url} (Port: ${srv.port})</div>
+                </div>
+              </div>
+              <span class="status-badge ${statusClass}">${srv.status}</span>
+            </div>
+
+            <div class="metrics-grid">
+              <div class="metric-item">
+                <span class="metric-label">PID</span>
+                <span class="metric-val">${srv.pid || '—'}</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Health</span>
+                <span class="metric-val" style="color:${srv.health?.ok ? 'var(--success)' : 'var(--text-dim)'}">
+                  ${srv.health?.ok ? `OK (${srv.health.latencyMs}ms)` : 'Unhealthy'}
+                </span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Uptime</span>
+                <span class="metric-val">${formatUptime(srv.uptimeSeconds)}</span>
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <div style="display:flex; gap:0.5rem;">
+                ${isStopped ? `
+                  <button class="btn btn-success btn-sm" onclick="triggerAction('${srv.id}', 'start')">▶ Start</button>
+                ` : `
+                  <button class="btn btn-secondary btn-sm" onclick="triggerAction('${srv.id}', 'restart')">🔄 Restart</button>
+                  <button class="btn btn-danger btn-sm" onclick="triggerAction('${srv.id}', 'stop')">⏹ Stop</button>
+                `}
+              </div>
+              <a href="${srv.url}" target="_blank" class="btn btn-primary btn-sm">
+                Open App ↗
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function formatUptime(seconds) {
+      if (!seconds) return '0s';
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      if (mins === 0) return `${secs}s`;
+      return `${mins}m ${secs}s`;
+    }
+
+    function appendLog(log) {
+      logsStore.push(log);
+      if (logsStore.length > maxClientLogs) logsStore.shift();
+      if (currentTab === 'all' || currentTab === log.serviceId) {
+        renderSingleLog(log);
+      }
+    }
+
+    function renderSingleLog(log) {
+      const consoleOutput = document.getElementById('console-output');
+      const row = document.createElement('div');
+      row.className = 'log-line';
+
+      const time = log.timestamp ? log.timestamp.split('T')[1].split('.')[0] : '--:--:--';
+      const tagClass = `tag-${log.serviceId}`;
+
+      row.innerHTML = `
+        <span class="log-time">${time}</span>
+        <span class="log-tag ${tagClass}">${log.serviceId.toUpperCase()}</span>
+        <span class="log-content ${log.stream === 'stderr' ? 'stderr' : ''}">${escapeHtml(log.text)}</span>
+      `;
+      consoleOutput.appendChild(row);
+
+      const autoscroll = document.getElementById('autoscroll-chk').checked;
+      if (autoscroll) {
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      }
+    }
+
+    function switchTab(tab, btn) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const consoleOutput = document.getElementById('console-output');
+      consoleOutput.innerHTML = '';
+      const filtered = logsStore.filter(l => tab === 'all' || l.serviceId === tab);
+      filtered.forEach(renderSingleLog);
+    }
+
+    function clearLogs() {
+      logsStore.length = 0;
+      document.getElementById('console-output').innerHTML = '';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    async function triggerAction(service, action) {
+      try {
+        await fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ service, action })
+        });
+      } catch (err) {
+        console.error('Failed action:', err);
+      }
+    }
+
+    function setupSSE() {
+      const eventSource = new EventSource('/api/events');
+      const connStatus = document.getElementById('conn-status');
+
+      eventSource.onopen = () => {
+        connStatus.textContent = 'CONNECTED (LIVE)';
+      };
+
+      eventSource.addEventListener('status', (e) => {
+        const data = JSON.parse(e.data);
+        renderServices(data);
+      });
+
+      eventSource.addEventListener('log', (e) => {
+        const log = JSON.parse(e.data);
+        appendLog(log);
+      });
+
+      eventSource.onerror = () => {
+        connStatus.textContent = 'RECONNECTING...';
+      };
+    }
+
+    // Initial fetch
+    fetch('/api/status')
+      .then(res => res.json())
+      .then(data => renderServices(data))
+      .catch(console.error);
+
+    fetch('/api/logs')
+      .then(res => res.json())
+      .then(logs => {
+        logs.forEach(appendLog);
+      })
+      .catch(console.error);
+
+    setupSSE();
+  </script>
+</body>
+</html>

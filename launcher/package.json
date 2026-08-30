@@ -1,0 +1,11 @@
+{
+  "name": "body-dashboard-launcher",
+  "version": "1.0.0",
+  "description": "Launcher and management dashboard for Angular frontend & NestJS backend",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  }
+}

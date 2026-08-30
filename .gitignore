@@ -1,0 +1,81 @@
+# -----------------------------------------------------------------------------
+# Root .gitignore for Body Dashboard Workspace
+# -----------------------------------------------------------------------------
+
+# Dependencies
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# Build outputs & Bundles
+dist/
+**/dist/
+out-tsc/
+**/out-tsc/
+bazel-out/
+tmp/
+**/tmp/
+
+# TypeScript & Angular caches
+*.tsbuildinfo
+**/*.tsbuildinfo
+.angular/
+**/.angular/
+.sass-cache/
+
+# Testing & Coverage
+coverage/
+**/coverage/
+__screenshots__/
+testem.log
+.nyc_output/
+
+# Logs & Runtime
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+libpeerconnection.log
+connect.lock
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDEs, Editors & Tooling
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.history/
+**/__pycache__/
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+
+# OS & Filesystem
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Typings
+typings/
