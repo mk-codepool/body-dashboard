@@ -67,7 +67,7 @@ export const EMPTY_MEASUREMENT: MeasurementRecord = {
   kcal: 0,
   urineKetones: 'Brak danych',
   ketoneValue: 0,
-  ketoneLevel: 'negative',
+  ketoneLevel: 'none',
   notes: 'Brak danych pomiarowych'
 };
 
@@ -81,6 +81,23 @@ export const EMPTY_MEASUREMENT: MeasurementRecord = {
 export class DashboardComponent {
   readonly layoutService = inject(DashboardLayoutService);
   readonly measurementsService = inject(MeasurementsService);
+
+  // Płeć użytkownika (persystowana w localStorage do norm składu ciała)
+  readonly userGender = signal<'male' | 'female'>((() => {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('body_dashboard_gender');
+      if (saved === 'female' || saved === 'male') return saved;
+    }
+    return 'male';
+  })());
+
+  setGender(gender: 'male' | 'female', event?: Event): void {
+    if (event) event.stopPropagation();
+    this.userGender.set(gender);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('body_dashboard_gender', gender);
+    }
+  }
 
   // Metadane wszystkich mierzonych parametrów
   readonly paramList: ParamMeta[] = [
@@ -145,6 +162,88 @@ export class DashboardComponent {
     const m = this.current();
     if (!m.weight || m.weight === 0) return 0;
     return Math.round((m.weight * (m.boneMass / 100)) * 10) / 10;
+  });
+
+  // Ewaluacja stanu ketozy (Brak pomiaru / Brak ketozy / Ketoza aktywna)
+  readonly isKetosisActive = computed(() => {
+    const level = this.current().ketoneLevel;
+    return level === 'trace' || level === 'low' || level === 'moderate' || level === 'high';
+  });
+
+  readonly ketoneBadgeText = computed(() => {
+    const level = this.current().ketoneLevel;
+    if (!level || level === 'none') return 'BRAK POMIARU';
+    if (level === 'negative') return 'BRAK KETOZY';
+    return 'KETOZA AKTYWNA';
+  });
+
+  // Szczegółowa klasyfikacja BMI zgodna z wytycznymi medycznymi
+  readonly bmiEvaluation = computed(() => {
+    const bmi = this.current().bmi;
+    if (!bmi || bmi <= 0) {
+      return { label: 'Brak danych', fullLabel: 'Brak danych', statusClass: 'status-muted' };
+    }
+    if (bmi < 16.0) {
+      return { label: 'Wyczerpanie (wygłodzenie)', fullLabel: 'Wyczerpanie (wygłodzenie: < 16,0)', statusClass: 'status-danger' };
+    }
+    if (bmi < 17.0) {
+      return { label: 'Wychudzenie', fullLabel: 'Wychudzenie: 16,0 – 16,9', statusClass: 'status-danger' };
+    }
+    if (bmi < 18.5) {
+      return { label: 'Lekka niedowaga', fullLabel: 'Lekka niedowaga: 17,0 – 18,4', statusClass: 'status-warning' };
+    }
+    if (bmi < 25.0) {
+      return { label: 'Waga prawidłowa', fullLabel: 'Waga prawidłowa: 18,5 – 24,9', statusClass: 'status-good' };
+    }
+    if (bmi < 30.0) {
+      return { label: 'Nadwaga', fullLabel: 'Nadwaga: 25,0 – 29,9', statusClass: 'status-warning' };
+    }
+    if (bmi < 35.0) {
+      return { label: 'Otyłość I stopnia', fullLabel: 'Otyłość I stopnia: 30,0 – 34,9', statusClass: 'status-danger' };
+    }
+    if (bmi < 40.0) {
+      return { label: 'Otyłość II st. (kliniczna)', fullLabel: 'Otyłość II stopnia (kliniczna): 35,0 – 39,9', statusClass: 'status-danger' };
+    }
+    return { label: 'Otyłość III st. (skrajna)', fullLabel: 'Otyłość III stopnia (skrajna): ≥ 40,0', statusClass: 'status-danger' };
+  });
+
+  // Szczegółowa ocena zawartości tkanki tłuszczowej z podziałem na kobiety i mężczyzn
+  readonly fatEvaluation = computed(() => {
+    const fat = this.current().overfat;
+    const isFemale = this.userGender() === 'female';
+    if (!fat || fat <= 0) {
+      return { label: 'Brak danych', fullLabel: 'Brak danych', normText: isFemale ? 'Norma K: 21–31%' : 'Norma M: 14–24%', statusClass: 'status-muted' };
+    }
+
+    if (isFemale) {
+      if (fat < 14.0) {
+        return { label: 'Poniżej normy (<14%)', fullLabel: 'Poniżej normy (< 14%)', normText: 'Norma K: 21–31%', statusClass: 'status-warning' };
+      }
+      if (fat <= 20.9) {
+        return { label: 'Niska (atletyczna)', fullLabel: 'Niska (atletyczna: 14–20%)', normText: 'Norma K: 21–31%', statusClass: 'status-info' };
+      }
+      if (fat <= 31.9) {
+        return { label: 'W normie (fit)', fullLabel: 'W normie (fit / przeciętna: 21–31%)', normText: 'Norma K: 21–31%', statusClass: 'status-good' };
+      }
+      if (fat <= 38.0) {
+        return { label: 'Overfat (nadmiar)', fullLabel: 'Overfat (nadmiar tłuszczu: 32–38%)', normText: 'Norma K: 21–31%', statusClass: 'status-warning' };
+      }
+      return { label: 'Obese (otyłość)', fullLabel: 'Obese (otyłość: > 38%)', normText: 'Norma K: 21–31%', statusClass: 'status-danger' };
+    } else {
+      if (fat < 6.0) {
+        return { label: 'Poniżej normy (<6%)', fullLabel: 'Poniżej normy (< 6%)', normText: 'Norma M: 14–24%', statusClass: 'status-warning' };
+      }
+      if (fat <= 13.9) {
+        return { label: 'Niska (atletyczna)', fullLabel: 'Niska (atletyczna: 6–13%)', normText: 'Norma M: 14–24%', statusClass: 'status-info' };
+      }
+      if (fat <= 24.9) {
+        return { label: 'W normie (fit)', fullLabel: 'W normie (fit / przeciętna: 14–24%)', normText: 'Norma M: 14–24%', statusClass: 'status-good' };
+      }
+      if (fat <= 30.0) {
+        return { label: 'Overfat (nadmiar)', fullLabel: 'Overfat (nadmiar tłuszczu: 25–30%)', normText: 'Norma M: 14–24%', statusClass: 'status-warning' };
+      }
+      return { label: 'Obese (otyłość)', fullLabel: 'Obese (otyłość: > 30%)', normText: 'Norma M: 14–24%', statusClass: 'status-danger' };
+    }
   });
 
   // Interaktywny hover nad warstwą sylwetki

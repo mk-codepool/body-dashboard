@@ -352,6 +352,47 @@
   color: #f472b6;
 }
 
+.badge-muted {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+}
+
+/* Gender toggle pill on Overfat card */
+.gender-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+}
+
+.gender-pill-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.gender-pill-btn:hover {
+  color: var(--text-primary);
+}
+
+.gender-pill-btn.active {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+}
+
 .tag-score {
   font-size: 10px;
   font-weight: 600;
@@ -481,6 +522,30 @@
   color: var(--accent-emerald);
 }
 
+.status-warning {
+  color: var(--accent-amber);
+}
+
+.status-danger {
+  color: var(--accent-rose);
+}
+
+.status-info {
+  color: var(--accent-cyan);
+}
+
+.status-muted {
+  color: var(--text-muted);
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
 .stat-label {
   font-size: 10px;
   font-weight: 600;
@@ -530,59 +595,24 @@
   margin-top: 2px;
 }
 
-/* TBW Water Tank */
+/* TBW Display & Norm Box */
 .tbw-display {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  margin-bottom: 2px;
 }
 
-.water-tank {
-  position: relative;
-  width: 100%;
-  height: 60px;
-  background: rgba(6, 182, 212, 0.04);
-  border: 1px solid rgba(6, 182, 212, 0.18);
-  border-radius: var(--radius-md);
-  margin: 6px 0;
+.tbw-norm-box {
   display: flex;
-  align-items: flex-end;
-  overflow: hidden;
-}
-
-.water-fill {
-  width: 100%;
-  background: linear-gradient(180deg, rgba(6, 182, 212, 0.7), rgba(59, 130, 246, 0.85));
-  transition: height 0.4s ease;
-  box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-}
-
-.water-tank-target {
-  position: absolute;
-  top: 40%;
-  left: 0;
-  right: 0;
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.target-line {
-  position: absolute;
+  gap: 2px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
   width: 100%;
-  height: 1px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.3);
-}
-
-.target-label {
-  position: relative;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 8px;
-  color: var(--text-secondary);
 }
 
 /* Ketone Cell */

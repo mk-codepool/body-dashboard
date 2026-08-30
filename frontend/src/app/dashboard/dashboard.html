@@ -185,16 +185,13 @@
                   <path [attr.d]="getSparkline('totalBodyWater').area" fill="url(#grad-tbw)" />
                   <path [attr.d]="getSparkline('totalBodyWater').line" fill="none" stroke="#3b82f6" stroke-width="1.8" />
                 </svg>
+                <span class="sparkline-label font-mono">Trend pomiarów</span>
               </div>
 
-              <div class="water-tank">
-                <div class="water-fill" [style.height.%]="current().totalBodyWater"></div>
-                <div class="water-tank-target">
-                  <span class="target-line"></span>
-                  <span class="target-label">Norma: 55-65%</span>
-                </div>
+              <div class="tbw-norm-box text-center">
+                <span class="stat-label">Nawodnienie komórkowe</span>
+                <span class="metric-sub status-good justify-center">Norma: 55 – 65%</span>
               </div>
-              <span class="stat-label text-center">Nawodnienie komórkowe</span>
             </div>
           }
 
@@ -202,7 +199,18 @@
           @case ('overfat') {
             <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('overfat')">
               <span class="cell-title">OVERFAT</span>
-              <span class="tag-score font-mono">TŁUSZCZ</span>
+              <div class="gender-toggle-wrap" (click)="$event.stopPropagation()" title="Przełącz normy: Kobieta / Mężczyzna">
+                <button 
+                  type="button" 
+                  class="gender-pill-btn" 
+                  [class.active]="userGender() === 'male'" 
+                  (click)="setGender('male', $event)">M</button>
+                <button 
+                  type="button" 
+                  class="gender-pill-btn" 
+                  [class.active]="userGender() === 'female'" 
+                  (click)="setGender('female', $event)">K</button>
+              </div>
             </div>
             <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('overfat')">
               <div class="metric-big">
@@ -215,7 +223,10 @@
                   <path [attr.d]="getSparkline('overfat').line" fill="none" stroke="#f59e0b" stroke-width="1.8" />
                 </svg>
               </div>
-              <span class="metric-sub text-muted">Norma: 10 - 20%</span>
+              <span class="metric-sub font-semibold" [ngClass]="fatEvaluation().statusClass" [title]="fatEvaluation().fullLabel">
+                {{ fatEvaluation().label }}
+              </span>
+              <span class="sub-text text-muted font-mono">{{ fatEvaluation().normText }}</span>
             </div>
           }
 
@@ -277,7 +288,9 @@
                   <path [attr.d]="getSparkline('bmi').line" fill="none" stroke="#0ea5e9" stroke-width="1.8" />
                 </svg>
               </div>
-              <span class="metric-sub status-good">Waga prawidłowa</span>
+              <span class="metric-sub font-semibold" [ngClass]="bmiEvaluation().statusClass" [title]="bmiEvaluation().fullLabel">
+                {{ bmiEvaluation().label }}
+              </span>
             </div>
           }
 
@@ -306,13 +319,16 @@
           @case ('ketones') {
             <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('ketoneValue')">
               <span class="cell-title">KETONY W MOCZU</span>
-              <span class="badge ketone-badge font-mono" [class.badge-active]="current().ketoneLevel !== 'negative'">
-                {{ current().ketoneLevel === 'negative' ? 'BRAK KETOZY' : 'KETOZA AKTYWNA' }}
+              <span 
+                class="badge ketone-badge font-mono" 
+                [class.badge-active]="isKetosisActive()"
+                [class.badge-muted]="!isKetosisActive()">
+                {{ ketoneBadgeText() }}
               </span>
             </div>
             <div class="cell-body" (click)="!layoutService.isEditMode() && setChartParam('ketoneValue')">
               <div class="ketone-top-row">
-                <div class="ketone-value font-mono">{{ current().urineKetones }}</div>
+                <div class="ketone-value font-mono">{{ current().urineKetones || 'Brak pomiaru' }}</div>
                 <div class="mini-chart-box-inline">
                   <svg class="sparkline-svg" viewBox="0 0 70 20">
                     <path [attr.d]="getSparkline('ketoneValue').area" fill="url(#grad-ketones)" />
