@@ -225,42 +225,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Wszystkie parametry tokena Google -->
-      @if (user.googleRawClaims) {
-      <div class="raw-claims-section">
-        <button type="button" class="raw-claims-toggle" (click)="toggleRawClaims()">
-          <div class="toggle-left">
-            <svg class="toggle-icon" [class.rotated]="isRawClaimsExpanded()" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-            <span>Wszystkie parametry przekazane przez Google</span>
-          </div>
-          <span class="claims-count font-mono">{{ isRawClaimsExpanded() ? 'Zwiń' : 'Rozwiń' }}</span>
-        </button>
-
-        @if (isRawClaimsExpanded()) {
-        <div class="raw-claims-table-wrap">
-          <table class="raw-claims-table font-mono">
-            <thead>
-              <tr>
-                <th>Parametr</th>
-                <th>Wartość</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of user.googleRawClaims | keyvalue; track item.key) {
-              <tr>
-                <td class="claim-key">{{ item.key }}</td>
-                <td class="claim-val">{{ item.value }}</td>
-              </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        }
-      </div>
-      }
     </div>
     }
 

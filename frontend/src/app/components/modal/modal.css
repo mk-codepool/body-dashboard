@@ -195,3 +195,46 @@
     transform: scale(1) translateY(0);
   }
 }
+
+/* ========================================================================= */
+/* RESPONSIVE DESIGN (RWD) DLA MODALA */
+/* ========================================================================= */
+
+@media (max-width: 768px) {
+  .modal-header {
+    height: auto;
+    min-height: 52px;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .modal-header-left {
+    gap: 8px;
+    max-width: calc(100% - 44px);
+  }
+
+  .modal-title {
+    font-size: 13px;
+  }
+
+  .modal-badge {
+    font-size: 9px;
+    padding: 1px 6px;
+  }
+
+  .modal-subtitle {
+    display: none;
+  }
+
+  .modal-close-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .modal-body {
+    height: calc(100vh - 52px);
+    max-height: calc(100vh - 52px);
+    padding: 12px 8px 24px 8px;
+    scrollbar-gutter: auto;
+  }
+}

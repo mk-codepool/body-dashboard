@@ -1859,21 +1859,379 @@
   background: rgba(255, 255, 255, 0.015);
 }
 
-/* Responsive adjustments */
-@media (max-width: 1100px) {
-  .card-4x2 {
-    grid-column: span 3;
+/* ==========================================================================
+   RESPONSIVE DESIGN (RWD) & MOBILE SYSTEM (MAX 2 BLOCKS WIDTH)
+   ========================================================================== */
+
+/* Tablet & Intermediate Screens (<= 1100px and > 768px) */
+@media (max-width: 1100px) and (min-width: 769px) {
+  .grid-container {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px;
+  }
+  
+  .blueprint-grid-layer {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px;
+  }
+
+  .grid-cell {
+    grid-column: span 1 !important;
+    grid-row: auto !important;
+    min-height: 135px;
+  }
+
+  /* 2-column spans on tablet */
+  .grid-cell.timestamp-cell,
+  .grid-cell.weight-cell,
+  .grid-cell.ketone-cell,
+  .grid-cell.alcohol-cell {
+    grid-column: span 2 !important;
+  }
+
+  /* 4-column (full width) spans on tablet */
+  .grid-cell.main-chart-cell,
+  .grid-cell.body-shape-cell,
+  .grid-cell.history-cell {
+    grid-column: span 4 !important;
+  }
+
+  .grid-cell.main-chart-cell {
+    min-height: 380px !important;
+  }
+
+  .grid-cell.body-shape-cell {
+    min-height: 360px !important;
+  }
+
+  .grid-cell.history-cell {
+    min-height: 320px !important;
   }
 }
 
+/* Mobile Screens (<= 768px) - EXACTLY MAX 2 BLOCKS WIDE */
 @media (max-width: 768px) {
+  .dashboard-viewport {
+    padding: 8px 8px 24px 8px;
+    scrollbar-gutter: auto;
+  }
+
   .grid-container {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(125px, auto) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  /* Wyłączenie siatki technicznej Blueprint na mobile */
+  .blueprint-grid-layer,
+  .drag-candidate-placeholder {
+    display: none !important;
+  }
+
+  /* Domyślny rozmiar kafelka na mobile: 1 klocek (span 1) */
+  .grid-cell {
+    grid-column: span 1 !important;
+    grid-row: auto !important;
+    min-height: 125px !important;
+    padding: 12px 10px !important;
+    border-radius: var(--radius-md) !important;
+    transform: none !important;
+  }
+
+  .grid-cell:hover {
+    transform: none !important;
+  }
+
+  /* Kafelki o pełnej szerokości mobile: 2 klocki (span 2) */
+  .grid-cell.timestamp-cell,
+  .grid-cell.weight-cell,
+  .grid-cell.ketone-cell,
+  .grid-cell.main-chart-cell,
+  .grid-cell.body-shape-cell,
+  .grid-cell.history-cell {
+    grid-column: span 2 !important;
+  }
+
+  /* Pomiary i nagłówki kafelków */
+  .cell-header {
+    margin-bottom: 6px;
+  }
+
+  .cell-title {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  .metric-big .value {
+    font-size: 24px;
+  }
+
+  .metric-big .unit {
+    font-size: 11px;
+  }
+
+  .metric-hero .hero-value {
+    font-size: 28px;
+  }
+
+  .metric-hero .hero-unit {
+    font-size: 12px;
+  }
+
+  .stat-sub, .sub-text, .metric-sub {
+    font-size: 10px;
+  }
+
+  /* Data i godzina pomiaru */
+  .grid-cell.timestamp-cell {
+    min-height: 90px !important;
+  }
+
+  .grid-cell.timestamp-cell .row-split {
+    gap: 8px;
+  }
+
+  .grid-cell.timestamp-cell .stat-value {
+    font-size: 14px;
+  }
+
+  /* Waga */
+  .grid-cell.weight-cell {
+    min-height: 105px !important;
+  }
+
+  .grid-cell.weight-cell .row-split {
+    justify-content: space-between;
+  }
+
+  /* Ketony w moczu */
+  .grid-cell.ketone-cell {
+    min-height: 120px !important;
+  }
+
+  .ketone-top-row {
+    margin-bottom: 6px;
+  }
+
+  .ketone-value {
+    font-size: 18px;
+  }
+
+  .ketone-strip-scale {
+    gap: 3px;
+  }
+
+  .strip-step {
+    height: 18px;
+    font-size: 9px;
+  }
+
+  .scale-labels {
+    font-size: 8px;
+  }
+
+  /* Główny Panel Wykresów */
+  .grid-cell.main-chart-cell {
+    min-height: 390px !important;
+    padding: 14px 10px !important;
+  }
+
+  .main-chart-cell .cell-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .title-with-badge {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chart-summary-stat {
+    align-self: flex-start;
+    font-size: 11px;
+  }
+
+  .param-tabs-container {
+    padding-bottom: 6px;
+    gap: 6px;
+    margin: 4px 0 8px 0;
+  }
+
+  .param-tab-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .main-svg-chart-container {
+    min-height: 250px;
+  }
+
+  .chart-y-axis-labels {
+    width: 38px;
+  }
+
+  .y-axis-val {
+    font-size: 9px;
+  }
+
+  .point-value-tag {
+    font-size: 9px;
+    padding: 1px 4px;
+    top: -20px;
+  }
+
+  .point-date-tag {
+    font-size: 8px;
+    bottom: -18px;
+  }
+
+  /* Kształt i skład ciała */
+  .grid-cell.body-shape-cell {
+    min-height: 360px !important;
+    padding: 14px 10px !important;
+  }
+
+  .body-shape-layout-2x2 {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .comp-stacked-bar-column {
+    width: 100%;
+    height: 28px;
+    min-width: 0;
+  }
+
+  .comp-stacked-bar-container {
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+  }
+
+  .breakdown-column-2x2 {
     grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    width: 100%;
   }
-  .card-4x2, .card-3x2, .card-2x1, .card-2x2 {
-    grid-column: span 2;
+
+  .comp-box-2x2 {
+    padding: 8px 10px;
   }
+
+  .comp-label-text {
+    font-size: 11px;
+  }
+
+  .comp-box-pct {
+    font-size: 12px;
+  }
+
+  .comp-box-bottom {
+    font-size: 9px;
+  }
+
+  /* Historia pomiarów */
+  .grid-cell.history-cell {
+    min-height: 300px !important;
+    padding: 12px 10px !important;
+  }
+
+  .history-cell .cell-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .header-right-actions {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .btn-open-modal {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+    margin-top: 6px;
+  }
+
+  .measurements-table th,
+  .measurements-table td {
+    padding: 7px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  /* Formularz w modalu */
   .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .form-group.full-width {
+    grid-column: 1 !important;
+  }
+
+  .lifestyle-pills-row {
+    gap: 6px;
+  }
+
+  .lifestyle-pill-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+/* Extra Small Screens (<= 400px) */
+@media (max-width: 400px) {
+  .grid-container {
+    gap: 6px !important;
+  }
+
+  .grid-cell {
+    padding: 10px 8px !important;
+    min-height: 115px !important;
+  }
+
+  .metric-big .value {
+    font-size: 20px;
+  }
+
+  .metric-hero .hero-value {
+    font-size: 24px;
+  }
+
+  .diet-badge-hero {
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+
+  .alcohol-badge-hero {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .alcohol-meter-strip {
+    gap: 4px;
+    padding: 3px;
+  }
+
+  .meter-bar {
+    padding: 4px 2px;
+  }
+
+  .meter-bar .meter-label {
+    font-size: 9px;
+  }
+
+  .breakdown-column-2x2 {
     grid-template-columns: 1fr;
   }
 }

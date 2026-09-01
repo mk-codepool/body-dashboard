@@ -53,13 +53,21 @@ body-dashboard/
 - Zawiera logo "BODY DASHBOARD", wskaźnik stanu systemu ("SYSTEM ONLINE") oraz zegar czasu rzeczywistego oparty o Signals.
 - Główna przestrzeń pod belką zajmuje 100% pozostałej wysokości (`height: calc(100vh - 56px)`).
 
-### 3. Modularny Kwadratowy Grid i Pozycjonowanie 2D (Square Grid System)
-- Siatka CSS Grid oparta na modułach kwadratowych:
+### 3. Modularny Kwadratowy Grid i Pozycjonowanie 2D (Square Grid System) & Responsywność RWD
+- **Desktop (8 Kolumn)**:
   - `grid-template-columns: repeat(8, minmax(120px, 1fr))`
   - `grid-auto-rows: 135px` (stała wysokość modułu zapobiegająca rozciąganiu wierszy)
   - `gap: var(--grid-gap)`
-- Każdy kontener posiada jawne współrzędne 2D: `col` (1-8), `row` (1+), `colSpan` i `rowSpan`.
-- Każdy kontener może być skalowany do minimum **1×1** (pojedynczy moduł siatki).
+  - Każdy kontener posiada jawne współrzędne 2D: `col` (1-8), `row` (1+), `colSpan` i `rowSpan`.
+  - Każdy kontener może być skalowany do minimum **1×1** (pojedynczy moduł siatki).
+- **Tablet (4 Kolumny, 769px - 1100px)**:
+  - `grid-template-columns: repeat(4, minmax(0, 1fr))` z automatycznym przepływem kart 1-kolumnowych, 2-kolumnowych i pełnoszerokościowych 4-kolumnowych.
+- **Mobile / Smartfony (Maksymalnie 2 Klocki Szerokości, <= 768px)**:
+  - `grid-template-columns: repeat(2, minmax(0, 1fr)) !important`
+  - `grid-auto-rows: minmax(125px, auto) !important` oraz `gap: 8px !important`
+  - **Kafelki pojedyncze (1 klocek szerokości - `span 1`)**: TBW, Overfat, Mięśnie, Kości, BMI, Kcal, Dieta, Alkohol.
+  - **Kafelki podwójne / pełnoszerokościowe (2 klocki szerokości - `span 2`)**: Data i Godzina, Waga Ciała, Ketony w moczu, Wykres Trendu (`mainChart`), Kształt Ciała (`bodyShape`), Historia Pomiarów (`history`).
+  - Optymalizacja dotykowa (touch-friendly), responsywna górna belka (Top Bar), mobilne modale oraz czytelne wykresy bez rozciągania.
 
 ### 4. Interaktywny Tryb Edycji i Persystencja JSON (Lift-to-Drag, Resize & JSON Sync)
 - **Aktywacja**: Przycisk "Dostosuj pulpit" w prawej części górnej belki (`app.html` / `app.ts`) zasilany przez `DashboardLayoutService`.
@@ -128,7 +136,7 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
   - Backend wczytuje je automatycznie przez `process.loadEnvFile()` i wystawia `GET /api/auth/config` bez ujawniania sekretów.
   - Brak wzmianek o `.env` lub formularzy wklejania kluczy w interfejsie użytkownika.
 - **Backend DTO & Moduł Uwierzytelniania**:
-  - `UserDto` (`backend/src/auth/dto/user.dto.ts`): `id`, `sub`, `email`, `name`, `givenName`, `familyName`, `emailVerified`, `picture`, `locale`, `provider`, `createdAt`, `lastLoginAt`, `googleRawClaims`.
+  - `UserDto` (`backend/src/auth/dto/user.dto.ts`): `id`, `sub`, `email`, `name`, `givenName`, `familyName`, `emailVerified`, `picture`, `locale`, `gender`, `provider`, `createdAt`, `lastLoginAt`, `googleRawClaims`.
   - `AuthService` & `AuthController` (`/api/auth/google`, `/api/auth/config`, `/api/auth/me`).
   - Przekazywanie kontekstu użytkownika nagłówkiem HTTP `x-user-id` we wszystkich serwisach biometrii i layoutu.
 - **Frontend Uwierzytelnianie, Top Bar & Modal Profilu**:
@@ -136,7 +144,29 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
   - Przycisk profilu w prawym górnym rogu górnej belki (`top-bar`): wyświetla awatar Google i imię użytkownika lub przycisk logowania Google.
   - Pełnoekranowy modal:
     - **Dla niezalogowanego**: Oficjalne logowanie Google Identity Services (GIS).
-    - **Dla zalogowanego ("Profil użytkownika")**: Karta tożsamości z awatarem, imieniem i e-mailem, siatka parametrów udostępnionych przez Google oraz rozwijana sekcja parametrów tokena bez jakichkolwiek technicznych szczegółów backendu.
+    - **Dla zalogowanego ("Profil użytkownika")**: Karta tożsamości z awatarem, imieniem i e-mailem oraz siatka bezpiecznych parametrów użytkownika (Imię, Nazwisko, E-mail, Język, Data rejestracji, Ostatnie logowanie).
+    - **Zasada Bezpieczeństwa**: Brak surowych zrzutów tokenów JWT / parametrów technicznych w interfejsie użytkownika.
+
+### 9. Wdrożenie Produkcyjne na Render.com & Dynamiczny Resolver API
+- **Render Blueprint (`render.yaml`)**:
+  - Projekt zawiera zadeklarowaną infrastrukturę IaC w głównym pliku `render.yaml`.
+  - **Backend Web Service (`body-dashboard-backend`)**:
+    - `rootDir: backend`
+    - `buildCommand: npm install --include=dev && npm run build` (flaga `--include=dev` zapewnia dostępność `@nestjs/cli` w trakcie budowania)
+    - `startCommand: npm run start:prod`
+    - Sekrety OAuth (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) oznaczone jako `sync: false` – wartości podawane są wyłącznie w panelu Render, co chroni je w publicznym repozytorium.
+  - **Frontend Static Site (`body-dashboard-frontend`)**:
+    - `rootDir: frontend`
+    - `buildCommand: npm install --include=dev && npm run build`
+    - `staticPublishPath: dist/frontend/browser`
+    - Reguła Rewrite `/* -> /index.html` gwarantująca bezbłędny routing SPA.
+- **Wymóg Wersji Node.js (Node 22)**:
+  - Angular v22 wymaga Node.js 22. Obie usługi mają ustawioną zmienną `NODE_VERSION: 22` w `render.yaml` oraz plik `.node-version`.
+- **Dynamiczny Resolver API (`api.config.ts`)**:
+  - Funkcja `getApiBaseUrl()` w `frontend/src/app/services/api.config.ts` automatycznie rozpoznaje środowisko:
+    - `localhost` / `127.0.0.1` ➔ `http://localhost:3000`
+    - Domeny Render (`*-frontend.onrender.com`) ➔ `https://*-backend.onrender.com`
+    - Opcjonalne nadpisanie przez `localStorage.getItem('BODY_DASHBOARD_API_URL')`.
 
 ---
 
@@ -150,9 +180,9 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
    - W skryptach i komendach terminalowych należy używać `npm.cmd` oraz `npx.cmd` ze względu na politykę bezpieczeństwa PowerShell (`ExecutionPolicy`).
 
 3. **Porty sieciowe**:
-   - **4000**: Launcher Dashboard & SSE streaming
-   - **4200**: Angular Frontend Client
-   - **3000**: NestJS Backend API
+   - **4000**: Launcher Dashboard & SSE streaming (Lokalnie)
+   - **4200**: Angular Frontend Client (Lokalnie)
+   - **3000 / 10000**: NestJS Backend API (3000 lokalnie, 10000 na Renderze)
 
 ---
 
@@ -166,8 +196,8 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
   - `DashboardLayoutService`: zarządza siatką, trybem edycji i synchronizacją z `/api/layout` per user (`x-user-id`).
   - `MeasurementsService`: zarządza danymi biometrycznymi i synchronizacją z `/api/measurements` per user (`x-user-id`).
 - **Wykresy i Wizualizacje**: Wykresy wektorowe SVG z krzywymi Beziera i gradientami (brak ciężkich zewnętrznych bibliotek).
-- **Komunikacja HTTP**: Konfiguracja przez `provideHttpClient()` w `app.config.ts`, obsługa błędów za pomocą operatora `catchError` z biblioteki RxJS.
-- **CORS**: NestJS jest skonfigurowany pod kątem zapytań z portu `4200` i `4000`.
+- **Komunikacja HTTP**: Konfiguracja przez `provideHttpClient()` w `app.config.ts`, dynamiczny adres API z `getApiBaseUrl()`, obsługa błędów za pomocą operatora `catchError` z biblioteki RxJS.
+- **CORS**: NestJS jest skonfigurowany pod kątem zapytań z dowolnego źródła (`origin: '*'`).
 
 ### Backend (NestJS)
 - **Moduły i importy**: Projekt korzysta z ESM (`"type": "module"`), importy relatywne w TypeScript muszą posiadać rozszerzenie `.js` (np. `import { AppModule } from './app.module.js'`).
@@ -176,7 +206,7 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
   - `StorageService` automatycznie tworzy katalog usera i inicjalizuje pliki. Nowi użytkownicy Google startują z pustą tablicą pomiarów (`[]`).
 - **Dekoratory i Isolated Modules**: Przy wstrzykiwaniu obiektów w `@Body()` należy stosować odpowiednie DTO lub `any` i importować interfejsy z `import type`, aby uniknąć błędów metadanych w trybie ESM (`TS1272`).
 - **Health Checks**: Każdy nowy kluczowy serwis powinien być uwzględniony w sondzie `/api/health`.
-- **CORS**: W `main.ts` zawsze musi być włączony `app.enableCors()`.
+- **CORS & Nasłuchiwanie**: W `main.ts` zawsze musi być włączony `app.enableCors()` oraz nasłuchiwanie na `await app.listen(port, '0.0.0.0')`.
 
 ### Launcher
 - **Zero zewnętrznych zależności**: Launcher opiera się na wbudowanych modułach Node.js (`node:http`, `node:child_process`, `node:fs`, `node:events`).

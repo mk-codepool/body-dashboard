@@ -11,13 +11,15 @@ body-dashboard/
 ├── start.js               # Główny punkt startowy - uruchamia Launcher (`node start`)
 ├── package.json           # Skrypty pomocnicze całego projektu
 ├── AGENTS.md              # Wytyczne deweloperskie i architektoniczne
+├── render.yaml            # Render Blueprint (CI/CD: NestJS Web Service + Angular Static Site)
+├── .node-version          # Wersja Node.js (22)
 ├── .env.example           # Wzorzec konfiguracji zmiennych środowiskowych
 ├── .env                   # Lokalne klucze Google OAuth i konfiguracja
 │
 ├── frontend/              # Aplikacja frontendowa Angular v22 (SPA)
 │   ├── src/
 │   │   ├── app/           # Komponenty Standalone, Signal API, Grid 2D
-│   │   │   ├── services/  # AuthService, DashboardLayoutService, MeasurementsService
+│   │   │   ├── services/  # AuthService, DashboardLayoutService, MeasurementsService, api.config
 │   │   │   ├── components/# Reużywalny ModalComponent
 │   │   │   └── dashboard/ # Modularny Grid Biometrii, Wykresy SVG Bezier
 │   │   └── ...
@@ -47,7 +49,7 @@ body-dashboard/
 
 ---
 
-## 🚀 Uruchamianie
+## 🚀 Uruchamianie Lokalne
 
 Wystarczy wywołać komendę w katalogu głównym:
 
@@ -61,6 +63,16 @@ npm start
 ```
 
 > **Automatyczny start w przeglądarce**: Po uruchomieniu, launcher automatycznie otworzy Dashboard w domyślnej przeglądarce pod adresem `http://localhost:4000`.
+
+---
+
+## ☁️ Wdrożenie Produkcyjne (Render.com)
+
+Projekt posiada gotowy plik **Render Blueprint (`render.yaml`)**:
+1. Na [dashboard.render.com](https://dashboard.render.com) kliknij **New +** ➔ **Blueprint**.
+2. Wybierz to repozytorium z GitHuba.
+3. W formularzu podaj wartości dla kluczy Google OAuth (`GOOGLE_CLIENT_ID` oraz `GOOGLE_CLIENT_SECRET`).
+4. Kliknij **Apply** — Render automatycznie wdroży i połączy Frontend (Static Site) oraz Backend (Web Service).
 
 ---
 

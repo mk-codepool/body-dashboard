@@ -8,9 +8,10 @@ description: >-
 # Workflow Projektu Body Dashboard
 
 Niniejszy skill zawiera procedury i instrukcje krok po kroku dotyczące pracy ze stosem technologicznym projektu:
-- **Frontend**: Angular 22 (Standalone + Signals, Dark Minimalist Grid System, Google OAuth GIS, RxJS HttpClient)
+- **Frontend**: Angular 22 (Standalone + Signals, Dark Minimalist Grid System, Google OAuth GIS, Dynamic API Resolver, RxJS HttpClient)
 - **Backend**: NestJS (ESM + TypeScript, JSON Data Storage per-user, Google JWT Decoding, .env Config)
-- **Launcher**: Wbudowany menedżer procesów z Web Dashboardem i SSE
+- **Wdrożenie Produkcyjne**: Render.com Blueprint (`render.yaml`) – Web Service (NestJS) + Static Site (Angular), bezpieczne sekrety `sync: false`
+- **Launcher**: Wbudowany menedżer procesów z Web Dashboardem i SSE (wyłącznie środowisko deweloperskie)
 
 ---
 
@@ -42,7 +43,7 @@ node start
 1. **Plik `.env` w głównym katalogu**:
    - `GOOGLE_CLIENT_ID`: identyfikator klienta aplikacji internetowej z Google Cloud Console (`*.apps.googleusercontent.com`).
    - `GOOGLE_CLIENT_SECRET`: sekret klienta OAuth.
-   - `PORT`: port backendu (domyślnie `3000`).
+   - `PORT`: port backendu (domyślnie `3000` lokalnie, `10000` na Renderze).
 2. **Backend**:
    - Automatycznie wczytuje `.env` przy starcie za pomocą natywnego mechanizmu Node.js `process.loadEnvFile()`.
    - Udostępnia endpoint `GET /api/auth/config` dostarczający Client ID frontendowi.
@@ -56,6 +57,11 @@ node start
 
 - **Katalog**: `frontend/`
 - **Root komponent**: `frontend/src/app/app.ts` (górna belka z przyciskiem "Dostosuj pulpit", przyciskiem profilu Google, zegarem czasu rzeczywistego i `<router-outlet />`).
+- **Dynamiczny Resolver API (`frontend/src/app/services/api.config.ts`)**:
+  - `getApiBaseUrl()`: automatycznie rozpoznaje środowisko.
+  - Lokalnie (`localhost` / `127.0.0.1`) ➔ `http://localhost:3000`.
+  - Na Renderze (`*-frontend.onrender.com`) ➔ `https://*-backend.onrender.com`.
+  - Możliwość nadpisania przez `localStorage.getItem('BODY_DASHBOARD_API_URL')`.
 - **Serwisy Danych**:
   - `frontend/src/app/services/auth.service.ts`: zarządzanie stanem uwierzytelnienia (`currentUser`, `isLoggedIn`), integracja z Google OAuth (GIS), persystencja w `localStorage`.
   - `frontend/src/app/services/dashboard-layout.service.ts`: reaktywne pozycjonowanie 2D, tryb edycji, sprawdzanie kolizji `canPlaceWidget`, auto-sync z `PUT /api/layout` z nagłówkiem `x-user-id`.
@@ -78,14 +84,12 @@ node start
     10. Główny Panel Trendów (`5x2`) z hybrydowym wykresem SVG Bezier + HTML Overlay
     11. Kształt i Skład Ciała (`3x2`) – koncentryczne warstwy sylwetki (Kości, Mięśnie, Tłuszcz, Woda)
     12. Historia Pomiarów (`8x2`) z przyciskiem otwierania pełnego rejestru w modalu
-- **Modal Profilu Użytkownika & Logowania Google**:
+- **Modal Profilu Użytkownika & Bezpieczeństwo Danych**:
   - Przycisk w prawym górnym rogu górnej belki otwiera pełnoekranowy `ModalComponent`.
-  - **Niezalogowany**: Elegancka karta logowania z oficjalnym przyciskiem Google Identity Services.
+  - **Niezalogowany**: Karta logowania z oficjalnym przyciskiem Google Identity Services.
   - **Zalogowany ("Profil użytkownika")**:
-    - Karta tożsamości z awatarem Google, imieniem i adresem e-mail.
-    - Zestawienie atrybutów pobranych z Google: Imię i nazwisko, Imię, Nazwisko, Adres e-mail, Język i region, Data pierwszego logowania, Ostatnie logowanie.
-    - Rozwijana sekcja "Wszystkie parametry przekazane przez Google" z pełną tabelą atrybutów tokena JWT.
-    - Całkowity brak informacji technicznych o backendzie lub ścieżkach plików.
+    - Wyświetla **wyłącznie bezpieczne dane biznesowe**: Awatar, Imię i nazwisko, E-mail, Język/Region, Datę rejestracji oraz Datę ostatniego logowania.
+    - Całkowity brak surowych zrzutów tokenów JWT / parametrów technicznych w interfejsie.
 
 ---
 
@@ -93,7 +97,7 @@ node start
 
 - **Katalog**: `backend/`
 - **Katalog danych per-user**: `backend/data/users/<userId>/`
-  - `user.json` – pełne dane profilowe Google (`id`, `sub`, `name`, `givenName`, `familyName`, `email`, `emailVerified`, `picture`, `locale`, `createdAt`, `lastLoginAt`, `googleRawClaims`).
+  - `user.json` – pełne dane profilowe Google (`id`, `sub`, `name`, `givenName`, `familyName`, `email`, `emailVerified`, `picture`, `locale`, `gender`, `createdAt`, `lastLoginAt`, `googleRawClaims`).
   - `layout.json` – spersonalizowany układ modularnego grida kafelków.
   - `measurements.json` – dedykowany rejestr pomiarów biometrii.
 - **Zasada Zero Statystyk dla Nowych Kont**:
@@ -111,10 +115,30 @@ node start
   - `backend/src/storage/` (`StorageService`):
     - Centralne zarządzanie odczytem/zapisem plików w podfolderach `data/users/<userId>/`.
 - **Konwencja importów ESM**: Wszystkie importy relatywne w TypeScript muszą posiadać rozszerzenie `.js` (np. `import { AuthService } from './auth.service.js'`).
+- **Stabilność Sieciowa**: Nasłuchiwanie na `await app.listen(port, '0.0.0.0')`.
 
 ---
 
-## 5. Budowanie i Weryfikacja
+## 5. Wdrożenie Produkcyjne na Render.com (Blueprint & CI/CD)
+
+- **Plik Blueprint**: `render.yaml` w katalogu głównym.
+- **Wersja Node.js**: Wymagana wersja **Node 22** (`NODE_VERSION: 22` oraz `.node-version`) ze względu na kompilator Angular v22.
+- **Struktura Usług na Renderze**:
+  1. **`body-dashboard-backend` (Web Service)**:
+     - `rootDir: backend`
+     - `buildCommand: npm install --include=dev && npm run build` (flaga `--include=dev` zapewnia instalację `@nestjs/cli`)
+     - `startCommand: npm run start:prod`
+     - Zmienne środowiskowe: `NODE_ENV=production`, `PORT=10000`, sekrety OAuth `GOOGLE_CLIENT_ID` i `GOOGLE_CLIENT_SECRET` z oznaczeniem `sync: false` (zarządzane wyłącznie w panelu Render).
+  2. **`body-dashboard-frontend` (Static Site)**:
+     - `rootDir: frontend`
+     - `buildCommand: npm install --include=dev && npm run build`
+     - `staticPublishPath: dist/frontend/browser`
+     - Reguła Rewrite: `/* -> /index.html` dla obsługi Angular Router.
+- **Launcher**: Wykluczony z procesu wdrażania (służy tylko do lokalnego developmentu).
+
+---
+
+## 6. Budowanie i Weryfikacja
 
 ```powershell
 # Testy jednostkowe

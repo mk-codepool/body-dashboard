@@ -23,7 +23,6 @@ export class App implements OnInit, OnDestroy {
   private timerInterval?: ReturnType<typeof setInterval>;
 
   readonly googleLoginSuccessMsg = signal<string>('');
-  readonly isRawClaimsExpanded = signal<boolean>(false);
 
   readonly modalTitle = computed(() => {
     return this.authService.isLoggedIn() ? 'Profil użytkownika' : 'Logowanie Google';
@@ -31,7 +30,7 @@ export class App implements OnInit, OnDestroy {
 
   readonly modalSubtitle = computed(() => {
     return this.authService.isLoggedIn()
-      ? 'Wszystkie dane i parametry profilu udostępnione przez konto Google'
+      ? 'Dane i parametry Twojego profilu użytkownika'
       : 'Uwierzytelnij się bezpiecznie swoim kontem Google Identity Services';
   });
 
@@ -123,10 +122,6 @@ export class App implements OnInit, OnDestroy {
     if (ok) {
       this.showSuccess('Zalogowano pomyślnie przez konto Google!');
     }
-  }
-
-  toggleRawClaims(): void {
-    this.isRawClaimsExpanded.update(v => !v);
   }
 
   logout(): void {
