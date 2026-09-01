@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { DashboardLayoutService } from './services/dashboard-layout.service';
 import { AuthService } from './services/auth.service';
+import { MeasurementsService } from './services/measurements.service';
+import { NotificationService } from './services/notification.service';
 import { ModalComponent } from './components/modal/modal';
 
 declare const google: any;
@@ -17,6 +19,12 @@ declare const google: any;
 export class App implements OnInit, OnDestroy {
   readonly layoutService = inject(DashboardLayoutService);
   readonly authService = inject(AuthService);
+  readonly measurementsService = inject(MeasurementsService);
+  readonly notificationService = inject(NotificationService);
+
+  openMeasurementsModal(): void {
+    this.measurementsService.openModal();
+  }
 
   readonly currentTime = signal<string>('');
   readonly currentDate = signal<string>('');

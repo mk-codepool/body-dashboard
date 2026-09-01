@@ -1,8 +1,10 @@
-import { Component, signal, computed, inject, HostListener } from '@angular/core';
+import { Component, signal, computed, inject, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardLayoutService, DashboardWidgetConfig } from '../services/dashboard-layout.service';
 import { MeasurementsService, MeasurementRecord, AlcoholLevel, DietType } from '../services/measurements.service';
+import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services/notification.service';
 import { ModalComponent } from '../components/modal/modal';
 
 export type ChartParamKey = 
@@ -99,28 +101,24 @@ export const EMPTY_MEASUREMENT: MeasurementRecord = {
 export class DashboardComponent {
   readonly layoutService = inject(DashboardLayoutService);
   readonly measurementsService = inject(MeasurementsService);
+  readonly authService = inject(AuthService);
+  readonly notificationService = inject(NotificationService);
 
-  // Płeć użytkownika (persystowana w localStorage do norm składu ciała)
-  readonly userGender = signal<'male' | 'female'>((() => {
-    if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('body_dashboard_gender');
-      if (saved === 'female' || saved === 'male') return saved;
-    }
-    return 'male';
-  })());
-
-  setGender(gender: 'male' | 'female', event?: Event): void {
-    if (event) event.stopPropagation();
-    this.userGender.set(gender);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('body_dashboard_gender', gender);
-    }
+  constructor() {
+    effect(() => {
+      if (this.measurementsService.isModalOpen() && !this.isEditing()) {
+        this.resetToNewEntry();
+      }
+    });
   }
+
+  // Płeć użytkownika (zsynchronizowana globalnie z profilem użytkownika w AuthService)
+  readonly userGender = this.authService.userGender;
 
   // Metadane wszystkich mierzonych parametrów
   readonly paramList: ParamMeta[] = [
     { key: 'weight', label: 'Waga', unit: 'kg', color: '#06b6d4', gradientId: 'grad-weight' },
-    { key: 'totalBodyWater', label: 'Total Body Water', unit: '%', color: '#3b82f6', gradientId: 'grad-tbw' },
+    { key: 'totalBodyWater', label: 'Nawodnienie komórkowe', unit: '%', color: '#3b82f6', gradientId: 'grad-tbw' },
     { key: 'overfat', label: 'Overfat (Tłuszcz)', unit: '%', color: '#f59e0b', gradientId: 'grad-fat' },
     { key: 'muscleMass', label: 'Mięśnie', unit: '%', color: '#f43f5e', gradientId: 'grad-muscle' },
     { key: 'boneMass', label: 'Kości', unit: '%', color: '#a855f7', gradientId: 'grad-bones' },
@@ -193,6 +191,57 @@ export class DashboardComponent {
     if (!level || level === 'none') return 'BRAK POMIARU';
     if (level === 'negative') return 'BRAK KETOZY';
     return 'KETOZA AKTYWNA';
+  });
+
+  // Stan na dziś dla kafelka ketonów w moczu (pasek poziomy z przybliżoną wartością na środku)
+  readonly ketoneTodayBar = computed(() => {
+    const m = this.current();
+    const level = m.ketoneLevel || 'none';
+    const rawText = m.urineKetones || '';
+
+    let color = 'rgba(255, 255, 255, 0.15)';
+    let widthPct = 0;
+    let label = 'Brak pomiaru';
+
+    switch (level) {
+      case 'negative':
+        color = '#94a3b8';
+        widthPct = 12;
+        label = '< 0.5 mmol/L';
+        break;
+      case 'trace':
+        color = '#ec4899';
+        widthPct = 32;
+        label = '≈ 0.5 mmol/L (Ślad)';
+        break;
+      case 'low':
+        color = '#f43f5e';
+        widthPct = 56;
+        label = '≈ 1.5 mmol/L (Lekka)';
+        break;
+      case 'moderate':
+        color = '#e11d48';
+        widthPct = 78;
+        label = '≈ 4.0 mmol/L (Optymalna)';
+        break;
+      case 'high':
+        color = '#be123c';
+        widthPct = 100;
+        label = '8.0+ mmol/L (Głęboka)';
+        break;
+      default:
+        color = 'rgba(255, 255, 255, 0.12)';
+        widthPct = 0;
+        label = rawText && rawText !== 'Brak danych' ? rawText : 'Brak pomiaru';
+        break;
+    }
+
+    return {
+      level,
+      color,
+      widthPct,
+      displayLabel: label
+    };
   });
 
   // Szczegółowa klasyfikacja BMI zgodna z wytycznymi medycznymi
@@ -516,7 +565,7 @@ export class DashboardComponent {
   }
 
   // --- MODAL REJESTRU I DODAWANIA/EDYCJI POMIARÓW BIOMETRII ---
-  readonly isMeasurementModalOpen = signal<boolean>(false);
+  readonly isMeasurementModalOpen = this.measurementsService.isModalOpen;
   readonly isFormExpanded = signal<boolean>(true);
   readonly formSuccessMessage = signal<string>('');
   readonly editingRecordId = signal<string | null>(null);
@@ -529,39 +578,106 @@ export class DashboardComponent {
     return idx !== -1 ? this.history().length - idx : null;
   });
 
-  readonly ketoneOptions: { level: 'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high'; label: string; text: string; value: number; color: string }[] = [
-    { level: 'none', label: 'Brak pomiaru', text: 'Brak pomiaru', value: 0, color: '#64748b' },
-    { level: 'negative', label: 'Negatywny', text: 'Negatywny (< 0.5 mmol/L)', value: 0.1, color: '#94a3b8' },
-    { level: 'trace', label: 'Ślad', text: '0.5 mmol/L (Ślad)', value: 0.5, color: '#ec4899' },
-    { level: 'low', label: 'Lekka', text: '1.5 mmol/L (Lekka)', value: 1.5, color: '#f43f5e' },
-    { level: 'moderate', label: 'Umiarkowana', text: '4.0 mmol/L (Umiarkowana)', value: 4.0, color: '#e11d48' },
-    { level: 'high', label: 'Wysoka', text: '8.0+ mmol/L (Wysoka)', value: 8.0, color: '#be123c' }
+  readonly ketoneOptions: { level: 'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high'; label: string; text: string; value: number; color: string; displayNum: string }[] = [
+    { level: 'none', label: 'Brak', text: 'Brak pomiaru', value: 0, color: '#64748b', displayNum: '0.0 mmol/L' },
+    { level: 'negative', label: 'Negatywny', text: 'Negatywny (< 0.5 mmol/L)', value: 0.1, color: '#94a3b8', displayNum: '< 0.5 mmol/L' },
+    { level: 'trace', label: 'Ślad', text: '0.5 mmol/L (Ślad)', value: 0.5, color: '#ec4899', displayNum: '0.5 mmol/L' },
+    { level: 'low', label: 'Lekka', text: '1.5 mmol/L (Lekka)', value: 1.5, color: '#f43f5e', displayNum: '1.5 mmol/L' },
+    { level: 'moderate', label: 'Umiarkowana', text: '4.0 mmol/L (Umiarkowana)', value: 4.0, color: '#e11d48', displayNum: '4.0 mmol/L' },
+    { level: 'high', label: 'Wysoka', text: '8.0+ mmol/L (Wysoka)', value: 8.0, color: '#be123c', displayNum: '8.0+ mmol/L' }
   ];
 
   // Opcje rejestru diety
   readonly dietOptions: DietOption[] = [
-    { type: 'keto', label: 'Keto', subLabel: 'Ketoza / Tłuszcze', color: '#10b981', badgeClass: 'badge-diet-keto' },
-    { type: 'light', label: 'Lekka', subLabel: 'Zbilansowana / Lekka', color: '#06b6d4', badgeClass: 'badge-diet-light' },
-    { type: 'bad', label: 'Zła', subLabel: 'Cukry / Fast Food', color: '#f43f5e', badgeClass: 'badge-diet-bad' }
+    { type: 'keto', label: 'Keto', subLabel: '', color: '#10b981', badgeClass: 'badge-diet-keto' },
+    { type: 'low-carb', label: 'Low Carb', subLabel: '', color: '#3b82f6', badgeClass: 'badge-diet-low-carb' },
+    { type: 'light', label: 'Lekka', subLabel: '', color: '#06b6d4', badgeClass: 'badge-diet-light' },
+    { type: 'bad', label: 'Zła', subLabel: '', color: '#f43f5e', badgeClass: 'badge-diet-bad' }
   ];
 
   // Opcje rejestru alkoholu
   readonly alcoholOptions: AlcoholOption[] = [
-    { level: 'none', label: 'Brak', subLabel: 'Zero alkoholu (100% czysto)', color: '#10b981', badgeClass: 'badge-alcohol-none' },
-    { level: 'light', label: 'Lekko', subLabel: '1–2 piwa / kieliszek wina', color: '#f59e0b', badgeClass: 'badge-alcohol-light' },
-    { level: 'heavy', label: 'Ciężko', subLabel: 'Mocny alkohol / Impreza', color: '#f43f5e', badgeClass: 'badge-alcohol-heavy' }
+    { level: 'none', label: 'Brak', subLabel: '', color: '#10b981', badgeClass: 'badge-alcohol-none' },
+    { level: 'light', label: 'Lekko', subLabel: '', color: '#f59e0b', badgeClass: 'badge-alcohol-light' },
+    { level: 'heavy', label: 'Ciężko', subLabel: '', color: '#f43f5e', badgeClass: 'badge-alcohol-heavy' }
   ];
 
   // Ewaluacja diety dla aktywnego rekordu
   readonly currentDiet = computed(() => {
     const d = this.current().diet || 'keto';
+    if (d === 'low-carbon') {
+      return this.dietOptions.find(opt => opt.type === 'low-carb') || this.dietOptions[0];
+    }
     return this.dietOptions.find(opt => opt.type === d) || this.dietOptions[0];
   });
+
+  getDietLabel(diet?: string): string {
+    if (diet === 'keto') return 'Keto';
+    if (diet === 'low-carb' || diet === 'low-carbon') return 'Low Carb';
+    if (diet === 'light') return 'Lekka';
+    if (diet === 'bad') return 'Zła';
+    return 'Keto';
+  }
 
   // Ewaluacja alkoholu dla aktywnego rekordu
   readonly currentAlcohol = computed(() => {
     const a = this.current().alcohol || 'none';
     return this.alcoholOptions.find(opt => opt.level === a) || this.alcoholOptions[0];
+  });
+
+  // Minimalistyczne statystyki spożycia alkoholu (wyłącznie numer ile dni i rodzaj spożycia)
+  readonly alcoholStats = computed(() => {
+    const list = this.history();
+    if (list.length === 0) {
+      return {
+        daysCount: 0,
+        lastLevel: 'none' as AlcoholLevel,
+        lastLabel: 'Brak'
+      };
+    }
+
+    // Szukamy najnowszego wpisu z odnotowanym alkoholem (light lub heavy)
+    const lastAlcoholIndex = list.findIndex(m => m.alcohol === 'light' || m.alcohol === 'heavy');
+
+    if (lastAlcoholIndex === -1) {
+      // Brak alkoholu we wszystkich wpisach
+      let totalDays = 0;
+      try {
+        const dLatest = new Date(list[0].date).getTime();
+        const dOldest = new Date(list[list.length - 1].date).getTime();
+        totalDays = Math.max(0, Math.floor((dLatest - dOldest) / (1000 * 60 * 60 * 24)));
+      } catch {
+        totalDays = list.length;
+      }
+      return {
+        daysCount: totalDays,
+        lastLevel: 'none' as AlcoholLevel,
+        lastLabel: 'Brak'
+      };
+    }
+
+    const lastAlcoholRecord = list[lastAlcoholIndex];
+    const currentRecord = this.current();
+
+    let days = 0;
+    try {
+      const refDateStr = currentRecord.date && currentRecord.date !== '-' ? currentRecord.date : new Date().toISOString().split('T')[0];
+      const alcDateStr = lastAlcoholRecord.date;
+      const d1 = new Date(refDateStr).getTime();
+      const d2 = new Date(alcDateStr).getTime();
+      const diffTime = d1 - d2;
+      days = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+    } catch {
+      days = lastAlcoholIndex;
+    }
+
+    const opt = this.alcoholOptions.find(o => o.level === lastAlcoholRecord.alcohol) || this.alcoholOptions[0];
+
+    return {
+      daysCount: days,
+      lastLevel: lastAlcoholRecord.alcohol || 'none',
+      lastLabel: opt.label
+    };
   });
 
   // Pola formularza pomiaru
@@ -581,11 +697,11 @@ export class DashboardComponent {
 
   openAddMeasurementModal(): void {
     this.resetToNewEntry();
-    this.isMeasurementModalOpen.set(true);
+    this.measurementsService.openModal();
   }
 
   closeMeasurementModal(): void {
-    this.isMeasurementModalOpen.set(false);
+    this.measurementsService.closeModal();
   }
 
   toggleFormExpanded(): void {
@@ -661,6 +777,7 @@ export class DashboardComponent {
     this.newEntryNotes.set(record.notes || '');
 
     this.formSuccessMessage.set('');
+    this.measurementsService.openModal();
   }
 
   onWeightChange(weight: number): void {
@@ -695,18 +812,14 @@ export class DashboardComponent {
     const editId = this.editingRecordId();
     if (editId) {
       await this.measurementsService.updateMeasurement(editId, payload);
-      this.formSuccessMessage.set(`Wpis #${this.editingRecordIndex() || ''} został pomyślnie zaktualizowany!`);
-      setTimeout(() => {
-        this.formSuccessMessage.set('');
-      }, 4000);
+      this.closeMeasurementModal();
+      this.notificationService.showSuccess('Dodano pomiar');
     } else {
       const saved = await this.measurementsService.addMeasurement(payload);
       if (saved) {
         this.selectedIndex.set(0);
-        this.formSuccessMessage.set('Nowy rekord pomiarowy został pomyślnie dodany i utrwalony w bazie!');
-        setTimeout(() => {
-          this.formSuccessMessage.set('');
-        }, 4000);
+        this.closeMeasurementModal();
+        this.notificationService.showSuccess('Dodano pomiar');
       }
     }
   }

@@ -6,7 +6,7 @@ import { AuthService } from './auth.service';
 import { getApiBaseUrl } from './api.config';
 
 export type AlcoholLevel = 'none' | 'light' | 'heavy';
-export type DietType = 'light' | 'keto' | 'bad';
+export type DietType = 'keto' | 'low-carb' | 'low-carbon' | 'light' | 'bad';
 
 export interface MeasurementRecord {
   id: string;
@@ -163,6 +163,15 @@ export class MeasurementsService {
   );
   readonly isLoading = signal<boolean>(false);
   readonly isSyncing = signal<boolean>(false);
+  readonly isModalOpen = signal<boolean>(false);
+
+  openModal(): void {
+    this.isModalOpen.set(true);
+  }
+
+  closeModal(): void {
+    this.isModalOpen.set(false);
+  }
 
   constructor() {
     this.loadFromBackend();

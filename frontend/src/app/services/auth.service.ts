@@ -43,6 +43,7 @@ export class AuthService {
   private readonly apiUrl = `${getApiBaseUrl()}/api/auth`;
 
   readonly currentUser = signal<UserDto | null>(this.loadStoredUser());
+  readonly userGender = signal<'male' | 'female'>(this.loadStoredGender());
   readonly isAuthModalOpen = signal<boolean>(false);
   readonly isLoading = signal<boolean>(false);
   readonly errorMessage = signal<string>('');
@@ -88,6 +89,28 @@ export class AuthService {
         }
       }
     });
+  }
+
+  private loadStoredGender(): 'male' | 'female' {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('body_dashboard_gender');
+      if (saved === 'female' || saved === 'male') return saved;
+    }
+    const user = this.loadStoredUser();
+    if (user?.gender === 'female' || user?.gender === 'male') {
+      return user.gender;
+    }
+    return 'male';
+  }
+
+  setGender(gender: 'male' | 'female'): void {
+    this.userGender.set(gender);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('body_dashboard_gender', gender);
+    }
+    if (this.currentUser()) {
+      this.currentUser.update(u => u ? { ...u, gender } : null);
+    }
   }
 
   private loadStoredUser(): UserDto | null {

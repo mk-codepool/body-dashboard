@@ -39,669 +39,567 @@
 
   <!-- Siatka Kwadratowa z dynamicznym Drag & Drop i Skalowaniem -->
   <div class="grid-container" [class.edit-mode-active]="layoutService.isEditMode()">
-    
+
     <!-- Warstwa siatki podkładowej (Blueprint Grid) widoczna w trybie edycji / podczas przeciągania -->
     @if (layoutService.isEditMode()) {
-      <div class="blueprint-grid-layer" [class.is-dragging]="activeDragWidget() !== null">
-        @for (tile of blueprintGridTiles; track $index) {
-          <div class="blueprint-tile" [style.grid-column]="tile.col" [style.grid-row]="tile.row">
-            <span class="blueprint-plus">+</span>
-          </div>
-        }
+    <div class="blueprint-grid-layer" [class.is-dragging]="activeDragWidget() !== null">
+      @for (tile of blueprintGridTiles; track $index) {
+      <div class="blueprint-tile" [style.grid-column]="tile.col" [style.grid-row]="tile.row">
+        <span class="blueprint-plus">+</span>
       </div>
+      }
+    </div>
     }
 
     <!-- Cień / Wskaźnik celu upuszczenia w siatce -->
     @if (activeDragWidget() && dragCandidateSlot()) {
-      <div 
-        class="drag-candidate-placeholder"
-        [class.is-valid]="dragCandidateSlot()!.isValid"
-        [class.is-invalid]="!dragCandidateSlot()!.isValid"
-        [style.grid-column]="dragCandidateSlot()!.col + ' / span ' + dragCandidateSlot()!.colSpan"
-        [style.grid-row]="dragCandidateSlot()!.row + ' / span ' + dragCandidateSlot()!.rowSpan"
-      >
-        <div class="placeholder-content font-mono">
-          @if (dragCandidateSlot()!.isValid) {
-            <span class="status-valid">✓ UPUŚĆ TUTAJ (KOL {{ dragCandidateSlot()!.col }}, WRS {{ dragCandidateSlot()!.row }})</span>
-          } @else {
-            <span class="status-invalid">✗ BRAK MIEJSCA</span>
-          }
-        </div>
+    <div class="drag-candidate-placeholder" [class.is-valid]="dragCandidateSlot()!.isValid"
+      [class.is-invalid]="!dragCandidateSlot()!.isValid"
+      [style.grid-column]="dragCandidateSlot()!.col + ' / span ' + dragCandidateSlot()!.colSpan"
+      [style.grid-row]="dragCandidateSlot()!.row + ' / span ' + dragCandidateSlot()!.rowSpan">
+      <div class="placeholder-content font-mono">
+        @if (dragCandidateSlot()!.isValid) {
+        <span class="status-valid">✓ UPUŚĆ TUTAJ (KOL {{ dragCandidateSlot()!.col }}, WRS {{ dragCandidateSlot()!.row
+          }})</span>
+        } @else {
+        <span class="status-invalid">✗ BRAK MIEJSCA</span>
+        }
       </div>
+    </div>
     }
 
     <!-- Kafelki Dashboardu (2D Grid Positioning) -->
     @for (widget of layoutService.widgets(); track widget.id; let i = $index) {
-      <div 
-        #cellElem
-        class="grid-cell"
-        [class.timestamp-cell]="widget.id === 'timestamp'"
-        [class.weight-cell]="widget.id === 'weight'"
-        [class.tbw-cell]="widget.id === 'tbw'"
-        [class.overfat-cell]="widget.id === 'overfat'"
-        [class.muscle-cell]="widget.id === 'muscleMass'"
-        [class.bone-cell]="widget.id === 'boneMass'"
-        [class.ketone-cell]="widget.id === 'ketones'"
-        [class.bmi-cell]="widget.id === 'bmi'"
-        [class.kcal-cell]="widget.id === 'kcal'"
-        [class.diet-cell]="widget.id === 'diet'"
-        [class.alcohol-cell]="widget.id === 'alcohol'"
-        [class.main-chart-cell]="widget.id === 'mainChart'"
-        [class.body-shape-cell]="widget.id === 'bodyShape'"
-        [class.history-cell]="widget.id === 'history'"
-        [class.is-edit-mode]="layoutService.isEditMode()"
-        [class.is-lifted]="activeDragWidget()?.id === widget.id"
-        [attr.data-widget-id]="widget.id"
-        [style.grid-column]="widget.col + ' / span ' + widget.colSpan"
-        [style.grid-row]="widget.row + ' / span ' + widget.rowSpan"
-        [style.transform]="activeDragWidget()?.id === widget.id ? 'translate3d(' + dragPointerDelta().x + 'px, ' + dragPointerDelta().y + 'px, 0) scale(1.03)' : null"
-      >
+    <div #cellElem class="grid-cell" [class.timestamp-cell]="widget.id === 'timestamp'"
+      [class.weight-cell]="widget.id === 'weight'" [class.tbw-cell]="widget.id === 'tbw'"
+      [class.overfat-cell]="widget.id === 'overfat'" [class.muscle-cell]="widget.id === 'muscleMass'"
+      [class.bone-cell]="widget.id === 'boneMass'" [class.ketone-cell]="widget.id === 'ketones'"
+      [class.bmi-cell]="widget.id === 'bmi'" [class.kcal-cell]="widget.id === 'kcal'"
+      [class.diet-cell]="widget.id === 'diet'" [class.alcohol-cell]="widget.id === 'alcohol'"
+      [class.main-chart-cell]="widget.id === 'mainChart'" [class.body-shape-cell]="widget.id === 'bodyShape'"
+      [class.history-cell]="widget.id === 'history'" [class.is-edit-mode]="layoutService.isEditMode()"
+      [class.is-lifted]="activeDragWidget()?.id === widget.id" [attr.data-widget-id]="widget.id"
+      [style.grid-column]="widget.col + ' / span ' + widget.colSpan"
+      [style.grid-row]="widget.row + ' / span ' + widget.rowSpan"
+      [style.transform]="activeDragWidget()?.id === widget.id ? 'translate3d(' + dragPointerDelta().x + 'px, ' + dragPointerDelta().y + 'px, 0) scale(1.03)' : null">
 
-        <!-- Pasek Kontrolek Edycji (widoczny w trybie edycji) -->
-        @if (layoutService.isEditMode()) {
-          <div 
-            class="edit-cell-header" 
-            (pointerdown)="onDragPointerDown(widget, $event, cellElem)"
-            title="Chwyć aby unieść i przenieść na wolne pole">
-            <div class="drag-grip">
-              <svg class="grip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="8" cy="6" r="1.5" fill="currentColor"/>
-                <circle cx="8" cy="12" r="1.5" fill="currentColor"/>
-                <circle cx="8" cy="18" r="1.5" fill="currentColor"/>
-                <circle cx="16" cy="6" r="1.5" fill="currentColor"/>
-                <circle cx="16" cy="12" r="1.5" fill="currentColor"/>
-                <circle cx="16" cy="18" r="1.5" fill="currentColor"/>
-              </svg>
-              <span class="grip-label">{{ widget.title }}</span>
-            </div>
-            
-            <div class="size-controls" (pointerdown)="$event.stopPropagation()">
-              <span class="grid-badge font-mono">{{ widget.colSpan }} × {{ widget.rowSpan }}</span>
-            </div>
-          </div>
-        }
+      <!-- Pasek Kontrolek Edycji (widoczny w trybie edycji) -->
+      @if (layoutService.isEditMode()) {
+      <div class="edit-cell-header" (pointerdown)="onDragPointerDown(widget, $event, cellElem)"
+        title="Chwyć aby unieść i przenieść na wolne pole">
+        <div class="drag-grip">
+          <svg class="grip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="8" cy="6" r="1.5" fill="currentColor" />
+            <circle cx="8" cy="12" r="1.5" fill="currentColor" />
+            <circle cx="8" cy="18" r="1.5" fill="currentColor" />
+            <circle cx="16" cy="6" r="1.5" fill="currentColor" />
+            <circle cx="16" cy="12" r="1.5" fill="currentColor" />
+            <circle cx="16" cy="18" r="1.5" fill="currentColor" />
+          </svg>
+          <span class="grip-label">{{ widget.title }}</span>
+        </div>
 
-        <!-- Zawartość kafelka w zależności od typu -->
-        @switch (widget.id) {
-          
-          <!-- 1. DATA I GODZINA POMIARU -->
-          @case ('timestamp') {
-            <div class="cell-header">
-              <div class="header-group">
-                <span class="cell-title">DATA I GODZINA POMIARU</span>
-                <span class="cell-subtitle">Aktywny rekord biometrii</span>
-              </div>
-              <span class="badge font-mono">POMIAR #{{ selectedIndex() + 1 }}</span>
-            </div>
-            <div class="cell-body row-split">
-              <div class="split-col">
-                <span class="stat-label">DATA</span>
-                <span class="stat-value font-mono text-cyan">{{ current().date }}</span>
-                <span class="sub-text text-muted">{{ current().notes || 'Pomiary poranne' }}</span>
-              </div>
-              <div class="split-divider"></div>
-              <div class="split-col">
-                <span class="stat-label">GODZINA</span>
-                <span class="stat-value font-mono text-primary">{{ current().time }}</span>
-                <span class="sub-text text-emerald">● Wykonano</span>
-              </div>
-            </div>
-          }
-
-          <!-- 2. WAGA (2x1) -->
-          @case ('weight') {
-            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('weight')">
-              <span class="cell-title">WAGA CIAŁA</span>
-              @if (weightDelta() !== null) {
-                <span class="trend-badge" [class.trend-down]="weightDelta()! < 0" [class.trend-up]="weightDelta()! > 0">
-                  {{ weightDelta()! > 0 ? '+' : '' }}{{ weightDelta() }} kg
-                </span>
-              }
-            </div>
-            <div class="cell-body row-split" (click)="!layoutService.isEditMode() && setChartParam('weight')">
-              <div class="metric-hero">
-                <span class="hero-value font-mono">{{ current().weight }}</span>
-                <span class="hero-unit">kg</span>
-              </div>
-              <div class="mini-chart-box">
-                <svg class="sparkline-svg" viewBox="0 0 100 32">
-                  <path [attr.d]="getSparkline('weight').area" fill="url(#grad-weight)" />
-                  <path [attr.d]="getSparkline('weight').line" fill="none" stroke="#06b6d4" stroke-width="1.8" stroke-linecap="round" />
-                </svg>
-                <span class="sparkline-label font-mono">Trend 7 dni</span>
-              </div>
-            </div>
-          }
-
-          <!-- 3. TOTAL BODY WATER (TBW) -->
-          @case ('tbw') {
-            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('totalBodyWater')">
-              <span class="cell-title">TOTAL BODY WATER</span>
-              <span class="badge font-mono">TBW</span>
-            </div>
-            <div class="cell-body column-flow" (click)="!layoutService.isEditMode() && setChartParam('totalBodyWater')">
-              <div class="tbw-display">
-                <div class="metric-big">
-                  <span class="value font-mono text-blue">{{ current().totalBodyWater }}</span>
-                  <span class="unit">%</span>
-                </div>
-                <span class="stat-sub text-muted font-mono">≈ {{ waterLiters() }} L wody</span>
-              </div>
-
-              <div class="mini-chart-box full-w">
-                <svg class="sparkline-svg" viewBox="0 0 100 28">
-                  <path [attr.d]="getSparkline('totalBodyWater').area" fill="url(#grad-tbw)" />
-                  <path [attr.d]="getSparkline('totalBodyWater').line" fill="none" stroke="#3b82f6" stroke-width="1.8" />
-                </svg>
-                <span class="sparkline-label font-mono">Trend pomiarów</span>
-              </div>
-
-              <div class="tbw-norm-box text-center">
-                <span class="stat-label">Nawodnienie komórkowe</span>
-                <span class="metric-sub status-good justify-center">Norma: 55 – 65%</span>
-              </div>
-            </div>
-          }
-
-          <!-- 4. OVERFAT / TKANKA TŁUSZCZOWA -->
-          @case ('overfat') {
-            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('overfat')">
-              <span class="cell-title">OVERFAT</span>
-              <div class="gender-toggle-wrap" (click)="$event.stopPropagation()" title="Przełącz normy: Kobieta / Mężczyzna">
-                <button 
-                  type="button" 
-                  class="gender-pill-btn" 
-                  [class.active]="userGender() === 'male'" 
-                  (click)="setGender('male', $event)">M</button>
-                <button 
-                  type="button" 
-                  class="gender-pill-btn" 
-                  [class.active]="userGender() === 'female'" 
-                  (click)="setGender('female', $event)">K</button>
-              </div>
-            </div>
-            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('overfat')">
-              <div class="metric-big">
-                <span class="value font-mono text-amber">{{ current().overfat }}</span>
-                <span class="unit">%</span>
-              </div>
-              <div class="mini-chart-box">
-                <svg class="sparkline-svg" viewBox="0 0 100 24">
-                  <path [attr.d]="getSparkline('overfat').area" fill="url(#grad-fat)" />
-                  <path [attr.d]="getSparkline('overfat').line" fill="none" stroke="#f59e0b" stroke-width="1.8" />
-                </svg>
-              </div>
-              <span class="metric-sub font-semibold" [ngClass]="fatEvaluation().statusClass" [title]="fatEvaluation().fullLabel">
-                {{ fatEvaluation().label }}
-              </span>
-              <span class="sub-text text-muted font-mono">{{ fatEvaluation().normText }}</span>
-            </div>
-          }
-
-          <!-- 5. MIĘŚNIE -->
-          @case ('muscleMass') {
-            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('muscleMass')">
-              <span class="cell-title">MIĘŚNIE</span>
-              <span class="tag-score font-mono">MASA</span>
-            </div>
-            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('muscleMass')">
-              <div class="metric-big">
-                <span class="value font-mono text-stat-muscle">{{ current().muscleMass }}</span>
-                <span class="unit">%</span>
-              </div>
-              <div class="mini-chart-box">
-                <svg class="sparkline-svg" viewBox="0 0 100 24">
-                  <path [attr.d]="getSparkline('muscleMass').area" fill="url(#grad-muscle)" />
-                  <path [attr.d]="getSparkline('muscleMass').line" fill="none" stroke="#f43f5e" stroke-width="1.8" />
-                </svg>
-              </div>
-              <span class="metric-sub text-muted font-mono">≈ {{ muscleKg() }} kg masy</span>
-            </div>
-          }
-
-          <!-- 6. KOŚCI -->
-          @case ('boneMass') {
-            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('boneMass')">
-              <span class="cell-title">KOŚCI</span>
-              <span class="tag-score font-mono">MINERAŁY</span>
-            </div>
-            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('boneMass')">
-              <div class="metric-big">
-                <span class="value font-mono text-purple">{{ current().boneMass }}</span>
-                <span class="unit">%</span>
-              </div>
-              <div class="mini-chart-box">
-                <svg class="sparkline-svg" viewBox="0 0 100 24">
-                  <path [attr.d]="getSparkline('boneMass').area" fill="url(#grad-bones)" />
-                  <path [attr.d]="getSparkline('boneMass').line" fill="none" stroke="#a855f7" stroke-width="1.8" />
-                </svg>
-              </div>
-              <span class="metric-sub text-muted font-mono">≈ {{ boneKg() }} kg minerałów</span>
-            </div>
-          }
-
-          <!-- 7. BMI -->
-          @case ('bmi') {
-            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('bmi')">
-              <span class="cell-title">BMI</span>
-              <span class="tag-score font-mono">INDEX</span>
-            </div>
-            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('bmi')">
-              <div class="metric-big">
-                <span class="value font-mono text-sky">{{ current().bmi }}</span>
-              </div>
-              <div class="mini-chart-box">
-                <svg class="sparkline-svg" viewBox="0 0 100 24">
-                  <path [attr.d]="getSparkline('bmi').area" fill="url(#grad-bmi)" />
-                  <path [attr.d]="getSparkline('bmi').line" fill="none" stroke="#0ea5e9" stroke-width="1.8" />
-                </svg>
-              </div>
-              <span class="metric-sub font-semibold" [ngClass]="bmiEvaluation().statusClass" [title]="bmiEvaluation().fullLabel">
-                {{ bmiEvaluation().label }}
-              </span>
-            </div>
-          }
-
-          <!-- 8. KCAL (BMR) -->
-          @case ('kcal') {
-            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('kcal')">
-              <span class="cell-title">KCAL</span>
-              <span class="tag-score font-mono">BMR</span>
-            </div>
-            <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('kcal')">
-              <div class="metric-big">
-                <span class="value font-mono text-orange">{{ current().kcal }}</span>
-                <span class="unit">kcal</span>
-              </div>
-              <div class="mini-chart-box">
-                <svg class="sparkline-svg" viewBox="0 0 100 24">
-                  <path [attr.d]="getSparkline('kcal').area" fill="url(#grad-kcal)" />
-                  <path [attr.d]="getSparkline('kcal').line" fill="none" stroke="#f97316" stroke-width="1.8" />
-                </svg>
-              </div>
-              <span class="metric-sub text-muted">Zapotrzebowanie</span>
-            </div>
-          }
-
-          <!-- 9. KETONY W MOCZU -->
-          @case ('ketones') {
-            <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('ketoneValue')">
-              <span class="cell-title">KETONY W MOCZU</span>
-              <span 
-                class="badge ketone-badge font-mono" 
-                [class.badge-active]="isKetosisActive()"
-                [class.badge-muted]="!isKetosisActive()">
-                {{ ketoneBadgeText() }}
-              </span>
-            </div>
-            <div class="cell-body" (click)="!layoutService.isEditMode() && setChartParam('ketoneValue')">
-              <div class="ketone-top-row">
-                <div class="ketone-value font-mono text-pink">{{ current().urineKetones || 'Brak pomiaru' }}</div>
-                <div class="mini-chart-box-inline">
-                  <svg class="sparkline-svg" viewBox="0 0 70 20">
-                    <path [attr.d]="getSparkline('ketoneValue').area" fill="url(#grad-ketones)" />
-                    <path [attr.d]="getSparkline('ketoneValue').line" fill="none" stroke="#ec4899" stroke-width="1.8" />
-                  </svg>
-                </div>
-              </div>
-              
-              <!-- Pasek kolorymetryczny testu paskowego -->
-              <div class="ketone-strip-scale">
-                <div class="strip-step step-neg" title="Negatywny (< 0.5 mmol/L)" [class.active]="current().ketoneLevel === 'negative'">
-                  <span>0</span>
-                </div>
-                <div class="strip-step step-trace" title="Ślad (0.5 - 1.5 mmol/L)" [class.active]="current().ketoneLevel === 'trace'">
-                  <span>0.5</span>
-                </div>
-                <div class="strip-step step-low" title="Niski (1.5 - 4.0 mmol/L)" [class.active]="current().ketoneLevel === 'low'">
-                  <span>1.5</span>
-                </div>
-                <div class="strip-step step-mod" title="Średni (4.0 - 8.0 mmol/L)" [class.active]="current().ketoneLevel === 'moderate'">
-                  <span>4.0</span>
-                </div>
-                <div class="strip-step step-high" title="Wysoki (> 8.0 mmol/L)" [class.active]="current().ketoneLevel === 'high'">
-                  <span>8.0+</span>
-                </div>
-              </div>
-              <div class="scale-labels">
-                <span>Negatywny</span>
-                <span>Ślad</span>
-                <span>Lekka</span>
-                <span>Optymalna</span>
-                <span>Głęboka</span>
-              </div>
-            </div>
-          }
-
-          <!-- 10. UTRZYMANIE DIETY (1x1) -->
-          @case ('diet') {
-            <div class="cell-header">
-              <span class="cell-title">DIETA</span>
-              <span class="tag-score font-mono" [style.color]="currentDiet().color">{{ currentDiet().label }}</span>
-            </div>
-            <div class="cell-body center-align">
-              <div class="diet-display-box">
-                <span class="diet-badge-hero font-mono" [ngClass]="currentDiet().badgeClass">
-                  {{ currentDiet().label }}
-                </span>
-              </div>
-              <span class="metric-sub font-semibold" [style.color]="currentDiet().color">
-                {{ currentDiet().subLabel }}
-              </span>
-              <div class="diet-status-dots">
-                <span class="diet-dot-step" [class.active]="current().diet === 'keto'" title="Keto">K</span>
-                <span class="diet-dot-step" [class.active]="current().diet === 'light'" title="Lekka">L</span>
-                <span class="diet-dot-step" [class.active]="current().diet === 'bad'" title="Zła">Z</span>
-              </div>
-            </div>
-          }
-
-          <!-- 11. SPOŻYCIE ALKOHOLU (2x1) -->
-          @case ('alcohol') {
-            <div class="cell-header">
-              <span class="cell-title">SPOŻYCIE ALKOHOLU</span>
-              <span class="badge font-mono" [style.color]="currentAlcohol().color">{{ currentAlcohol().label }}</span>
-            </div>
-            <div class="cell-body alcohol-cell-body">
-              <div class="alcohol-top-status">
-                <span class="alcohol-badge-hero font-mono" [ngClass]="currentAlcohol().badgeClass">
-                  {{ currentAlcohol().label }}
-                </span>
-                <span class="alcohol-sub-info text-muted font-mono">
-                  {{ currentAlcohol().subLabel }}
-                </span>
-              </div>
-
-              <!-- 3-stopniowy wskaźnik diodowy alkoholu -->
-              <div class="alcohol-meter-strip">
-                <div class="meter-bar step-none" [class.active]="current().alcohol === 'none'" title="Brak alkoholu">
-                  <span class="meter-dot"></span>
-                  <span class="meter-label font-mono">BRAK</span>
-                </div>
-                <div class="meter-bar step-light" [class.active]="current().alcohol === 'light'" title="Lekko (1-2 drinki / piwo)">
-                  <span class="meter-dot"></span>
-                  <span class="meter-label font-mono">LEKKO</span>
-                </div>
-                <div class="meter-bar step-heavy" [class.active]="current().alcohol === 'heavy'" title="Ciężko (duża ilość)">
-                  <span class="meter-dot"></span>
-                  <span class="meter-label font-mono">CIĘŻKO</span>
-                </div>
-              </div>
-            </div>
-          }
-
-          <!-- 12. GŁÓWNY INTERAKTYWNY PANEL WYKRESÓW DLA KAŻDEGO PARAMETRU -->
-          @case ('mainChart') {
-            <div class="cell-header">
-              <div class="header-group">
-                <div class="title-with-badge">
-                  <span class="cell-title">ANALIZA TRENDU BIOMETRYCZNEGO</span>
-                  <span class="badge font-mono" [style.color]="activeParamMeta().color">
-                    {{ activeParamMeta().label }}: {{ current()[activeParamKey()] }} {{ activeParamMeta().unit }}
-                  </span>
-                </div>
-                <span class="cell-subtitle">Wybierz parametr aby zobaczyć pełną historię i krzywą zmian</span>
-              </div>
-              <div class="chart-summary-stat font-mono">
-                <span class="stat-small-label">{{ mainChartData().isSingle ? 'STAN BAZOWY:' : 'ZMIANA 7D:' }}</span>
-                <span class="stat-small-val" [class.text-emerald]="mainChartData().delta <= 0" [class.text-rose]="mainChartData().delta > 0">
-                  {{ mainChartData().isSingle ? '1 pomiar' : (mainChartData().delta > 0 ? '+' : '') + mainChartData().delta + ' ' + activeParamMeta().unit }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Przełącznik parametrów (Pill Tabs) -->
-            <div class="param-tabs-container">
-              @for (p of paramList; track p.key) {
-                <button 
-                  type="button"
-                  class="param-tab-btn" 
-                  [class.active]="activeParamKey() === p.key"
-                  (click)="setChartParam(p.key)">
-                  <span class="tab-dot" [style.background-color]="p.color"></span>
-                  <span>{{ p.label }}</span>
-                </button>
-              }
-            </div>
-
-            <!-- Nowoczesny, w pełni responsywny kontener wykresu (SVG Canvas + HTML Overlay) -->
-            <div class="main-svg-chart-container">
-              @if (!hasMeasurements()) {
-                <div class="empty-chart-box">
-                  <span class="empty-chart-title">BRAK PUNKTÓW POMIAROWYCH</span>
-                  <span class="empty-chart-desc text-muted">Zarejestruj pierwszy pomiar biometrii za pomocą przycisku poniżej, aby wygenerować analizę trendu.</span>
-                </div>
-              } @else {
-                <!-- Oś Y: Wartości min, mid, max (HTML - idealna czcionka bez zniekształceń proporcji) -->
-                <div class="chart-y-axis-labels">
-                  <span class="y-axis-val font-mono top-val">{{ mainChartData().maxValFormatted }}</span>
-                  <span class="y-axis-val font-mono mid-val">{{ mainChartData().midValFormatted }}</span>
-                  <span class="y-axis-val font-mono btm-val">{{ mainChartData().minValFormatted }}</span>
-                </div>
-
-                <!-- Obszar graficzny z wektorami SVG i punktami HTML -->
-                <div class="chart-graph-canvas">
-                  <svg class="main-chart-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-                    <!-- Poziome linie siatki pomocniczej z zachowaniem stałej grubości -->
-                    <line x1="0" y1="140" x2="1000" y2="140" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-                    <line x1="0" y1="500" x2="1000" y2="500" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-                    <line x1="0" y1="860" x2="1000" y2="860" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-
-                    <!-- Obszar gradientu pod wykresem -->
-                    <path [attr.d]="mainChartData().areaPath" [attr.fill]="'url(#' + activeParamMeta().gradientId + ')'" />
-
-                    <!-- Główna linia wykresu (stała grubość 2.5px niezależnie od rozciągnięcia) -->
-                    <path 
-                      [attr.d]="mainChartData().linePath" 
-                      fill="none" 
-                      [attr.stroke]="activeParamMeta().color" 
-                      vector-effect="non-scaling-stroke"
-                      [attr.stroke-dasharray]="mainChartData().isSingle ? '6,6' : 'none'"
-                      stroke-width="2.5" 
-                      stroke-linecap="round" 
-                      stroke-linejoin="round" />
-                  </svg>
-
-                  <!-- Warstwa punktów i etykiet HTML (idealne koła, ostre cyfry JetBrains Mono) -->
-                  <div class="chart-points-overlay">
-                    @for (pt of mainChartData().points; track pt.date + $index) {
-                      <div class="chart-point-node" [style.left.%]="pt.xPct" [style.top.%]="pt.yPct">
-                        <!-- Poświata punktu -->
-                        <div class="point-glow-pulse" [style.background-color]="activeParamMeta().color"></div>
-                        
-                        <!-- Okrągły punkt (zawsze perfekcyjnie okrągły 8x8px) -->
-                        <div class="point-core-dot" [style.background-color]="activeParamMeta().color"></div>
-                        
-                        <!-- Etykieta z wartością (zawsze ostra i proporcjonalna) -->
-                        <div class="point-value-tag font-mono">
-                          {{ pt.val }}
-                        </div>
-
-                        <!-- Etykieta daty pod spodem -->
-                        <div class="point-date-tag font-mono">
-                          {{ pt.date }}
-                        </div>
-                      </div>
-                    }
-
-                    @if (mainChartData().isSingle) {
-                      <div class="single-point-badge font-mono">
-                        <span class="badge-dot" [style.background-color]="activeParamMeta().color"></span>
-                        <span>PUNKT BAZOWY (1 POMIAR)</span>
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          }
-
-          <!-- 11. KSZTAŁT CIAŁA I PROCENTOWY SKŁAD (WARSTWY KONCENTRYCZNE) -->
-          @case ('bodyShape') {
-            <div class="cell-header">
-              <div class="header-group">
-                <span class="cell-title">KSZTAŁT I SKŁAD CIAŁA</span>
-                <span class="cell-subtitle font-mono">{{ current().weight }} kg = 100% MASY</span>
-              </div>
-              <span class="badge font-mono">ANATOMIA 2X2</span>
-            </div>
-
-            <div class="cell-body body-shape-layout-2x2">
-              <div class="comp-stacked-bar-column">
-                <div class="comp-stacked-bar-container">
-                  @for (item of bodyComposition(); track item.id) {
-                    <div 
-                      class="comp-bar-segment"
-                      [class.is-hovered]="hoveredLayer() === item.id"
-                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== item.id"
-                      [style.flex-grow]="item.percent > 0 ? item.percent : 1"
-                      [style.--segment-color]="item.color"
-                      [style.background-color]="item.color"
-                      [title]="item.label + ': ' + item.percent + '% (' + item.kg + ' kg)'"
-                      (mouseenter)="setHoveredLayer(item.id)"
-                      (mouseleave)="setHoveredLayer(null)">
-                    </div>
-                  }
-                </div>
-              </div>
-
-              <div class="breakdown-column-2x2">
-                @for (item of bodyComposition(); track item.id) {
-                  <div 
-                    class="comp-box-2x2"
-                    [class.is-hovered]="hoveredLayer() === item.id"
-                    [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== item.id"
-                    (mouseenter)="setHoveredLayer(item.id)"
-                    (mouseleave)="setHoveredLayer(null)">
-                    <div class="comp-box-top">
-                      <div class="comp-box-title">
-                        <span class="comp-dot" [style.background-color]="item.color"></span>
-                        <span class="comp-label-text">{{ item.label }}</span>
-                      </div>
-                      <span class="comp-box-pct font-mono" [style.color]="item.color">{{ item.percent }}%</span>
-                    </div>
-                    <div class="comp-bar-container">
-                      <div class="comp-bar-fill" [style.background-color]="item.color" [style.width.%]="item.percent"></div>
-                    </div>
-                    <div class="comp-box-bottom font-mono text-muted">
-                      <span>Masa: {{ item.kg }} kg</span>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- 12. HISTORIA POMIARÓW -->
-          @case ('history') {
-            <div class="cell-header">
-              <div class="header-group">
-                <span class="cell-title">HISTORIA I REJESTR POMIARÓW CIAŁA</span>
-                <span class="cell-subtitle">Kliknij wiersz aby załadować wybrany punkt czasowy na kafelki</span>
-              </div>
-              <div class="header-right-actions">
-                <button 
-                  type="button" 
-                  class="btn-open-modal"
-                  (click)="openAddMeasurementModal()"
-                  title="Otwórz pełny rejestr i dodaj nowy pomiar">
-                  <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  <span>Dodaj pomiar</span>
-                </button>
-                <span class="badge font-mono">{{ history().length }} WPISY</span>
-              </div>
-            </div>
-            <div class="cell-body table-responsive">
-              <table class="measurements-table">
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Godzina</th>
-                    <th>Waga</th>
-                    <th>TBW</th>
-                    <th>Overfat</th>
-                    <th>Mięśnie</th>
-                    <th>Kości</th>
-                    <th>BMI</th>
-                    <th>Kcal</th>
-                    <th>Ketony</th>
-                    <th>Dieta</th>
-                    <th>Alkohol</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (item of history(); track item.id; let rowIdx = $index) {
-                    <tr [class.selected]="rowIdx === selectedIndex()" (click)="selectMeasurement(rowIdx)">
-                      <td class="font-mono text-primary font-semibold">{{ item.date }}</td>
-                      <td class="font-mono text-muted">{{ item.time }}</td>
-                      <td class="font-mono text-cyan font-bold">{{ item.weight }} kg</td>
-                      <td class="font-mono text-blue">{{ item.totalBodyWater }}%</td>
-                      <td class="font-mono text-amber">{{ item.overfat }}%</td>
-                      <td class="font-mono text-stat-muscle">{{ item.muscleMass }}%</td>
-                      <td class="font-mono text-purple">{{ item.boneMass }}%</td>
-                      <td class="font-mono text-sky">{{ item.bmi }}</td>
-                      <td class="font-mono text-orange">{{ item.kcal }}</td>
-                      <td class="font-mono text-pink">{{ item.urineKetones }}</td>
-                      <td>
-                        <span class="tag-status" [ngClass]="'diet-' + (item.diet || 'keto')">
-                          {{ item.diet === 'keto' ? 'Keto' : item.diet === 'light' ? 'Lekka' : 'Zła' }}
-                        </span>
-                      </td>
-                      <td>
-                        <span class="tag-status" [ngClass]="'alcohol-' + (item.alcohol || 'none')">
-                          {{ item.alcohol === 'none' ? 'Brak' : item.alcohol === 'light' ? 'Lekko' : 'Ciężko' }}
-                        </span>
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td colspan="12" class="empty-table-msg font-mono text-muted text-center">
-                        Brak zarejestrowanych pomiarów. Kliknij "+ Dodaj pomiar" powyżej, aby wprowadzić pierwszy wpis.
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        }
-
-        <!-- Uchwyt do skokowej zmiany rozmiaru w siatce (w prawym dolnym rogu) -->
-        @if (layoutService.isEditMode()) {
-          <div 
-            class="grid-resize-handle" 
-            (pointerdown)="onResizePointerDown(widget, $event, cellElem)"
-            title="Przeciągnij aby zmienić rozmiar kafelka skokowo">
-            <svg class="resize-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-              <line x1="14" y1="6" x2="6" y2="14" stroke-width="2" stroke-linecap="round" />
-              <line x1="14" y1="10" x2="10" y2="14" stroke-width="2" stroke-linecap="round" />
-              <line x1="14" y1="2" x2="2" y2="14" stroke-width="2" stroke-linecap="round" />
-            </svg>
-          </div>
-        }
-
+        <div class="size-controls" (pointerdown)="$event.stopPropagation()">
+          <span class="grid-badge font-mono">{{ widget.colSpan }} × {{ widget.rowSpan }}</span>
+        </div>
       </div>
+      }
+
+      <!-- Zawartość kafelka w zależności od typu -->
+      @switch (widget.id) {
+
+      <!-- 1. DATA I GODZINA POMIARU -->
+      @case ('timestamp') {
+      <div class="cell-header">
+        <div class="header-group">
+          <span class="cell-title">DATA I GODZINA POMIARU</span>
+          <span class="cell-subtitle">Aktywny rekord biometrii</span>
+        </div>
+        <span class="badge font-mono">POMIAR #{{ selectedIndex() + 1 }}</span>
+      </div>
+      <div class="cell-body row-split">
+        <div class="split-col">
+          <span class="stat-label">DATA</span>
+          <span class="stat-value font-mono text-cyan">{{ current().date }}</span>
+          <span class="sub-text text-muted">{{ current().notes || 'Pomiary poranne' }}</span>
+        </div>
+        <div class="split-divider"></div>
+        <div class="split-col">
+          <span class="stat-label">GODZINA</span>
+          <span class="stat-value font-mono text-primary">{{ current().time }}</span>
+          <span class="sub-text text-emerald">● Wykonano</span>
+        </div>
+      </div>
+      }
+
+      <!-- 2. WAGA (2x1) -->
+      @case ('weight') {
+      <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('weight')">
+        <span class="cell-title">WAGA CIAŁA</span>
+        @if (weightDelta() !== null) {
+        <span class="trend-badge" [class.trend-down]="weightDelta()! < 0" [class.trend-up]="weightDelta()! > 0">
+          {{ weightDelta()! > 0 ? '+' : '' }}{{ weightDelta() }} kg
+        </span>
+        }
+      </div>
+      <div class="cell-body row-split" (click)="!layoutService.isEditMode() && setChartParam('weight')">
+        <div class="metric-hero">
+          <span class="hero-value font-mono">{{ current().weight }}</span>
+          <span class="hero-unit">kg</span>
+        </div>
+        <div class="mini-chart-box">
+          <svg class="sparkline-svg" viewBox="0 0 100 32">
+            <path [attr.d]="getSparkline('weight').area" fill="url(#grad-weight)" />
+            <path [attr.d]="getSparkline('weight').line" fill="none" stroke="#06b6d4" stroke-width="1.8"
+              stroke-linecap="round" />
+          </svg>
+          <span class="sparkline-label font-mono">Trend 7 dni</span>
+        </div>
+      </div>
+      }
+
+      <!-- 3. TOTAL BODY WATER (NAWODNIENIE KOMÓRKOWE) -->
+      @case ('tbw') {
+      <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('totalBodyWater')">
+        <span class="cell-title">NAWODNIENIE KOMÓRKOWE</span>
+      </div>
+      <div class="cell-body column-flow" (click)="!layoutService.isEditMode() && setChartParam('totalBodyWater')">
+        <div class="tbw-display">
+          <div class="metric-big">
+            <span class="value font-mono text-blue">{{ current().totalBodyWater }}</span>
+            <span class="unit">%</span>
+          </div>
+          <span class="stat-sub text-muted font-mono">≈ {{ waterLiters() }} L wody</span>
+        </div>
+
+        <div class="mini-chart-box full-w">
+          <svg class="sparkline-svg" viewBox="0 0 100 28">
+            <path [attr.d]="getSparkline('totalBodyWater').area" fill="url(#grad-tbw)" />
+            <path [attr.d]="getSparkline('totalBodyWater').line" fill="none" stroke="#3b82f6" stroke-width="1.8" />
+          </svg>
+          <span class="sparkline-label font-mono">Trend pomiarów</span>
+        </div>
+
+        <div class="tbw-norm-box text-center">
+          <span class="metric-sub status-good justify-center">Norma: 55 – 65%</span>
+        </div>
+      </div>
+      }
+
+      <!-- 4. OVERFAT / TKANKA TŁUSZCZOWA -->
+      @case ('overfat') {
+      <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('overfat')">
+        <span class="cell-title">OVERFAT</span>
+      </div>
+      <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('overfat')">
+        <div class="metric-big">
+          <span class="value font-mono text-amber">{{ current().overfat }}</span>
+          <span class="unit">%</span>
+        </div>
+        <div class="mini-chart-box">
+          <svg class="sparkline-svg" viewBox="0 0 100 24">
+            <path [attr.d]="getSparkline('overfat').area" fill="url(#grad-fat)" />
+            <path [attr.d]="getSparkline('overfat').line" fill="none" stroke="#f59e0b" stroke-width="1.8" />
+          </svg>
+        </div>
+        <span class="metric-sub font-semibold" [ngClass]="fatEvaluation().statusClass"
+          [title]="fatEvaluation().fullLabel">
+          {{ fatEvaluation().label }}
+        </span>
+        <span class="sub-text text-muted font-mono">{{ fatEvaluation().normText }}</span>
+      </div>
+      }
+
+      <!-- 5. MIĘŚNIE -->
+      @case ('muscleMass') {
+      <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('muscleMass')">
+        <span class="cell-title">MIĘŚNIE</span>
+        <span class="tag-score font-mono">MASA</span>
+      </div>
+      <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('muscleMass')">
+        <div class="metric-big">
+          <span class="value font-mono text-stat-muscle">{{ current().muscleMass }}</span>
+          <span class="unit">%</span>
+        </div>
+        <div class="mini-chart-box">
+          <svg class="sparkline-svg" viewBox="0 0 100 24">
+            <path [attr.d]="getSparkline('muscleMass').area" fill="url(#grad-muscle)" />
+            <path [attr.d]="getSparkline('muscleMass').line" fill="none" stroke="#f43f5e" stroke-width="1.8" />
+          </svg>
+        </div>
+        <span class="metric-sub text-muted font-mono">≈ {{ muscleKg() }} kg masy</span>
+      </div>
+      }
+
+      <!-- 6. KOŚCI -->
+      @case ('boneMass') {
+      <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('boneMass')">
+        <span class="cell-title">KOŚCI</span>
+        <span class="tag-score font-mono">MINERAŁY</span>
+      </div>
+      <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('boneMass')">
+        <div class="metric-big">
+          <span class="value font-mono text-purple">{{ current().boneMass }}</span>
+          <span class="unit">%</span>
+        </div>
+        <div class="mini-chart-box">
+          <svg class="sparkline-svg" viewBox="0 0 100 24">
+            <path [attr.d]="getSparkline('boneMass').area" fill="url(#grad-bones)" />
+            <path [attr.d]="getSparkline('boneMass').line" fill="none" stroke="#a855f7" stroke-width="1.8" />
+          </svg>
+        </div>
+        <span class="metric-sub text-muted font-mono">≈ {{ boneKg() }} kg minerałów</span>
+      </div>
+      }
+
+      <!-- 7. BMI -->
+      @case ('bmi') {
+      <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('bmi')">
+        <span class="cell-title">BMI</span>
+        <span class="tag-score font-mono">INDEX</span>
+      </div>
+      <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('bmi')">
+        <div class="metric-big">
+          <span class="value font-mono text-sky">{{ current().bmi }}</span>
+        </div>
+        <div class="mini-chart-box">
+          <svg class="sparkline-svg" viewBox="0 0 100 24">
+            <path [attr.d]="getSparkline('bmi').area" fill="url(#grad-bmi)" />
+            <path [attr.d]="getSparkline('bmi').line" fill="none" stroke="#0ea5e9" stroke-width="1.8" />
+          </svg>
+        </div>
+        <span class="metric-sub font-semibold" [ngClass]="bmiEvaluation().statusClass"
+          [title]="bmiEvaluation().fullLabel">
+          {{ bmiEvaluation().label }}
+        </span>
+      </div>
+      }
+
+      <!-- 8. KCAL (BMR) -->
+      @case ('kcal') {
+      <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('kcal')">
+        <span class="cell-title">KCAL</span>
+        <span class="tag-score font-mono">BMR</span>
+      </div>
+      <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('kcal')">
+        <div class="metric-big">
+          <span class="value font-mono text-orange">{{ current().kcal }}</span>
+          <span class="unit">kcal</span>
+        </div>
+        <div class="mini-chart-box">
+          <svg class="sparkline-svg" viewBox="0 0 100 24">
+            <path [attr.d]="getSparkline('kcal').area" fill="url(#grad-kcal)" />
+            <path [attr.d]="getSparkline('kcal').line" fill="none" stroke="#f97316" stroke-width="1.8" />
+          </svg>
+        </div>
+        <span class="metric-sub text-muted">Zapotrzebowanie</span>
+      </div>
+      }
+
+      <!-- 9. KETONY W MOCZU -->
+      @case ('ketones') {
+      <div class="cell-header" (click)="!layoutService.isEditMode() && setChartParam('ketoneValue')">
+        <span class="cell-title">KETONY W MOCZU</span>
+        <span class="badge ketone-badge font-mono" [class.badge-active]="isKetosisActive()"
+          [class.badge-muted]="!isKetosisActive()">
+          {{ ketoneBadgeText() }}
+        </span>
+      </div>
+      <div class="cell-body ketone-body-flow" (click)="!layoutService.isEditMode() && setChartParam('ketoneValue')">
+        <!-- Mini sparkline wykres trendu w czasie -->
+        <div class="mini-chart-box-wide">
+          <svg class="sparkline-svg" viewBox="0 0 100 24">
+            <path [attr.d]="getSparkline('ketoneValue').area" fill="url(#grad-ketones)" />
+            <path [attr.d]="getSparkline('ketoneValue').line" fill="none" stroke="#ec4899" stroke-width="1.8" />
+          </svg>
+        </div>
+
+        <!-- Stan na dziś: poziomy pasek z kolorem wg ilości ketonów i przybliżoną wartością na środku -->
+        <div class="ketone-today-section">
+          <div class="ketone-bar-track" [title]="'Stan na dziś: ' + ketoneTodayBar().displayLabel">
+            <div class="ketone-bar-fill" [style.width.%]="ketoneTodayBar().widthPct"
+              [style.background-color]="ketoneTodayBar().color"></div>
+            <span class="ketone-bar-label font-mono">{{ ketoneTodayBar().displayLabel }}</span>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- 10. UTRZYMANIE DIETY (1x1) -->
+      @case ('diet') {
+      <div class="cell-header">
+        <span class="cell-title">DIETA</span>
+      </div>
+      <div class="cell-body center-align">
+        <div class="diet-display-box">
+          <span class="diet-badge-hero font-mono" [ngClass]="currentDiet().badgeClass">
+            {{ currentDiet().label }}
+          </span>
+        </div>
+        <span class="metric-sub font-semibold" [style.color]="currentDiet().color">
+          {{ currentDiet().subLabel }}
+        </span>
+        <span class="sub-text text-muted font-mono" style="margin-top: 4px;">Ostatni pomiar</span>
+      </div>
+      }
+
+      <!-- 11. SPOŻYCIE ALKOHOLU (2x1) -->
+      @case ('alcohol') {
+      <div class="cell-header">
+        <span class="cell-title">SPOŻYCIE ALKOHOLU</span>
+      </div>
+      <div class="cell-body alcohol-cell-clean">
+        <div class="alcohol-clean-row">
+          <div class="alcohol-num-group">
+            <span class="alcohol-big-num font-mono">{{ alcoholStats().daysCount }}</span>
+            <span class="alcohol-big-unit font-mono">dni</span>
+          </div>
+          <span class="alcohol-clean-badge font-mono" [ngClass]="'badge-alcohol-' + alcoholStats().lastLevel">
+            {{ alcoholStats().lastLabel }}
+          </span>
+        </div>
+      </div>
+      }
+
+      <!-- 12. GŁÓWNY INTERAKTYWNY PANEL WYKRESÓW DLA KAŻDEGO PARAMETRU -->
+      @case ('mainChart') {
+      <div class="cell-header">
+        <div class="header-group">
+          <div class="title-with-badge">
+            <span class="cell-title">ANALIZA TRENDU BIOMETRYCZNEGO</span>
+            <span class="badge font-mono" [style.color]="activeParamMeta().color">
+              {{ activeParamMeta().label }}: {{ current()[activeParamKey()] }} {{ activeParamMeta().unit }}
+            </span>
+          </div>
+          <span class="cell-subtitle">Wybierz parametr aby zobaczyć pełną historię i krzywą zmian</span>
+        </div>
+        <div class="chart-summary-stat font-mono">
+          <span class="stat-small-label">{{ mainChartData().isSingle ? 'STAN BAZOWY:' : 'ZMIANA 7D:' }}</span>
+          <span class="stat-small-val" [class.text-emerald]="mainChartData().delta <= 0"
+            [class.text-rose]="mainChartData().delta > 0">
+            {{ mainChartData().isSingle ? '1 pomiar' : (mainChartData().delta > 0 ? '+' : '') + mainChartData().delta +
+            ' ' + activeParamMeta().unit }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Przełącznik parametrów (Pill Tabs) -->
+      <div class="param-tabs-container">
+        @for (p of paramList; track p.key) {
+        <button type="button" class="param-tab-btn" [class.active]="activeParamKey() === p.key"
+          (click)="setChartParam(p.key)">
+          <span class="tab-dot" [style.background-color]="p.color"></span>
+          <span>{{ p.label }}</span>
+        </button>
+        }
+      </div>
+
+      <!-- Nowoczesny, w pełni responsywny kontener wykresu (SVG Canvas + HTML Overlay) -->
+      <div class="main-svg-chart-container">
+        @if (!hasMeasurements()) {
+        <div class="empty-chart-box">
+          <span class="empty-chart-title">BRAK PUNKTÓW POMIAROWYCH</span>
+          <span class="empty-chart-desc text-muted">Zarejestruj pierwszy pomiar biometrii za pomocą przycisku poniżej,
+            aby wygenerować analizę trendu.</span>
+        </div>
+        } @else {
+        <!-- Oś Y: Wartości min, mid, max (HTML - idealna czcionka bez zniekształceń proporcji) -->
+        <div class="chart-y-axis-labels">
+          <span class="y-axis-val font-mono top-val">{{ mainChartData().maxValFormatted }}</span>
+          <span class="y-axis-val font-mono mid-val">{{ mainChartData().midValFormatted }}</span>
+          <span class="y-axis-val font-mono btm-val">{{ mainChartData().minValFormatted }}</span>
+        </div>
+
+        <!-- Obszar graficzny z wektorami SVG i punktami HTML -->
+        <div class="chart-graph-canvas">
+          <svg class="main-chart-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+            <!-- Poziome linie siatki pomocniczej z zachowaniem stałej grubości -->
+            <line x1="0" y1="140" x2="1000" y2="140" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4,4"
+              vector-effect="non-scaling-stroke" />
+            <line x1="0" y1="500" x2="1000" y2="500" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4,4"
+              vector-effect="non-scaling-stroke" />
+            <line x1="0" y1="860" x2="1000" y2="860" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4,4"
+              vector-effect="non-scaling-stroke" />
+
+            <!-- Obszar gradientu pod wykresem -->
+            <path [attr.d]="mainChartData().areaPath" [attr.fill]="'url(#' + activeParamMeta().gradientId + ')'" />
+
+            <!-- Główna linia wykresu (stała grubość 2.5px niezależnie od rozciągnięcia) -->
+            <path [attr.d]="mainChartData().linePath" fill="none" [attr.stroke]="activeParamMeta().color"
+              vector-effect="non-scaling-stroke" [attr.stroke-dasharray]="mainChartData().isSingle ? '6,6' : 'none'"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+
+          <!-- Warstwa punktów i etykiet HTML (idealne koła, ostre cyfry JetBrains Mono) -->
+          <div class="chart-points-overlay">
+            @for (pt of mainChartData().points; track pt.date + $index) {
+            <div class="chart-point-node" [style.left.%]="pt.xPct" [style.top.%]="pt.yPct">
+              <!-- Poświata punktu -->
+              <div class="point-glow-pulse" [style.background-color]="activeParamMeta().color"></div>
+
+              <!-- Okrągły punkt (zawsze perfekcyjnie okrągły 8x8px) -->
+              <div class="point-core-dot" [style.background-color]="activeParamMeta().color"></div>
+
+              <!-- Etykieta z wartością (zawsze ostra i proporcjonalna) -->
+              <div class="point-value-tag font-mono">
+                {{ pt.val }}
+              </div>
+
+              <!-- Etykieta daty pod spodem -->
+              <div class="point-date-tag font-mono">
+                {{ pt.date }}
+              </div>
+            </div>
+            }
+
+            @if (mainChartData().isSingle) {
+            <div class="single-point-badge font-mono">
+              <span class="badge-dot" [style.background-color]="activeParamMeta().color"></span>
+              <span>PUNKT BAZOWY (1 POMIAR)</span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+      }
+
+      <!-- 11. KSZTAŁT CIAŁA I PROCENTOWY SKŁAD (WARSTWY KONCENTRYCZNE) -->
+      @case ('bodyShape') {
+      <div class="cell-header">
+        <div class="header-group">
+          <span class="cell-title">KSZTAŁT I SKŁAD CIAŁA</span>
+          <span class="cell-subtitle font-mono">{{ current().weight }} kg = 100% MASY</span>
+        </div>
+      </div>
+
+      <div class="cell-body body-shape-layout-clean">
+        <!-- Poziomy pasek proporcji składu ciała -->
+        <div class="comp-stacked-bar-container-horizontal">
+          @for (item of bodyComposition(); track item.id) {
+          <div class="comp-bar-segment" [class.is-hovered]="hoveredLayer() === item.id"
+            [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== item.id"
+            [style.flex-grow]="item.percent > 0 ? item.percent : 1" [style.flex-basis]="'0px'"
+            [style.--segment-color]="item.color" [style.background-color]="item.color"
+            [title]="item.label + ': ' + item.percent + '% (' + item.kg + ' kg)'"
+            (mouseenter)="setHoveredLayer(item.id)" (mouseleave)="setHoveredLayer(null)">
+          </div>
+          }
+        </div>
+
+        <!-- Duży przelicznik masy na kilogramy wycentrowany pod wykresem -->
+        <div class="body-comp-kg-grid">
+          @for (item of bodyComposition(); track item.id) {
+          <div class="comp-kg-card" [class.is-hovered]="hoveredLayer() === item.id"
+            [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== item.id"
+            (mouseenter)="setHoveredLayer(item.id)" (mouseleave)="setHoveredLayer(null)">
+            <div class="comp-kg-header">
+              <span class="comp-kg-dot" [style.background-color]="item.color"></span>
+              <span class="comp-kg-name">{{ item.label.split(' ')[0] }}</span>
+            </div>
+            <div class="comp-kg-value-row">
+              <span class="comp-kg-num font-mono" [style.color]="item.color">{{ item.kg }}</span>
+              <span class="comp-kg-unit font-mono">kg</span>
+            </div>
+            <div class="comp-kg-pct font-mono text-muted">
+              {{ item.percent }}%
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- 12. HISTORIA POMIARÓW -->
+      @case ('history') {
+      <div class="cell-header">
+        <div class="header-group">
+          <span class="cell-title">HISTORIA I REJESTR POMIARÓW CIAŁA</span>
+          <span class="cell-subtitle">Kliknij wiersz aby załadować wybrany punkt czasowy na kafelki</span>
+        </div>
+        <div class="header-right-actions">
+          <span class="badge font-mono">{{ history().length }} WPISY</span>
+        </div>
+      </div>
+      <div class="cell-body table-responsive">
+        <table class="measurements-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Godzina</th>
+              <th>Waga</th>
+              <th>TBW</th>
+              <th>Overfat</th>
+              <th>Mięśnie</th>
+              <th>Kości</th>
+              <th>BMI</th>
+              <th>Kcal</th>
+              <th>Ketony</th>
+              <th>Dieta</th>
+              <th>Alkohol</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of history(); track item.id; let rowIdx = $index) {
+            <tr [class.selected]="rowIdx === selectedIndex()" (click)="selectMeasurement(rowIdx)">
+              <td class="font-mono text-primary font-semibold">{{ item.date }}</td>
+              <td class="font-mono text-muted">{{ item.time }}</td>
+              <td class="font-mono text-cyan font-bold">{{ item.weight }} kg</td>
+              <td class="font-mono text-blue">{{ item.totalBodyWater }}%</td>
+              <td class="font-mono text-amber">{{ item.overfat }}%</td>
+              <td class="font-mono text-stat-muscle">{{ item.muscleMass }}%</td>
+              <td class="font-mono text-purple">{{ item.boneMass }}%</td>
+              <td class="font-mono text-sky">{{ item.bmi }}</td>
+              <td class="font-mono text-orange">{{ item.kcal }}</td>
+              <td class="font-mono text-pink">{{ item.urineKetones }}</td>
+              <td>
+                <span class="tag-status" [ngClass]="'diet-' + (item.diet || 'keto')">
+                  {{ getDietLabel(item.diet) }}
+                </span>
+              </td>
+              <td>
+                <span class="tag-status" [ngClass]="'alcohol-' + (item.alcohol || 'none')">
+                  {{ item.alcohol === 'none' ? 'Brak' : item.alcohol === 'light' ? 'Lekko' : 'Ciężko' }}
+                </span>
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="12" class="empty-table-msg font-mono text-muted text-center">
+                Brak zarejestrowanych pomiarów.
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+      }
+
+      <!-- Uchwyt do skokowej zmiany rozmiaru w siatce (w prawym dolnym rogu) -->
+      @if (layoutService.isEditMode()) {
+      <div class="grid-resize-handle" (pointerdown)="onResizePointerDown(widget, $event, cellElem)"
+        title="Przeciągnij aby zmienić rozmiar kafelka skokowo">
+        <svg class="resize-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+          <line x1="14" y1="6" x2="6" y2="14" stroke-width="2" stroke-linecap="round" />
+          <line x1="14" y1="10" x2="10" y2="14" stroke-width="2" stroke-linecap="round" />
+          <line x1="14" y1="2" x2="2" y2="14" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </div>
+      }
+
+    </div>
     }
 
   </div>
 
   <!-- REUŻYWALNY MODAL: REJESTR I DODAWANIE POMIARÓW BIOMETRII -->
-  <app-modal
-    [isOpen]="isMeasurementModalOpen()"
-    title="REJESTR I HISTORIA POMIARÓW BIOMETRII"
-    subtitle="Zarządzanie wpisami, szczegółowa analiza oraz wprowadzanie nowych pomiarów ciała"
-    [badge]="'ZAPISANE: ' + history().length"
-    (closed)="closeMeasurementModal()">
+  <app-modal [isOpen]="isMeasurementModalOpen()" title="Pomiary"
+    subtitle="" [badge]="''" [showIndicator]="false" (closed)="closeMeasurementModal()">
 
     <!-- Custom Akcje w Nagłówku Modala (Prawa strona) -->
     <div modal-actions class="modal-header-btns">
-      <button 
-        type="button" 
-        class="modal-btn btn-secondary"
-        [class.btn-active-new]="!isEditing()"
+      <button type="button" class="modal-btn btn-secondary" [class.btn-active-new]="!isEditing()"
         (click)="resetToNewEntry()"
         title="Przełącz na tworzenie nowego wpisu (domyślne wartości z poprzedniego pomiaru)">
         <svg class="modal-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -711,25 +609,19 @@
         <span>+ Nowy wpis</span>
       </button>
 
-      <button 
-        type="button" 
-        class="modal-btn btn-secondary" 
-        (click)="toggleFormExpanded()"
+      <button type="button" class="modal-btn btn-secondary" (click)="toggleFormExpanded()"
         [title]="isFormExpanded() ? 'Zwiń sekcję formularza' : 'Rozwiń sekcję formularza'">
         <svg class="modal-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           @if (isFormExpanded()) {
-            <polyline points="18 15 12 9 6 15" />
+          <polyline points="18 15 12 9 6 15" />
           } @else {
-            <polyline points="6 9 12 15 18 9" />
+          <polyline points="6 9 12 15 18 9" />
           }
         </svg>
         <span>{{ isFormExpanded() ? 'Zwiń formularz' : 'Rozwiń formularz' }}</span>
       </button>
 
-      <button 
-        type="button" 
-        class="modal-btn btn-primary" 
-        (click)="saveMeasurement()">
+      <button type="button" class="modal-btn btn-primary" (click)="saveMeasurement()">
         <svg class="modal-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
           <polyline points="17 21 17 13 7 13 7 21" />
@@ -744,276 +636,188 @@
 
       <!-- Komunikat Sukcesu -->
       @if (formSuccessMessage()) {
-        <div class="modal-alert-success">
-          <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          <span>{{ formSuccessMessage() }}</span>
-        </div>
+      <div class="modal-alert-success">
+        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        <span>{{ formSuccessMessage() }}</span>
+      </div>
       }
 
       <!-- Sekcja Formularza Dodawania / Edycji Pomiaru -->
       @if (isFormExpanded()) {
-        <section class="modal-section form-card" [class.is-edit-mode-card]="isEditing()">
-          <div class="section-header">
-            <div class="section-title-box">
-              @if (isEditing()) {
-                <span class="section-badge badge-amber font-mono">EDYCJA WPISU #{{ editingRecordIndex() }}</span>
-                <h3 class="section-title">Edytuj parametry wybranego punktu pomiarowego</h3>
-              } @else {
-                <span class="section-badge font-mono">NOWY WPIS</span>
-                <h3 class="section-title">Wprowadź dane z wagi biometrycznej</h3>
-              }
+      <section class="modal-section form-card" [class.is-edit-mode-card]="isEditing()">
+        @if (isEditing()) {
+        <div class="section-header">
+          <div class="section-title-box">
+            <span class="section-badge badge-amber font-mono">EDYCJA WPISU #{{ editingRecordIndex() }}</span>
+          </div>
+          <div class="section-header-right">
+            <button type="button" class="btn-switch-new font-mono" (click)="resetToNewEntry()">
+              + Przełącz na nowy wpis
+            </button>
+          </div>
+        </div>
+        }
+
+        <form (ngSubmit)="saveMeasurement()" class="measurement-form">
+          <!-- Duże kwadratowe pola po dwa na wiersz: od Data do BMR -->
+          <div class="form-grid-square-two-col">
+
+            <!-- Data -->
+            <div class="form-group square-field">
+              <label class="form-label" for="m-date">Data pomiaru</label>
+              <div class="input-wrap">
+                <input id="m-date" type="date" class="form-input font-mono" [ngModel]="newEntryDate()"
+                  (ngModelChange)="newEntryDate.set($event)" name="mDate" required />
+              </div>
             </div>
-            <div class="section-header-right">
-              @if (isEditing()) {
-                <button type="button" class="btn-switch-new font-mono" (click)="resetToNewEntry()">
-                  + Przełącz na nowy wpis
-                </button>
-              } @else {
-                <span class="section-hint text-muted">Domyślne wartości pochodzą z poprzedniego wpisu</span>
+
+            <!-- Godzina -->
+            <div class="form-group square-field">
+              <label class="form-label" for="m-time">Godzina</label>
+              <div class="input-wrap">
+                <input id="m-time" type="time" class="form-input font-mono" [ngModel]="newEntryTime()"
+                  (ngModelChange)="newEntryTime.set($event)" name="mTime" required />
+              </div>
+            </div>
+
+            <!-- Waga -->
+            <div class="form-group square-field highlight-cyan">
+              <label class="form-label" for="m-weight">Waga całkowita (kg)</label>
+              <div class="input-wrap with-suffix">
+                <input id="m-weight" type="number" step="0.1" class="form-input font-mono text-cyan font-bold"
+                  [ngModel]="newEntryWeight()" (ngModelChange)="onWeightChange($event)" name="mWeight" required />
+                <span class="input-suffix">kg</span>
+              </div>
+            </div>
+
+            <!-- TBW -->
+            <div class="form-group square-field highlight-blue">
+              <label class="form-label" for="m-tbw">Total Body Water (TBW %)</label>
+              <div class="input-wrap with-suffix">
+                <input id="m-tbw" type="number" step="0.1" class="form-input font-mono text-blue font-bold"
+                  [ngModel]="newEntryTBW()" (ngModelChange)="newEntryTBW.set($event)" name="mTBW" required />
+                <span class="input-suffix">%</span>
+              </div>
+            </div>
+
+            <!-- Overfat -->
+            <div class="form-group square-field highlight-amber">
+              <label class="form-label" for="m-fat">Tkanka tłuszczowa (Overfat %)</label>
+              <div class="input-wrap with-suffix">
+                <input id="m-fat" type="number" step="0.1" class="form-input font-mono text-amber font-bold"
+                  [ngModel]="newEntryOverfat()" (ngModelChange)="newEntryOverfat.set($event)" name="mFat" required />
+                <span class="input-suffix">%</span>
+              </div>
+            </div>
+
+            <!-- Mięśnie -->
+            <div class="form-group square-field highlight-rose">
+              <label class="form-label" for="m-muscle">Masa mięśniowa (%)</label>
+              <div class="input-wrap with-suffix">
+                <input id="m-muscle" type="number" step="0.1" class="form-input font-mono text-stat-muscle font-bold"
+                  [ngModel]="newEntryMuscle()" (ngModelChange)="newEntryMuscle.set($event)" name="mMuscle" required />
+                <span class="input-suffix">%</span>
+              </div>
+            </div>
+
+            <!-- Kości -->
+            <div class="form-group square-field highlight-purple">
+              <label class="form-label" for="m-bones">Masa mineralna kości (%)</label>
+              <div class="input-wrap with-suffix">
+                <input id="m-bones" type="number" step="0.1" class="form-input font-mono text-purple font-bold"
+                  [ngModel]="newEntryBones()" (ngModelChange)="newEntryBones.set($event)" name="mBones" required />
+                <span class="input-suffix">%</span>
+              </div>
+            </div>
+
+            <!-- BMI -->
+            <div class="form-group square-field highlight-sky">
+              <label class="form-label" for="m-bmi">Wskaźnik BMI</label>
+              <div class="input-wrap">
+                <input id="m-bmi" type="number" step="0.1" class="form-input font-mono text-sky font-bold"
+                  [ngModel]="newEntryBmi()" (ngModelChange)="newEntryBmi.set($event)" name="mBmi" required />
+              </div>
+            </div>
+
+            <!-- Kcal (BMR) -->
+            <div class="form-group square-field highlight-orange">
+              <label class="form-label" for="m-kcal">Zapotrzebowanie BMR (Kcal)</label>
+              <div class="input-wrap with-suffix">
+                <input id="m-kcal" type="number" step="1" class="form-input font-mono text-orange font-bold"
+                  [ngModel]="newEntryKcal()" (ngModelChange)="newEntryKcal.set($event)" name="mKcal" required />
+                <span class="input-suffix">kcal</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Ketony w moczu: po 2 klocki w wierszu z kolorem i wartością -->
+          <div class="form-group lifestyle-group">
+            <label class="form-label">Ketony w moczu</label>
+            <div class="two-col-blocks-grid">
+              @for (opt of ketoneOptions; track opt.level) {
+              <button type="button" class="lifestyle-block-btn" [class.active]="newEntryKetoneLevel() === opt.level"
+                [style.--block-color]="opt.color" (click)="newEntryKetoneLevel.set(opt.level)">
+                <span class="block-dot" [style.background-color]="opt.color"></span>
+                <span class="block-value font-mono">{{ opt.displayNum }}</span>
+              </button>
               }
             </div>
           </div>
 
-          <form (ngSubmit)="saveMeasurement()" class="measurement-form">
-            <div class="form-grid">
-              
-              <!-- Data -->
-              <div class="form-group">
-                <label class="form-label" for="m-date">Data pomiaru</label>
-                <div class="input-wrap">
-                  <input 
-                    id="m-date" 
-                    type="date" 
-                    class="form-input font-mono" 
-                    [ngModel]="newEntryDate()" 
-                    (ngModelChange)="newEntryDate.set($event)" 
-                    name="mDate" 
-                    required />
-                </div>
-              </div>
-
-              <!-- Godzina -->
-              <div class="form-group">
-                <label class="form-label" for="m-time">Godzina</label>
-                <div class="input-wrap">
-                  <input 
-                    id="m-time" 
-                    type="time" 
-                    class="form-input font-mono" 
-                    [ngModel]="newEntryTime()" 
-                    (ngModelChange)="newEntryTime.set($event)" 
-                    name="mTime" 
-                    required />
-                </div>
-              </div>
-
-              <!-- Waga -->
-              <div class="form-group highlight-cyan">
-                <label class="form-label" for="m-weight">Waga całkowita (kg)</label>
-                <div class="input-wrap with-suffix">
-                  <input 
-                    id="m-weight" 
-                    type="number" 
-                    step="0.1" 
-                    class="form-input font-mono text-cyan font-bold" 
-                    [ngModel]="newEntryWeight()" 
-                    (ngModelChange)="onWeightChange($event)" 
-                    name="mWeight" 
-                    required />
-                  <span class="input-suffix">kg</span>
-                </div>
-              </div>
-
-              <!-- TBW -->
-              <div class="form-group highlight-blue">
-                <label class="form-label" for="m-tbw">Total Body Water (TBW %)</label>
-                <div class="input-wrap with-suffix">
-                  <input 
-                    id="m-tbw" 
-                    type="number" 
-                    step="0.1" 
-                    class="form-input font-mono text-blue" 
-                    [ngModel]="newEntryTBW()" 
-                    (ngModelChange)="newEntryTBW.set($event)" 
-                    name="mTBW" 
-                    required />
-                  <span class="input-suffix">%</span>
-                </div>
-              </div>
-
-              <!-- Overfat -->
-              <div class="form-group highlight-amber">
-                <label class="form-label" for="m-fat">Tkanka tłuszczowa (Overfat %)</label>
-                <div class="input-wrap with-suffix">
-                  <input 
-                    id="m-fat" 
-                    type="number" 
-                    step="0.1" 
-                    class="form-input font-mono text-amber" 
-                    [ngModel]="newEntryOverfat()" 
-                    (ngModelChange)="newEntryOverfat.set($event)" 
-                    name="mFat" 
-                    required />
-                  <span class="input-suffix">%</span>
-                </div>
-              </div>
-
-              <!-- Mięśnie -->
-              <div class="form-group highlight-rose">
-                <label class="form-label" for="m-muscle">Masa mięśniowa (%)</label>
-                <div class="input-wrap with-suffix">
-                  <input 
-                    id="m-muscle" 
-                    type="number" 
-                    step="0.1" 
-                    class="form-input font-mono text-stat-muscle" 
-                    [ngModel]="newEntryMuscle()" 
-                    (ngModelChange)="newEntryMuscle.set($event)" 
-                    name="mMuscle" 
-                    required />
-                  <span class="input-suffix">%</span>
-                </div>
-              </div>
-
-              <!-- Kości -->
-              <div class="form-group highlight-purple">
-                <label class="form-label" for="m-bones">Masa mineralna kości (%)</label>
-                <div class="input-wrap with-suffix">
-                  <input 
-                    id="m-bones" 
-                    type="number" 
-                    step="0.1" 
-                    class="form-input font-mono text-purple" 
-                    [ngModel]="newEntryBones()" 
-                    (ngModelChange)="newEntryBones.set($event)" 
-                    name="mBones" 
-                    required />
-                  <span class="input-suffix">%</span>
-                </div>
-              </div>
-
-              <!-- BMI -->
-              <div class="form-group highlight-sky">
-                <label class="form-label" for="m-bmi">Wskaźnik BMI</label>
-                <div class="input-wrap">
-                  <input 
-                    id="m-bmi" 
-                    type="number" 
-                    step="0.1" 
-                    class="form-input font-mono text-sky" 
-                    [ngModel]="newEntryBmi()" 
-                    (ngModelChange)="newEntryBmi.set($event)" 
-                    name="mBmi" 
-                    required />
-                </div>
-              </div>
-
-              <!-- Kcal (BMR) -->
-              <div class="form-group highlight-orange">
-                <label class="form-label" for="m-kcal">Zapotrzebowanie BMR (Kcal)</label>
-                <div class="input-wrap with-suffix">
-                  <input 
-                    id="m-kcal" 
-                    type="number" 
-                    step="1" 
-                    class="form-input font-mono text-orange" 
-                    [ngModel]="newEntryKcal()" 
-                    (ngModelChange)="newEntryKcal.set($event)" 
-                    name="mKcal" 
-                    required />
-                  <span class="input-suffix">kcal</span>
-                </div>
-              </div>
-
-              <!-- Ketony w moczu -->
-              <div class="form-group ketone-select-group">
-                <label class="form-label">Ketony w moczu (Test paskowy)</label>
-                <div class="ketone-pills-row">
-                  @for (opt of ketoneOptions; track opt.level) {
-                    <button 
-                      type="button" 
-                      class="ketone-pill-btn"
-                      [class.active]="newEntryKetoneLevel() === opt.level"
-                      [style.--pill-color]="opt.color"
-                      (click)="newEntryKetoneLevel.set(opt.level)">
-                      <span class="pill-dot" [style.background-color]="opt.color"></span>
-                      <span class="pill-title">{{ opt.label }}</span>
-                      <span class="pill-val font-mono">{{ opt.value > 0 ? opt.value + ' mmol/L' : 'Brak pomiaru' }}</span>
-                    </button>
-                  }
-                </div>
-              </div>
-
-              <!-- Utrzymanie diety -->
-              <div class="form-group diet-select-group">
-                <label class="form-label">Utrzymanie diety</label>
-                <div class="lifestyle-pills-row">
-                  @for (opt of dietOptions; track opt.type) {
-                    <button 
-                      type="button" 
-                      class="lifestyle-pill-btn"
-                      [class.active]="newEntryDiet() === opt.type"
-                      [style.--pill-color]="opt.color"
-                      (click)="newEntryDiet.set(opt.type)">
-                      <span class="pill-dot" [style.background-color]="opt.color"></span>
-                      <span class="pill-title">{{ opt.label }}</span>
-                      <span class="pill-val font-mono">{{ opt.subLabel }}</span>
-                    </button>
-                  }
-                </div>
-              </div>
-
-              <!-- Spożycie alkoholu -->
-              <div class="form-group alcohol-select-group">
-                <label class="form-label">Spożycie alkoholu</label>
-                <div class="lifestyle-pills-row">
-                  @for (opt of alcoholOptions; track opt.level) {
-                    <button 
-                      type="button" 
-                      class="lifestyle-pill-btn"
-                      [class.active]="newEntryAlcohol() === opt.level"
-                      [style.--pill-color]="opt.color"
-                      (click)="newEntryAlcohol.set(opt.level)">
-                      <span class="pill-dot" [style.background-color]="opt.color"></span>
-                      <span class="pill-title">{{ opt.label }}</span>
-                      <span class="pill-val font-mono">{{ opt.subLabel }}</span>
-                    </button>
-                  }
-                </div>
-              </div>
-
-              <!-- Notatki / Okoliczności -->
-              <div class="form-group full-width-field">
-                <label class="form-label" for="m-notes">Notatki / Okoliczności pomiaru</label>
-                <input 
-                  id="m-notes" 
-                  type="text" 
-                  class="form-input" 
-                  placeholder="np. Na czczo po przebudzeniu, po treningu..." 
-                  [ngModel]="newEntryNotes()" 
-                  (ngModelChange)="newEntryNotes.set($event)" 
-                  name="mNotes" />
-              </div>
-
-            </div>
-
-            <div class="form-actions-footer">
-              @if (isEditing()) {
-                <button type="button" class="cancel-edit-btn" (click)="resetToNewEntry()">
-                  <span>Anuluj edycję</span>
-                </button>
-              }
-              <button type="submit" class="submit-entry-btn" [class.btn-update]="isEditing()">
-                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>{{ isEditing() ? 'Zaktualizuj wpis w rejestrze' : 'Zapisz pomiar w rejestrze' }}</span>
+          <!-- Utrzymanie diety: po 2 klocki w wierszu z kolorem i krótką nazwą -->
+          <div class="form-group lifestyle-group">
+            <label class="form-label">Utrzymanie diety</label>
+            <div class="two-col-blocks-grid">
+              @for (opt of dietOptions; track opt.type) {
+              <button type="button" class="lifestyle-block-btn" [class.active]="newEntryDiet() === opt.type"
+                [style.--block-color]="opt.color" (click)="newEntryDiet.set(opt.type)">
+                <span class="block-dot" [style.background-color]="opt.color"></span>
+                <span class="block-value font-mono">{{ opt.label }}</span>
               </button>
+              }
             </div>
-          </form>
-        </section>
+          </div>
+
+          <!-- Spożycie alkoholu: po 2 klocki w wierszu z krótkimi słowami -->
+          <div class="form-group lifestyle-group">
+            <label class="form-label">Spożycie alkoholu</label>
+            <div class="two-col-blocks-grid">
+              @for (opt of alcoholOptions; track opt.level) {
+              <button type="button" class="lifestyle-block-btn" [class.active]="newEntryAlcohol() === opt.level"
+                [style.--block-color]="opt.color" (click)="newEntryAlcohol.set(opt.level)">
+                <span class="block-dot" [style.background-color]="opt.color"></span>
+                <span class="block-value font-mono">{{ opt.label }}</span>
+              </button>
+              }
+            </div>
+          </div>
+
+          <!-- Notatki / Okoliczności -->
+          <div class="form-group full-width-field">
+            <label class="form-label" for="m-notes">Notatki / Okoliczności pomiaru</label>
+            <input id="m-notes" type="text" class="form-input"
+              placeholder="np. Na czczo po przebudzeniu, po treningu..." [ngModel]="newEntryNotes()"
+              (ngModelChange)="newEntryNotes.set($event)" name="mNotes" />
+          </div>
+
+          <div class="form-actions-footer">
+            @if (isEditing()) {
+            <button type="button" class="cancel-edit-btn" (click)="resetToNewEntry()">
+              <span>Anuluj edycję</span>
+            </button>
+            }
+            <button type="submit" class="submit-entry-btn" [class.btn-update]="isEditing()">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>{{ isEditing() ? 'Zaktualizuj wpis w rejestrze' : 'Zapisz pomiar w rejestrze' }}</span>
+            </button>
+          </div>
+        </form>
+      </section>
       }
 
       <!-- Sekcja Pełnej Tabeli Historii -->
@@ -1051,73 +855,65 @@
             </thead>
             <tbody>
               @for (item of history(); track item.id; let idx = $index) {
-                <tr [class.selected]="idx === selectedIndex()" [class.row-editing]="editingRecordId() === item.id">
-                  <td class="font-mono text-muted">#{{ history().length - idx }}</td>
-                  <td class="font-mono text-primary font-bold">{{ item.date }}</td>
-                  <td class="font-mono text-muted">{{ item.time }}</td>
-                  <td class="font-mono font-bold text-cyan">{{ item.weight }} kg</td>
-                  <td class="font-mono text-blue">{{ item.totalBodyWater }}%</td>
-                  <td class="font-mono text-amber">{{ item.overfat }}%</td>
-                  <td class="font-mono text-stat-muscle">{{ item.muscleMass }}%</td>
-                  <td class="font-mono text-purple">{{ item.boneMass }}%</td>
-                  <td class="font-mono text-sky">{{ item.bmi }}</td>
-                  <td class="font-mono text-orange">{{ item.kcal }}</td>
-                  <td>
-                    <span class="ketone-tag" [class]="'level-' + (item.ketoneLevel || 'none')">
-                      {{ item.urineKetones || 'Brak pomiaru' }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="tag-status" [ngClass]="'diet-' + (item.diet || 'keto')">
-                      {{ item.diet === 'keto' ? 'Keto' : item.diet === 'light' ? 'Lekka' : 'Zła' }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="tag-status" [ngClass]="'alcohol-' + (item.alcohol || 'none')">
-                      {{ item.alcohol === 'none' ? 'Brak' : item.alcohol === 'light' ? 'Lekko' : 'Ciężko' }}
-                    </span>
-                  </td>
-                  <td class="notes-cell text-muted">{{ item.notes || '-' }}</td>
-                  <td class="actions-cell text-right">
-                    <div class="action-buttons-inline">
-                      <button 
-                        type="button" 
-                        class="table-btn-select"
-                        [class.is-active]="idx === selectedIndex()"
-                        (click)="selectMeasurement(idx)"
-                        title="Załaduj ten pomiar na główny pulpit">
-                        {{ idx === selectedIndex() ? '● Aktywny' : 'Wybierz' }}
-                      </button>
-                      <button 
-                        type="button" 
-                        class="table-btn-edit"
-                        [class.is-editing]="editingRecordId() === item.id"
-                        (click)="startEditingRecord(item, $event)"
-                        title="Edytuj ten wpis pomiarowy">
-                        <svg class="icon-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </button>
-                      <button 
-                        type="button" 
-                        class="table-btn-delete"
-                        (click)="deleteMeasurementRecord(item.id, $event)"
-                        title="Usuń ten wpis">
-                        <svg class="icon-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+              <tr [class.selected]="idx === selectedIndex()" [class.row-editing]="editingRecordId() === item.id">
+                <td class="font-mono text-muted">#{{ history().length - idx }}</td>
+                <td class="font-mono text-primary font-bold">{{ item.date }}</td>
+                <td class="font-mono text-muted">{{ item.time }}</td>
+                <td class="font-mono font-bold text-cyan">{{ item.weight }} kg</td>
+                <td class="font-mono text-blue">{{ item.totalBodyWater }}%</td>
+                <td class="font-mono text-amber">{{ item.overfat }}%</td>
+                <td class="font-mono text-stat-muscle">{{ item.muscleMass }}%</td>
+                <td class="font-mono text-purple">{{ item.boneMass }}%</td>
+                <td class="font-mono text-sky">{{ item.bmi }}</td>
+                <td class="font-mono text-orange">{{ item.kcal }}</td>
+                <td>
+                  <span class="ketone-tag" [class]="'level-' + (item.ketoneLevel || 'none')">
+                    {{ item.urineKetones || 'Brak pomiaru' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="tag-status" [ngClass]="'diet-' + (item.diet || 'keto')">
+                    {{ getDietLabel(item.diet) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="tag-status" [ngClass]="'alcohol-' + (item.alcohol || 'none')">
+                    {{ item.alcohol === 'none' ? 'Brak' : item.alcohol === 'light' ? 'Lekko' : 'Ciężko' }}
+                  </span>
+                </td>
+                <td class="notes-cell text-muted">{{ item.notes || '-' }}</td>
+                <td class="actions-cell text-right">
+                  <div class="action-buttons-inline">
+                    <button type="button" class="table-btn-select" [class.is-active]="idx === selectedIndex()"
+                      (click)="selectMeasurement(idx)" title="Załaduj ten pomiar na główny pulpit">
+                      {{ idx === selectedIndex() ? '● Aktywny' : 'Wybierz' }}
+                    </button>
+                    <button type="button" class="table-btn-edit" [class.is-editing]="editingRecordId() === item.id"
+                      (click)="startEditingRecord(item, $event)" title="Edytuj ten wpis pomiarowy">
+                      <svg class="icon-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    <button type="button" class="table-btn-delete" (click)="deleteMeasurementRecord(item.id, $event)"
+                      title="Usuń ten wpis">
+                      <svg class="icon-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
               } @empty {
-                <tr>
-                  <td colspan="15" class="empty-table-msg font-mono text-muted text-center">
-                    Brak zarejestrowanych pomiarów w bazie danych. Wprowadź dane w formularzu powyżej i kliknij "Zapisz pomiar".
-                  </td>
-                </tr>
+              <tr>
+                <td colspan="15" class="empty-table-msg font-mono text-muted text-center">
+                  Brak zarejestrowanych pomiarów w bazie danych. Wprowadź dane w formularzu powyżej i kliknij "Zapisz
+                  pomiar".
+                </td>
+              </tr>
               }
             </tbody>
           </table>

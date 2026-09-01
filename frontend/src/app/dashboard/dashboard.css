@@ -616,77 +616,61 @@
 }
 
 /* Ketone Cell */
-.ketone-top-row {
+.ketone-body-flow {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: space-between;
-  margin-bottom: 6px;
+  gap: 8px;
+  height: 100%;
 }
 
-.ketone-value {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.ketone-strip-scale {
-  display: flex;
-  gap: 4px;
+.mini-chart-box-wide {
   width: 100%;
-  margin-bottom: 4px;
-}
-
-.strip-step {
-  flex: 1;
-  height: 18px;
-  border-radius: 4px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  opacity: 0.65;
 }
 
-.strip-step.active {
-  opacity: 1;
-  transform: scaleY(1.15);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-  border: 1px solid #fff;
+.ketone-today-section {
+  width: 100%;
+  margin-top: 2px;
 }
 
-.step-neg {
-  background: #f4e8c1;
-  color: #594a28;
-}
-
-.step-trace {
-  background: #deb6d6;
-  color: #4a2143;
-}
-
-.step-low {
-  background: #c384b7;
-  color: #3b1035;
-}
-
-.step-mod {
-  background: #9d4e92;
-  color: #fff;
-}
-
-.step-high {
-  background: #672262;
-  color: #fff;
-}
-
-.scale-labels {
+.ketone-bar-track {
+  position: relative;
+  width: 100%;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
   display: flex;
-  justify-content: space-between;
-  font-size: 8px;
-  color: var(--text-muted);
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.ketone-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  opacity: 0.35;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.ketone-bar-label {
+  position: relative;
+  z-index: 2;
+  font-size: 11px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
 }
 
 /* Main Interactive Chart Panel */
@@ -994,40 +978,35 @@
   justify-content: space-between;
 }
 
-.body-shape-layout-2x2 {
+.body-shape-layout-clean {
   display: flex;
-  flex-direction: row;
-  align-items: stretch;
+  flex-direction: column;
   justify-content: space-between;
-  gap: 16px;
   height: 100%;
+  gap: 12px;
   padding-top: 4px;
 }
 
-/* Kolumna słupka proporcji składu ciała */
-.comp-stacked-bar-column {
-  flex: 0 0 54px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.comp-stacked-bar-container {
+/* Poziomy pasek proporcji składu ciała */
+.comp-stacked-bar-container-horizontal {
   width: 100%;
-  height: 100%;
+  height: 18px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0;
   padding: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
   box-sizing: border-box;
   overflow: hidden;
 }
 
 .comp-bar-segment {
-  width: 100%;
+  width: auto;
+  height: 100%;
+  flex-basis: 0px;
+  flex-shrink: 1;
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -1048,89 +1027,87 @@
   filter: grayscale(0.6);
 }
 
-.breakdown-column-2x2 {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 100%;
-  justify-content: space-between;
-  min-width: 0;
+/* Duży przelicznik masy na kilogramy wycentrowany pod wykresem */
+.body-comp-kg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+  align-items: center;
 }
 
-.comp-box-2x2 {
+.comp-kg-card {
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 7px 10px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
   transition: all var(--transition-fast);
   cursor: pointer;
 }
 
-.comp-box-2x2:hover,
-.comp-box-2x2.is-hovered {
+.comp-kg-card:hover,
+.comp-kg-card.is-hovered {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.25);
-  transform: translateX(-2px);
-  box-shadow: 0 0 14px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
-.comp-box-2x2.is-dimmed {
+.comp-kg-card.is-dimmed {
   opacity: 0.35;
 }
 
-.comp-box-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.comp-box-title {
+.comp-kg-header {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.comp-dot {
+.comp-kg-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   box-shadow: 0 0 6px currentColor;
 }
 
-.comp-label-text {
+.comp-kg-name {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.comp-box-pct {
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.comp-bar-container {
-  width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.comp-bar-fill {
-  height: 100%;
-  border-radius: var(--radius-full);
-  transition: width 0.4s ease;
-}
-
-.comp-box-bottom {
+.comp-kg-value-row {
   display: flex;
-  justify-content: flex-end;
-  font-size: 9px;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px;
+  margin: 2px 0;
+}
+
+.comp-kg-num {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.comp-kg-unit {
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-muted);
+}
+
+.comp-kg-pct {
+  font-size: 11px;
+  font-weight: 600;
 }
 
 
@@ -1446,13 +1423,103 @@
 .measurement-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
-.form-grid {
+/* Duże kwadratowe pola po dwa na wiersz */
+.form-grid-square-two-col {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.square-field {
+  background: rgba(18, 21, 31, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  min-height: 86px;
+  box-sizing: border-box;
+  transition: all var(--transition-fast);
+}
+
+.square-field:hover {
+  background: rgba(18, 21, 31, 0.9);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.square-field.highlight-cyan {
+  border-color: rgba(6, 182, 212, 0.25);
+  background: rgba(6, 182, 212, 0.04);
+}
+
+.square-field.highlight-cyan:hover {
+  border-color: rgba(6, 182, 212, 0.45);
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.square-field.highlight-blue {
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.square-field.highlight-blue:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.square-field.highlight-amber {
+  border-color: rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.04);
+}
+
+.square-field.highlight-amber:hover {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.square-field.highlight-rose {
+  border-color: rgba(244, 63, 94, 0.25);
+  background: rgba(244, 63, 94, 0.04);
+}
+
+.square-field.highlight-rose:hover {
+  border-color: rgba(244, 63, 94, 0.45);
+  background: rgba(244, 63, 94, 0.08);
+}
+
+.square-field.highlight-purple {
+  border-color: rgba(168, 85, 247, 0.25);
+  background: rgba(168, 85, 247, 0.04);
+}
+
+.square-field.highlight-purple:hover {
+  border-color: rgba(168, 85, 247, 0.45);
+  background: rgba(168, 85, 247, 0.08);
+}
+
+.square-field.highlight-sky {
+  border-color: rgba(14, 165, 233, 0.25);
+  background: rgba(14, 165, 233, 0.04);
+}
+
+.square-field.highlight-sky:hover {
+  border-color: rgba(14, 165, 233, 0.45);
+  background: rgba(14, 165, 233, 0.08);
+}
+
+.square-field.highlight-orange {
+  border-color: rgba(249, 115, 22, 0.25);
+  background: rgba(249, 115, 22, 0.04);
+}
+
+.square-field.highlight-orange:hover {
+  border-color: rgba(249, 115, 22, 0.45);
+  background: rgba(249, 115, 22, 0.08);
 }
 
 .form-group {
@@ -1463,8 +1530,10 @@
 
 .form-label {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .input-wrap {
@@ -1474,12 +1543,12 @@
 
 .form-input {
   width: 100%;
-  padding: 9px 12px;
-  background: rgba(13, 15, 22, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  background: rgba(10, 12, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
   transition: all var(--transition-fast);
   box-sizing: border-box;
@@ -1487,78 +1556,86 @@
 
 .form-input:focus {
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
-  background: rgba(18, 21, 31, 0.95);
+  box-shadow: 0 0 14px rgba(6, 182, 212, 0.3);
+  background: rgba(15, 18, 26, 0.95);
 }
 
 .input-wrap.with-suffix .form-input {
-  padding-right: 42px;
+  padding-right: 48px;
 }
 
 .input-suffix {
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-muted);
   pointer-events: none;
 }
 
-/* Wybór poziomu ketonów w formularzu */
-.ketone-select-group {
-  grid-column: 1 / -1;
-}
-
-.ketone-pills-row {
+/* Sekcje Stylu Życia (Ketony, Dieta, Alkohol) – Siatka 2 Klocki na Wiersz */
+.lifestyle-group {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
-  margin-top: 4px;
 }
 
-.ketone-pill-btn {
-  display: inline-flex;
+.two-col-blocks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.lifestyle-block-btn {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
-  font-size: 12px;
   cursor: pointer;
   transition: all var(--transition-fast);
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 48px;
 }
 
-.ketone-pill-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.18);
+.lifestyle-block-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.22);
   color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
-.ketone-pill-btn.active {
-  background: rgba(236, 72, 153, 0.12);
-  border-color: var(--pill-color, #ec4899);
-  color: #fff;
-  box-shadow: 0 0 14px rgba(236, 72, 153, 0.25);
+.lifestyle-block-btn.active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--block-color, #06b6d4);
+  color: #ffffff;
+  box-shadow: 0 0 16px var(--block-color, rgba(6, 182, 212, 0.3));
 }
 
-.pill-dot {
-  width: 8px;
-  height: 8px;
+.block-dot {
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  box-shadow: 0 0 6px currentColor;
+  box-shadow: 0 0 8px currentColor;
+  flex-shrink: 0;
 }
 
-.pill-val {
-  font-size: 11px;
-  opacity: 0.8;
+.block-value {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .full-width-field {
-  grid-column: 1 / -1;
+  width: 100%;
 }
 
 .form-actions-footer {
@@ -1912,7 +1989,7 @@
 /* Mobile Screens (<= 768px) - EXACTLY MAX 2 BLOCKS WIDE */
 @media (max-width: 768px) {
   .dashboard-viewport {
-    padding: 8px 8px 24px 8px;
+    padding: 8px 8px calc(80px + env(safe-area-inset-bottom, 0px)) 8px !important;
     scrollbar-gutter: auto;
   }
 
@@ -2008,28 +2085,7 @@
 
   /* Ketony w moczu */
   .grid-cell.ketone-cell {
-    min-height: 120px !important;
-  }
-
-  .ketone-top-row {
-    margin-bottom: 6px;
-  }
-
-  .ketone-value {
-    font-size: 18px;
-  }
-
-  .ketone-strip-scale {
-    gap: 3px;
-  }
-
-  .strip-step {
-    height: 18px;
-    font-size: 9px;
-  }
-
-  .scale-labels {
-    font-size: 8px;
+    min-height: 110px !important;
   }
 
   /* Główny Panel Wykresów */
@@ -2090,47 +2146,33 @@
 
   /* Kształt i skład ciała */
   .grid-cell.body-shape-cell {
-    min-height: 360px !important;
+    min-height: 260px !important;
     padding: 14px 10px !important;
   }
 
-  .body-shape-layout-2x2 {
-    flex-direction: column;
-    gap: 12px;
+  .body-shape-layout-clean {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
   }
 
-  .comp-stacked-bar-column {
-    width: 100%;
-    height: 28px;
-    min-width: 0;
+  .comp-stacked-bar-container-horizontal {
+    height: 16px !important;
   }
 
-  .comp-stacked-bar-container {
-    flex-direction: row;
-    height: 100%;
-    width: 100%;
+  .body-comp-kg-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
   }
 
-  .breakdown-column-2x2 {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    width: 100%;
+  .comp-kg-card {
+    padding: 6px 8px !important;
   }
 
-  .comp-box-2x2 {
-    padding: 8px 10px;
-  }
-
-  .comp-label-text {
-    font-size: 11px;
-  }
-
-  .comp-box-pct {
-    font-size: 12px;
-  }
-
-  .comp-box-bottom {
-    font-size: 9px;
+  .comp-kg-num {
+    font-size: 18px !important;
   }
 
   /* Historia pomiarów */
@@ -2169,23 +2211,35 @@
     white-space: nowrap;
   }
 
-  /* Formularz w modalu */
-  .form-grid {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
+  /* Formularz w modalu: po 2 na wiersz */
+  .form-grid-square-two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
   }
 
-  .form-group.full-width {
-    grid-column: 1 !important;
+  .square-field {
+    padding: 10px 12px !important;
+    min-height: 74px !important;
   }
 
-  .lifestyle-pills-row {
-    gap: 6px;
+  .square-field .form-input {
+    font-size: 13px !important;
+    padding: 8px 10px !important;
   }
 
-  .lifestyle-pill-btn {
-    padding: 6px 10px;
-    font-size: 11px;
+  .square-field .form-label {
+    font-size: 10px !important;
+  }
+
+  .two-col-blocks-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .lifestyle-block-btn {
+    padding: 10px 12px !important;
+    min-height: 42px !important;
+    font-size: 12px !important;
   }
 
   /* Przyciski w nagłówku modala pomiarów – tylko ikony */
@@ -2234,26 +2288,24 @@
     padding: 3px 10px;
   }
 
-  .alcohol-badge-hero {
-    font-size: 11px;
-    padding: 3px 8px;
+  .alcohol-days-hero {
+    font-size: 18px;
   }
 
-  .alcohol-meter-strip {
-    gap: 4px;
-    padding: 3px;
+  .alcohol-last-box {
+    align-items: flex-start;
+    text-align: left;
   }
 
-  .meter-bar {
-    padding: 4px 2px;
+  .alcohol-metric-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 
-  .meter-bar .meter-label {
-    font-size: 9px;
-  }
-
-  .breakdown-column-2x2 {
-    grid-template-columns: 1fr;
+  .body-comp-kg-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
   }
 }
 
@@ -2270,9 +2322,9 @@
 
 .diet-badge-hero {
   display: inline-block;
-  padding: 4px 14px;
+  padding: 6px 18px;
   border-radius: var(--radius-full);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2284,6 +2336,14 @@
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.5);
   box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+}
+
+.diet-badge-hero.badge-diet-low-carb,
+.diet-badge-hero.badge-diet-low-carbon {
+  background: rgba(59, 130, 246, 0.16);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.25);
 }
 
 .diet-badge-hero.badge-diet-light {
@@ -2300,152 +2360,74 @@
   box-shadow: 0 0 16px rgba(244, 63, 94, 0.25);
 }
 
-.diet-status-dots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.diet-dot-step {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  font-size: 10px;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-muted);
-  transition: all var(--transition-fast);
-}
-
-.diet-dot-step.active {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border-color: currentColor;
-  transform: scale(1.1);
-  box-shadow: 0 0 8px currentColor;
-}
-
 /* 2. Kafelek Alkoholu */
-.alcohol-cell-body {
+.alcohol-cell-clean {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
-.alcohol-top-status {
+.alcohol-clean-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  width: 100%;
+  padding: 0 8px;
+  gap: 16px;
 }
 
-.alcohol-badge-hero {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+.alcohol-num-group {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.alcohol-big-num {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.alcohol-big-unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.alcohol-badge-hero.badge-alcohol-none {
-  background: rgba(16, 185, 129, 0.15);
+.alcohol-clean-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.alcohol-clean-badge.badge-alcohol-none {
+  background: rgba(16, 185, 129, 0.16);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
 }
 
-.alcohol-badge-hero.badge-alcohol-light {
-  background: rgba(245, 158, 11, 0.15);
+.alcohol-clean-badge.badge-alcohol-light {
+  background: rgba(245, 158, 11, 0.16);
   color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
 }
 
-.alcohol-badge-hero.badge-alcohol-heavy {
+.alcohol-clean-badge.badge-alcohol-heavy {
   background: rgba(244, 63, 94, 0.18);
   color: #fb7185;
   border: 1px solid rgba(244, 63, 94, 0.5);
-  box-shadow: 0 0 14px rgba(244, 63, 94, 0.3);
-}
-
-.alcohol-sub-info {
-  font-size: 11px;
-}
-
-.alcohol-meter-strip {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 5px;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.meter-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 4px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: var(--text-muted);
-  transition: all var(--transition-fast);
-}
-
-.meter-bar .meter-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.meter-bar .meter-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.meter-bar.step-none.active {
-  background: rgba(16, 185, 129, 0.16);
-  border-color: rgba(16, 185, 129, 0.5);
-  color: #34d399;
-}
-.meter-bar.step-none.active .meter-dot {
-  background: #34d399;
-  box-shadow: 0 0 8px #34d399;
-}
-
-.meter-bar.step-light.active {
-  background: rgba(245, 158, 11, 0.16);
-  border-color: rgba(245, 158, 11, 0.5);
-  color: #fbbf24;
-}
-.meter-bar.step-light.active .meter-dot {
-  background: #fbbf24;
-  box-shadow: 0 0 8px #fbbf24;
-}
-
-.meter-bar.step-heavy.active {
-  background: rgba(244, 63, 94, 0.2);
-  border-color: rgba(244, 63, 94, 0.6);
-  color: #fb7185;
-}
-.meter-bar.step-heavy.active .meter-dot {
-  background: #fb7185;
-  box-shadow: 0 0 8px #fb7185;
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.3);
 }
 
 /* 3. Selektory w Formularzu Modala */
@@ -2502,6 +2484,13 @@
   background: rgba(16, 185, 129, 0.12);
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.tag-status.diet-low-carb,
+.tag-status.diet-low-carbon {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .tag-status.diet-light {

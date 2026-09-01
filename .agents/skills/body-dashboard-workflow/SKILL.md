@@ -67,29 +67,31 @@ node start
   - `frontend/src/app/services/dashboard-layout.service.ts`: reaktywne pozycjonowanie 2D, tryb edycji, sprawdzanie kolizji `canPlaceWidget`, auto-sync z `PUT /api/layout` z nagłówkiem `x-user-id`.
   - `frontend/src/app/services/measurements.service.ts`: pobieranie i modyfikacja pomiarów biometrii (`history`), integracja z `/api/measurements` z nagłówkiem `x-user-id`.
 - **Główny kontener widoku**: `frontend/src/app/dashboard/dashboard.ts`
-- **Konwencje Grida 2D i Parametrów**:
-  - **Siatka Kwadratowa**: 8 kolumn `repeat(8, minmax(120px, 1fr))`, stała wysokość wiersza `135px`.
+- **Konwencje Grida 2D, Responsywności RWD i Parametrów**:
+  - **Siatka Desktop**: 8 kolumn `repeat(8, minmax(120px, 1fr))`, stała wysokość wiersza `135px`.
+  - **Siatka Mobile (<= 768px)**: Maksymalnie 2 kolumny `repeat(2, minmax(0, 1fr)) !important`, `grid-auto-rows: minmax(125px, auto) !important`, `gap: 8px !important`. Kafelki 1-kolumnowe (`span 1`) i 2-kolumnowe (`span 2`).
+  - **Dynamiczne Viewporty i Safe Area**: Obsługa jednostki `100dvh`, deklaracja `viewport-fit=cover` oraz bezpieczny dolny padding `calc(80px + env(safe-area-inset-bottom, 0px))` zapobiegający zasłanianiu dolnych kontenerów przez pasek przeglądarki mobilnej.
   - **Pozycjonowanie 2D**: Współrzędne `col`, `row`, `colSpan`, `rowSpan` dla każdego kafelka (minimalny rozmiar 1×1).
   - **Interaktywne przenoszenie i skalowanie**: Lift-to-Drag ze wskaźnikiem wolnego miejsca oraz skalowanie prawym dolnym rogiem.
-  - **Parametry Biometryczne**:
+  - **14 Parametrów Biometrycznych**:
     1. Data i Godzina (`2x1`)
     2. Waga w kg (`2x1`) z automatyczną deltą
-    3. Total Body Water TBW (`1x2`) ze zbiornikiem poziomu
-    4. Overfat / Tkanka tłuszczowa (`1x1`)
+    3. Nawodnienie komórkowe (`1x2`) ze wskaźnikiem normy 55-65% (bez zbędnych plakietek)
+    4. Overfat / Tkanka tłuszczowa (`1x1`) – ocena normy bazuje na płci ustawionej w profilu użytkownika (brak przełącznika M/K na kafelku)
     5. Mięśnie (% / kg) (`1x1`)
     6. Kości / Masa mineralna (% / kg) (`1x1`)
     7. BMI (`1x1`)
     8. Kcal / BMR (`1x1`)
-    9. Ketony w moczu (`2x1`) z 6-stopniowym testem paskowym
-    10. Główny Panel Trendów (`5x2`) z hybrydowym wykresem SVG Bezier + HTML Overlay
-    11. Kształt i Skład Ciała (`3x2`) – koncentryczne warstwy sylwetki (Kości, Mięśnie, Tłuszcz, Woda)
-    12. Historia Pomiarów (`8x2`) z przyciskiem otwierania pełnego rejestru w modalu
-- **Modal Profilu Użytkownika & Bezpieczeństwo Danych**:
-  - Przycisk w prawym górnym rogu górnej belki otwiera pełnoekranowy `ModalComponent`.
-  - **Niezalogowany**: Karta logowania z oficjalnym przyciskiem Google Identity Services.
-  - **Zalogowany ("Profil użytkownika")**:
-    - Wyświetla **wyłącznie bezpieczne dane biznesowe**: Awatar, Imię i nazwisko, E-mail, Język/Region, Datę rejestracji oraz Datę ostatniego logowania.
-    - Całkowity brak surowych zrzutów tokenów JWT / parametrów technicznych w interfejsie.
+    9. Ketony w moczu (`2x1`) – wykres trendu w czasie + poziomy pasek stanu na dziś z wycentrowaną przybliżoną wartością
+    10. Utrzymanie Diety (`1x1`) – minimalistyczny wskaźnik ostatniego pomiaru (Keto, Low Carb, Lekka, Zła)
+    11. Spożycie Alkoholu (`2x1`) – minimalistyczny licznik liczby dni od ostatniego spożycia oraz rodzaj ostatniego spożycia (Brak, Lekko, Ciężko)
+    12. Główny Panel Trendów (`5x2`) z hybrydowym wykresem SVG Bezier + HTML Overlay
+    13. Wizualizacja Kształtu i Składu Ciała (`3x2`) – poziomy pasek kompozycji oraz wyśrodkowany, powiększony przelicznik masy na kilogramy (Kości, Mięśnie, Tłuszcz, Woda)
+    14. Historia Pomiarów (`8x2`) z przyciskiem otwierania pełnego rejestru w modalu
+- **Modal Profilu Użytkownika & Rejestr Pomiarów**:
+  - Pełnoekranowy `ModalComponent` z obsługą `100dvh` i klawisza `Escape`.
+  - **Przyciski akcji na mobile (`<= 768px`)**: Wyświetlają wyłącznie ikony SVG w kwadratowych polach dotykowych (`34×34px`).
+  - **Profil użytkownika**: Wyświetla bezpieczne dane Google OAuth z przyciskiem **Wyloguj bezpośrednio pod awatarem** tożsamości oraz interaktywnym selektorem płci biologicznej (`♂ Mężczyzna` / `♀ Kobieta`) synchronizowanym z normami biometrii.
 
 ---
 

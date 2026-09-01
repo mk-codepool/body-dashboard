@@ -14,6 +14,7 @@ export class ModalComponent {
   readonly subtitle = input<string>('');
   readonly badge = input<string>('');
   readonly showClose = input<boolean>(true);
+  readonly showIndicator = input<boolean>(true);
 
   readonly closed = output<void>();
 

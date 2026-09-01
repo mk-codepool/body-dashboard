@@ -7,9 +7,11 @@
         <div class="modal-header-left">
           <div class="modal-title-group">
             <div class="modal-title-row">
-              <div class="modal-icon-indicator">
-                <span class="modal-dot"></span>
-              </div>
+              @if (showIndicator()) {
+                <div class="modal-icon-indicator">
+                  <span class="modal-dot"></span>
+                </div>
+              }
               <h2 class="modal-title">{{ title() }}</h2>
               @if (badge()) {
                 <span class="modal-badge font-mono">{{ badge() }}</span>

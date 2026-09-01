@@ -60,7 +60,7 @@ export const DEFAULT_WIDGETS: DashboardWidgetConfig[] = [
   },
   {
     id: 'tbw',
-    title: 'Total Body Water',
+    title: 'Nawodnienie komórkowe',
     col: 5,
     row: 1,
     colSpan: 1,

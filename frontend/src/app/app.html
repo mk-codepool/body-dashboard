@@ -4,6 +4,18 @@
     <div class="top-bar-left"></div>
 
     <div class="top-bar-right">
+      <!-- Przycisk + Otwórz pomiary -->
+      <button type="button" class="topbar-add-btn" (click)="openMeasurementsModal()"
+        title="Otwórz okno pomiarów i dodaj nowy wpis biometrii">
+        <svg class="btn-icon add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        <span>Pomiar</span>
+      </button>
+
+      <div class="divider"></div>
+
       <!-- Przełącznik trybu edycji dashboardu -->
       <div class="layout-controls">
         @if (layoutService.isEditMode()) {
@@ -75,6 +87,33 @@
       </div>
     </div>
   </header>
+
+  <!-- REUŻYWALNY BANNER POWIADOMIEŃ POD GÓRNĄ BELKĄ -->
+  @if (notificationService.activeBanner(); as banner) {
+  <div class="topbar-banner" [class]="'banner-' + banner.type" (click)="notificationService.dismiss()"
+    role="alert" title="Kliknij aby zamknąć powiadomienie">
+    <div class="banner-content">
+      <div class="banner-icon-box">
+        <svg class="banner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          @if (banner.type === 'success') {
+          <polyline points="20 6 9 17 4 12" />
+          } @else if (banner.type === 'error') {
+          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          } @else {
+          <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+          }
+        </svg>
+      </div>
+      <span class="banner-text font-mono">{{ banner.message }}</span>
+    </div>
+    <button type="button" class="banner-close-btn" (click)="notificationService.dismiss(); $event.stopPropagation()" title="Zamknij">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  </div>
+  }
 
   <!-- Main Content Space (Dashboard) -->
   <main class="main-content">
@@ -206,6 +245,23 @@
           <div class="attr-box">
             <span class="attr-label">Adres e-mail</span>
             <span class="attr-value font-mono">{{ user.email }}</span>
+          </div>
+
+          <!-- Płeć biologiczna do norm biometrii -->
+          <div class="attr-box attr-box-interactive">
+            <span class="attr-label">Płeć (normy składu ciała)</span>
+            <div class="profile-gender-toggle">
+              <button type="button" class="profile-gender-btn" [class.active]="authService.userGender() === 'male'"
+                (click)="authService.setGender('male')">
+                <span class="gender-icon">♂</span>
+                <span>Mężczyzna</span>
+              </button>
+              <button type="button" class="profile-gender-btn" [class.active]="authService.userGender() === 'female'"
+                (click)="authService.setGender('female')">
+                <span class="gender-icon">♀</span>
+                <span>Kobieta</span>
+              </button>
+            </div>
           </div>
 
           <!-- Język i region -->

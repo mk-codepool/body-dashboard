@@ -21,7 +21,7 @@ export interface DashboardWidgetConfig {
 }
 
 export type AlcoholLevel = 'none' | 'light' | 'heavy';
-export type DietType = 'light' | 'keto' | 'bad';
+export type DietType = 'keto' | 'low-carb' | 'low-carbon' | 'light' | 'bad';
 
 export interface MeasurementRecord {
   id: string;

@@ -67,6 +67,7 @@ body-dashboard/
   - `grid-auto-rows: minmax(125px, auto) !important` oraz `gap: 8px !important`
   - **Kafelki pojedyncze (1 klocek szerokości - `span 1`)**: TBW, Overfat, Mięśnie, Kości, BMI, Kcal, Dieta, Alkohol.
   - **Kafelki podwójne / pełnoszerokościowe (2 klocki szerokości - `span 2`)**: Data i Godzina, Waga Ciała, Ketony w moczu, Wykres Trendu (`mainChart`), Kształt Ciała (`bodyShape`), Historia Pomiarów (`history`).
+  - **Dynamiczne Viewporty i Safe Area**: Obsługa jednostki `100dvh`, deklaracja `viewport-fit=cover` oraz bezpieczny dolny padding `calc(80px + env(safe-area-inset-bottom, 0px))` zapobiegający ucinaniu dolnych kontenerów przez pasek nawigacyjny przeglądarki mobilnej.
   - Optymalizacja dotykowa (touch-friendly), responsywna górna belka (Top Bar), mobilne modale oraz czytelne wykresy bez rozciągania.
 
 ### 4. Interaktywny Tryb Edycji i Persystencja JSON (Lift-to-Drag, Resize & JSON Sync)
@@ -89,26 +90,23 @@ body-dashboard/
 Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/measurements.json` poprzez serwis `MeasurementsService` i endpointy `/api/measurements`:
 1. **Data i Godzina pomiaru** (`colSpan: 2, rowSpan: 1`)
 2. **Waga (kg)** (`colSpan: 2, rowSpan: 1`) z trendem vs poprzedni pomiar
-3. **Total Body Water (TBW % / L)** (`colSpan: 1, rowSpan: 2`) ze zbiornikiem poziomu
-4. **Overfat (Tkanka tłuszczowa %)** (`colSpan: 1, rowSpan: 1`) z zakresem normy
+3. **Nawodnienie komórkowe (% / L)** (`colSpan: 1, rowSpan: 2`) ze wskaźnikiem normy 55-65%
+4. **Overfat (Tkanka tłuszczowa %)** (`colSpan: 1, rowSpan: 1`) z oceną normy bazującą na płci ustawionej w profilu użytkownika
 5. **Mięśnie (% / kg)** (`colSpan: 1, rowSpan: 1`) z przeliczeniem na kg
 6. **Kości (Minerały % / kg)** (`colSpan: 1, rowSpan: 1`) z przeliczeniem na kg
 7. **BMI** (`colSpan: 1, rowSpan: 1`)
 8. **Kcal (BMR)** (`colSpan: 1, rowSpan: 1`)
-9. **Ketony w moczu (mmol/L)** (`colSpan: 2, rowSpan: 1`) z 6-stopniowym selektorem (w tym stan `Brak pomiaru` / `none`)
-10. **Główny Panel Wykresów Trendu** (`colSpan: 5, rowSpan: 2`) z przełącznikiem parametrów (Pill Tabs)
-11. **Wizualizacja Sylwetki i Składu Ciała** (`colSpan: 3, rowSpan: 2`) po prawej stronie wykresu – wielowarstwowy wektorowy model koncentrycznych otoczek (Painter's Algorithm):
-    - ⚪ **Kości (Minerały)**: Cienki biały rdzeń szkieletu (`2.0px`, `#ffffff`) z pełną, jednolitą kropką głowy w środku (brak wewnętrznych pustych warstw).
-    - 🔴 **Mięśnie & Białko**: Czerwona otoczka (`#ef4444`) otaczająca szkielet kości, o grubości proporcjonalnej do masy mięśniowej.
-    - 🟡 **Tłuszcz (Fat)**: Żółta otoczka (`#f59e0b`) otaczająca warstwę mięśni, o grubości proporcjonalnej do poziomu tkanki tłuszczowej.
-    - 🔵 **Woda (TBW)**: Niebieska zewnętrzna otoczka (`#06b6d4`) otaczająca całą sylwetkę, o grubości proporcjonalnej do nawodnienia.
-    - Dynamiczne skalowanie 1:1 grubości fizycznych otoczek $\Delta T_i$ oraz dwustronny interaktywny hover łączący sylwetkę z kafelkami składowych.
-12. **Historia i Rejestr Pomiarów** (`colSpan: 8, rowSpan: 2`) z możliwością wyboru rekordu i przyciskiem otwierania pełnego rejestru w Modalu
+9. **Ketony w moczu (mmol/L)** (`colSpan: 2, rowSpan: 1`) z wykresem trendu w czasie oraz poziomym paskiem stanu na dziś z wycentrowaną przybliżoną wartością
+10. **Utrzymanie Diety** (`colSpan: 1, rowSpan: 1`) – minimalistyczny wskaźnik ostatniego pomiaru (Keto, Low Carb, Lekka, Zła)
+11. **Spożycie Alkoholu** (`colSpan: 2, rowSpan: 1`) – licznik dni od ostatniego spożycia alkoholu wraz z informacją o zarejestrowanym poziomie
+12. **Główny Panel Wykresów Trendu** (`colSpan: 5, rowSpan: 2`) z przełącznikiem parametrów (Pill Tabs)
+13. **Wizualizacja Kształtu i Składu Ciała** (`colSpan: 3, rowSpan: 2`) – poziomy pasek kompozycji oraz wyśrodkowany, powiększony przelicznik masy na kilogramy (Kości, Mięśnie, Tłuszcz, Woda)
+14. **Historia i Rejestr Pomiarów** (`colSpan: 8, rowSpan: 2`) z możliwością wyboru rekordu i przyciskiem otwierania pełnego rejestru w Modalu
 
 ### 6. Reużywalny Pełnoekranowy Komponent Modala (`ModalComponent`) & Rejestr Pomiarów
 - **Ścieżka**: `frontend/src/app/components/modal/modal.ts` (oraz `modal.html`, `modal.css`).
 - **Standard**: Standalone Component z sygnałami (`isOpen = input<boolean>()`, `title = input<string>()`, `subtitle = input<string>()`, `badge = input<string>()`, `closed = output<void>()`).
-- **Układ**: Pełny ekran (`100vw` x `100vh`), treść o pełnej szerokości (`width: 100%`) z `scrollbar-gutter: stable`, zapobiegającym nachodzeniu na pasek przewijania.
+- **Układ**: Pełny ekran (`100vw` x `100vh` / `100dvh`), treść o pełnej szerokości (`width: 100%`) z `scrollbar-gutter: stable`, zapobiegającym nachodzeniu na pasek przewijania.
 - **Nagłówek i Responsywność Mobilna**:
   - Tytuł i wskaźnik po lewej, slot projekcji `<ng-content select="[modal-actions]" />` na przyciski akcji (np. `+ Nowy wpis`, zwijanie formularza, zapis/aktualizacja) oraz przycisk zamknięcia `✕` (obsługa klawisza `Escape` przez `@HostListener`).
   - **RWD na komórkach (`<= 768px`)**: Przyciski akcji w nagłówku modala (`[modal-actions]`) ukrywają etykiety tekstowe i wyświetlają **wyłącznie ikony** w kwadratowych, dotykowych przyciskach (`34×34px`), co zapobiega rozpychaniu nagłówka na małych ekranach.
@@ -146,7 +144,7 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
   - Przycisk profilu w prawym górnym rogu górnej belki (`top-bar`): wyświetla awatar Google i imię użytkownika lub przycisk logowania Google.
   - Pełnoekranowy modal:
     - **Dla niezalogowanego**: Oficjalne logowanie Google Identity Services (GIS).
-    - **Dla zalogowanego ("Profil użytkownika")**: Karta tożsamości z awatarem, imieniem i e-mailem oraz siatka bezpiecznych parametrów użytkownika (Imię, Nazwisko, E-mail, Język, Data rejestracji, Ostatnie logowanie).
+    - **Dla zalogowanego ("Profil użytkownika")**: Karta tożsamości z awatarem, przyciskiem **Wyloguj bezpośrednio pod awatarem**, imieniem i e-mailem, interaktywnym selektorem płci biologicznej (`♂ Mężczyzna` / `♀ Kobieta` – zasilającym normy biometrii) oraz siatką bezpiecznych parametrów użytkownika (Imię, Nazwisko, E-mail, Język, Data rejestracji, Ostatnie logowanie).
     - **Zasada Bezpieczeństwa**: Brak surowych zrzutów tokenów JWT / parametrów technicznych w interfejsie użytkownika.
 
 ### 9. Wdrożenie Produkcyjne na Render.com & Dynamiczny Resolver API
