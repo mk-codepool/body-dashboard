@@ -210,7 +210,8 @@
 
   .modal-header-left {
     gap: 8px;
-    max-width: calc(100% - 44px);
+    max-width: calc(100% - 150px);
+    min-width: 0;
   }
 
   .modal-title {
@@ -226,9 +227,45 @@
     display: none;
   }
 
+  .modal-header-right {
+    gap: 6px;
+  }
+
+  .modal-actions-container {
+    gap: 6px;
+  }
+
+  /* Przyciski w nagłówku modala na komórce – tylko ikony */
+  ::ng-deep .modal-actions-container button span,
+  ::ng-deep .modal-actions-container .modal-btn span,
+  ::ng-deep .modal-actions-container .btn-modal-action span {
+    display: none !important;
+  }
+
+  ::ng-deep .modal-actions-container button,
+  ::ng-deep .modal-actions-container .modal-btn,
+  ::ng-deep .modal-actions-container .btn-modal-action {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  ::ng-deep .modal-actions-container button svg,
+  ::ng-deep .modal-actions-container .modal-btn-icon,
+  ::ng-deep .modal-actions-container .action-svg {
+    margin: 0 !important;
+    width: 15px !important;
+    height: 15px !important;
+  }
+
   .modal-close-btn {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
   }
 
   .modal-body {

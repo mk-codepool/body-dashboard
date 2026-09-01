@@ -358,7 +358,15 @@
 .hero-left {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
+}
+
+.profile-avatar-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .profile-avatar-box {
@@ -446,23 +454,26 @@
 .btn-hero-logout {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
   background: rgba(244, 63, 94, 0.1);
   border: 1px solid rgba(244, 63, 94, 0.3);
   border-radius: var(--radius-md);
   color: #f43f5e;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
   font-family: inherit;
+  width: 100%;
 }
 
 .btn-hero-logout:hover {
   background: rgba(244, 63, 94, 0.2);
   border-color: rgba(244, 63, 94, 0.5);
-  box-shadow: 0 0 16px rgba(244, 63, 94, 0.2);
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.25);
+  transform: translateY(-1px);
 }
 
 /* Google Data Grid Section */
@@ -810,6 +821,27 @@
 
   .login-subtitle {
     font-size: 12px;
+  }
+
+  /* Przycisk w nagłówku modala profilu – tylko ikona */
+  .auth-modal-header-actions .btn-modal-action span {
+    display: none !important;
+  }
+
+  .auth-modal-header-actions .btn-modal-action {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .auth-modal-header-actions .btn-modal-action .action-svg {
+    width: 15px !important;
+    height: 15px !important;
+    margin: 0 !important;
   }
 }
 

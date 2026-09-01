@@ -2187,6 +2187,27 @@
     padding: 6px 10px;
     font-size: 11px;
   }
+
+  /* Przyciski w nagłówku modala pomiarów – tylko ikony */
+  .modal-header-btns .modal-btn span {
+    display: none !important;
+  }
+
+  .modal-header-btns .modal-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .modal-header-btns .modal-btn .modal-btn-icon {
+    width: 15px !important;
+    height: 15px !important;
+    margin: 0 !important;
+  }
 }
 
 /* Extra Small Screens (<= 400px) */

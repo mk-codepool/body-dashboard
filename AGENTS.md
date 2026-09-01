@@ -109,7 +109,9 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
 - **Ścieżka**: `frontend/src/app/components/modal/modal.ts` (oraz `modal.html`, `modal.css`).
 - **Standard**: Standalone Component z sygnałami (`isOpen = input<boolean>()`, `title = input<string>()`, `subtitle = input<string>()`, `badge = input<string>()`, `closed = output<void>()`).
 - **Układ**: Pełny ekran (`100vw` x `100vh`), treść o pełnej szerokości (`width: 100%`) z `scrollbar-gutter: stable`, zapobiegającym nachodzeniu na pasek przewijania.
-- **Nagłówek**: Tytuł i wskaźnik po lewej, slot projekcji `<ng-content select="[modal-actions]" />` na przyciski akcji (np. `+ Nowy wpis`, zwijanie formularza, zapis/aktualizacja) oraz przycisk zamknięcia `✕` (obsługa klawisza `Escape` przez `@HostListener`).
+- **Nagłówek i Responsywność Mobilna**:
+  - Tytuł i wskaźnik po lewej, slot projekcji `<ng-content select="[modal-actions]" />` na przyciski akcji (np. `+ Nowy wpis`, zwijanie formularza, zapis/aktualizacja) oraz przycisk zamknięcia `✕` (obsługa klawisza `Escape` przez `@HostListener`).
+  - **RWD na komórkach (`<= 768px`)**: Przyciski akcji w nagłówku modala (`[modal-actions]`) ukrywają etykiety tekstowe i wyświetlają **wyłącznie ikony** w kwadratowych, dotykowych przyciskach (`34×34px`), co zapobiega rozpychaniu nagłówka na małych ekranach.
 - **Obsługa Edycji i Nowego Wpisu**:
   - Dedykowany przycisk edycji (ikona ołówka `.table-btn-edit`) w tabeli modala ładuje wybrany rekord i przełącza formularz w tryb `EDYCJA WPISU #...` z podświetleniem wiersza `.row-editing`.
   - Przycisk `+ Nowy wpis` w nagłówku modala resetuje formularz, przełącza z trybu edycji na nowy wpis oraz automatycznie pobiera wartości startowe z **poprzedniego (najnowszego) pomiaru**.
