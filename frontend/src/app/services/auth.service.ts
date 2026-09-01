@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+import { getApiBaseUrl } from './api.config';
+
 export interface UserDto {
   id: string;
   sub?: string;
@@ -13,6 +15,7 @@ export interface UserDto {
   emailVerified?: boolean;
   picture?: string;
   locale?: string;
+  gender?: string;
   provider: 'google' | 'guest';
   createdAt: string;
   lastLoginAt: string;
@@ -37,7 +40,7 @@ const AUTH_USER_KEY = 'body_dashboard_active_user_v1';
 })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:3000/api/auth';
+  private readonly apiUrl = `${getApiBaseUrl()}/api/auth`;
 
   readonly currentUser = signal<UserDto | null>(this.loadStoredUser());
   readonly isAuthModalOpen = signal<boolean>(false);

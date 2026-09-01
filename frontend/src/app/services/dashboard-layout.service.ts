@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
+import { getApiBaseUrl } from './api.config';
 
 export interface DashboardWidgetConfig {
   id: string;
@@ -257,7 +258,7 @@ export const DEFAULT_WIDGETS: DashboardWidgetConfig[] = [
 export class DashboardLayoutService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
-  private readonly apiUrl = 'http://localhost:3000/api/layout';
+  private readonly apiUrl = `${getApiBaseUrl()}/api/layout`;
 
   readonly isEditMode = signal<boolean>(false);
   readonly widgets = signal<DashboardWidgetConfig[]>(this.loadInitialWidgets());

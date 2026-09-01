@@ -8,6 +8,7 @@ export interface UserDto {
   emailVerified?: boolean;
   picture?: string;
   locale?: string;
+  gender?: string;
   provider: 'google' | 'guest';
   createdAt: string;
   lastLoginAt: string;

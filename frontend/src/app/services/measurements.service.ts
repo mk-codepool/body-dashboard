@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
+import { getApiBaseUrl } from './api.config';
 
 export type AlcoholLevel = 'none' | 'light' | 'heavy';
 export type DietType = 'light' | 'keto' | 'bad';
@@ -155,7 +156,7 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
 export class MeasurementsService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
-  private readonly apiUrl = 'http://localhost:3000/api/measurements';
+  private readonly apiUrl = `${getApiBaseUrl()}/api/measurements`;
 
   readonly history = signal<MeasurementRecord[]>(
     this.authService.isLoggedIn() ? [] : DEFAULT_MEASUREMENTS
