@@ -15,8 +15,8 @@
         <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0" />
       </linearGradient>
       <linearGradient id="grad-muscle" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#10b981" stop-opacity="0.35" />
-        <stop offset="100%" stop-color="#10b981" stop-opacity="0.0" />
+        <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.0" />
       </linearGradient>
       <linearGradient id="grad-bones" x1="0%" y1="0%" x2="0%" y2="100%">
         <stop offset="0%" stop-color="#a855f7" stop-opacity="0.35" />
@@ -79,6 +79,8 @@
         [class.weight-cell]="widget.id === 'weight'"
         [class.tbw-cell]="widget.id === 'tbw'"
         [class.ketone-cell]="widget.id === 'ketones'"
+        [class.diet-cell]="widget.id === 'diet'"
+        [class.alcohol-cell]="widget.id === 'alcohol'"
         [class.main-chart-cell]="widget.id === 'mainChart'"
         [class.body-shape-cell]="widget.id === 'bodyShape'"
         [class.history-cell]="widget.id === 'history'"
@@ -174,7 +176,7 @@
             <div class="cell-body column-flow" (click)="!layoutService.isEditMode() && setChartParam('totalBodyWater')">
               <div class="tbw-display">
                 <div class="metric-big">
-                  <span class="value font-mono text-cyan">{{ current().totalBodyWater }}</span>
+                  <span class="value font-mono text-blue">{{ current().totalBodyWater }}</span>
                   <span class="unit">%</span>
                 </div>
                 <span class="stat-sub text-muted font-mono">≈ {{ waterLiters() }} L wody</span>
@@ -214,7 +216,7 @@
             </div>
             <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('overfat')">
               <div class="metric-big">
-                <span class="value font-mono text-orange">{{ current().overfat }}</span>
+                <span class="value font-mono text-amber">{{ current().overfat }}</span>
                 <span class="unit">%</span>
               </div>
               <div class="mini-chart-box">
@@ -238,13 +240,13 @@
             </div>
             <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('muscleMass')">
               <div class="metric-big">
-                <span class="value font-mono text-emerald">{{ current().muscleMass }}</span>
+                <span class="value font-mono text-stat-muscle">{{ current().muscleMass }}</span>
                 <span class="unit">%</span>
               </div>
               <div class="mini-chart-box">
                 <svg class="sparkline-svg" viewBox="0 0 100 24">
                   <path [attr.d]="getSparkline('muscleMass').area" fill="url(#grad-muscle)" />
-                  <path [attr.d]="getSparkline('muscleMass').line" fill="none" stroke="#10b981" stroke-width="1.8" />
+                  <path [attr.d]="getSparkline('muscleMass').line" fill="none" stroke="#f43f5e" stroke-width="1.8" />
                 </svg>
               </div>
               <span class="metric-sub text-muted font-mono">≈ {{ muscleKg() }} kg masy</span>
@@ -280,7 +282,7 @@
             </div>
             <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('bmi')">
               <div class="metric-big">
-                <span class="value font-mono text-cyan">{{ current().bmi }}</span>
+                <span class="value font-mono text-sky">{{ current().bmi }}</span>
               </div>
               <div class="mini-chart-box">
                 <svg class="sparkline-svg" viewBox="0 0 100 24">
@@ -302,7 +304,7 @@
             </div>
             <div class="cell-body center-align" (click)="!layoutService.isEditMode() && setChartParam('kcal')">
               <div class="metric-big">
-                <span class="value font-mono text-amber">{{ current().kcal }}</span>
+                <span class="value font-mono text-orange">{{ current().kcal }}</span>
                 <span class="unit">kcal</span>
               </div>
               <div class="mini-chart-box">
@@ -328,7 +330,7 @@
             </div>
             <div class="cell-body" (click)="!layoutService.isEditMode() && setChartParam('ketoneValue')">
               <div class="ketone-top-row">
-                <div class="ketone-value font-mono">{{ current().urineKetones || 'Brak pomiaru' }}</div>
+                <div class="ketone-value font-mono text-pink">{{ current().urineKetones || 'Brak pomiaru' }}</div>
                 <div class="mini-chart-box-inline">
                   <svg class="sparkline-svg" viewBox="0 0 70 20">
                     <path [attr.d]="getSparkline('ketoneValue').area" fill="url(#grad-ketones)" />
@@ -365,7 +367,64 @@
             </div>
           }
 
-          <!-- 10. GŁÓWNY INTERAKTYWNY PANEL WYKRESÓW DLA KAŻDEGO PARAMETRU -->
+          <!-- 10. UTRZYMANIE DIETY (1x1) -->
+          @case ('diet') {
+            <div class="cell-header">
+              <span class="cell-title">DIETA</span>
+              <span class="tag-score font-mono" [style.color]="currentDiet().color">{{ currentDiet().label }}</span>
+            </div>
+            <div class="cell-body center-align">
+              <div class="diet-display-box">
+                <span class="diet-badge-hero font-mono" [ngClass]="currentDiet().badgeClass">
+                  {{ currentDiet().label }}
+                </span>
+              </div>
+              <span class="metric-sub font-semibold" [style.color]="currentDiet().color">
+                {{ currentDiet().subLabel }}
+              </span>
+              <div class="diet-status-dots">
+                <span class="diet-dot-step" [class.active]="current().diet === 'keto'" title="Keto">K</span>
+                <span class="diet-dot-step" [class.active]="current().diet === 'light'" title="Lekka">L</span>
+                <span class="diet-dot-step" [class.active]="current().diet === 'bad'" title="Zła">Z</span>
+              </div>
+            </div>
+          }
+
+          <!-- 11. SPOŻYCIE ALKOHOLU (2x1) -->
+          @case ('alcohol') {
+            <div class="cell-header">
+              <span class="cell-title">SPOŻYCIE ALKOHOLU</span>
+              <span class="badge font-mono" [style.color]="currentAlcohol().color">{{ currentAlcohol().label }}</span>
+            </div>
+            <div class="cell-body alcohol-cell-body">
+              <div class="alcohol-top-status">
+                <span class="alcohol-badge-hero font-mono" [ngClass]="currentAlcohol().badgeClass">
+                  {{ currentAlcohol().label }}
+                </span>
+                <span class="alcohol-sub-info text-muted font-mono">
+                  {{ currentAlcohol().subLabel }}
+                </span>
+              </div>
+
+              <!-- 3-stopniowy wskaźnik diodowy alkoholu -->
+              <div class="alcohol-meter-strip">
+                <div class="meter-bar step-none" [class.active]="current().alcohol === 'none'" title="Brak alkoholu">
+                  <span class="meter-dot"></span>
+                  <span class="meter-label font-mono">BRAK</span>
+                </div>
+                <div class="meter-bar step-light" [class.active]="current().alcohol === 'light'" title="Lekko (1-2 drinki / piwo)">
+                  <span class="meter-dot"></span>
+                  <span class="meter-label font-mono">LEKKO</span>
+                </div>
+                <div class="meter-bar step-heavy" [class.active]="current().alcohol === 'heavy'" title="Ciężko (duża ilość)">
+                  <span class="meter-dot"></span>
+                  <span class="meter-label font-mono">CIĘŻKO</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- 12. GŁÓWNY INTERAKTYWNY PANEL WYKRESÓW DLA KAŻDEGO PARAMETRU -->
           @case ('mainChart') {
             <div class="cell-header">
               <div class="header-group">
@@ -482,115 +541,21 @@
             </div>
 
             <div class="cell-body body-shape-layout-2x2">
-              <div class="silhouette-column">
-                <div class="silhouette-wrapper-2x2">
-                  <svg 
-                    class="body-silhouette-svg-2x2" 
-                    viewBox="-5 -25 170 335"
-                    [class.has-hover]="hoveredLayer() !== null">
-                    
-                    <defs>
-                      <filter id="silhouette-neon-glow" x="-20%" y="-20%" width="140%" height="140%">
-                        <feGaussianBlur stdDeviation="3" result="blur" />
-                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                      </filter>
-
-                      <!-- Jednolity, cienki szkielet anatomiczny ciała człowieka (szyja, kręgosłup, ramiona, nogi) -->
-                      <path id="unified-human-wireframe" d="
-                        M 68,255 
-                        L 70,200 
-                        L 75,145 
-                        L 80,145 
-                        L 80,72 
-                        L 60,74 
-                        L 50,110 
-                        L 44,148 
-                        L 50,110 
-                        L 60,74 
-                        L 80,72 
-                        L 80,44 
-                        L 80,72 
-                        L 100,74 
-                        L 110,110 
-                        L 116,148 
-                        L 110,110 
-                        L 100,74 
-                        L 80,72 
-                        L 80,145 
-                        L 85,145 
-                        L 90,200 
-                        L 92,255
-                      " />
-                    </defs>
-
-                    <!-- Warstwa 4: WODA (Zewnętrzny obrys, cyjan) -->
-                    <g 
-                      class="silhouette-layer layer-water"
-                      [class.is-hovered]="hoveredLayer() === 'water'"
-                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== 'water'"
-                      (mouseenter)="setHoveredLayer('water')"
+              <div class="comp-stacked-bar-column">
+                <div class="comp-stacked-bar-container">
+                  @for (item of bodyComposition(); track item.id) {
+                    <div 
+                      class="comp-bar-segment"
+                      [class.is-hovered]="hoveredLayer() === item.id"
+                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== item.id"
+                      [style.flex-grow]="item.percent > 0 ? item.percent : 1"
+                      [style.--segment-color]="item.color"
+                      [style.background-color]="item.color"
+                      [title]="item.label + ': ' + item.percent + '% (' + item.kg + ' kg)'"
+                      (mouseenter)="setHoveredLayer(item.id)"
                       (mouseleave)="setHoveredLayer(null)">
-                      <circle cx="80" cy="38" [attr.r]="silhouetteLayers().water.headRadius" [attr.fill]="silhouetteLayers().water.color" />
-                      <use 
-                        href="#unified-human-wireframe"
-                        [attr.stroke]="silhouetteLayers().water.color"
-                        [attr.stroke-width]="silhouetteLayers().water.strokeWidth"
-                        fill="none"
-                        stroke-linejoin="round"
-                        stroke-linecap="round" />
-                    </g>
-
-                    <!-- Warstwa 3: TŁUSZCZ (Obrys tkanki tłuszczowej, żółty) -->
-                    <g 
-                      class="silhouette-layer layer-fat"
-                      [class.is-hovered]="hoveredLayer() === 'fat'"
-                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== 'fat'"
-                      (mouseenter)="setHoveredLayer('fat')"
-                      (mouseleave)="setHoveredLayer(null)">
-                      <circle cx="80" cy="38" [attr.r]="silhouetteLayers().fat.headRadius" [attr.fill]="silhouetteLayers().fat.color" />
-                      <use 
-                        href="#unified-human-wireframe"
-                        [attr.stroke]="silhouetteLayers().fat.color"
-                        [attr.stroke-width]="silhouetteLayers().fat.strokeWidth"
-                        fill="none"
-                        stroke-linejoin="round"
-                        stroke-linecap="round" />
-                    </g>
-
-                    <!-- Warstwa 2: MIĘŚNIE & BIAŁKO (Obrys masy mięśniowej, czerwony) -->
-                    <g 
-                      class="silhouette-layer layer-muscle"
-                      [class.is-hovered]="hoveredLayer() === 'muscle'"
-                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== 'muscle'"
-                      (mouseenter)="setHoveredLayer('muscle')"
-                      (mouseleave)="setHoveredLayer(null)">
-                      <circle cx="80" cy="38" [attr.r]="silhouetteLayers().muscle.headRadius" [attr.fill]="silhouetteLayers().muscle.color" />
-                      <use 
-                        href="#unified-human-wireframe"
-                        [attr.stroke]="silhouetteLayers().muscle.color"
-                        [attr.stroke-width]="silhouetteLayers().muscle.strokeWidth"
-                        fill="none"
-                        stroke-linejoin="round"
-                        stroke-linecap="round" />
-                    </g>
-
-                    <!-- Warstwa 1: KOŚCI (Cienki, bazowy rdzeń szkieletu, biały) -->
-                    <g 
-                      class="silhouette-layer layer-bones"
-                      [class.is-hovered]="hoveredLayer() === 'bones'"
-                      [class.is-dimmed]="hoveredLayer() !== null && hoveredLayer() !== 'bones'"
-                      (mouseenter)="setHoveredLayer('bones')"
-                      (mouseleave)="setHoveredLayer(null)">
-                      <circle cx="80" cy="38" [attr.r]="silhouetteLayers().bones.headRadius" [attr.fill]="silhouetteLayers().bones.color" />
-                      <use 
-                        href="#unified-human-wireframe"
-                        [attr.stroke]="silhouetteLayers().bones.color"
-                        [attr.stroke-width]="silhouetteLayers().bones.strokeWidth"
-                        fill="none"
-                        stroke-linejoin="round"
-                        stroke-linecap="round" />
-                    </g>
-                  </svg>
+                    </div>
+                  }
                 </div>
               </div>
 
@@ -657,25 +622,37 @@
                     <th>BMI</th>
                     <th>Kcal</th>
                     <th>Ketony</th>
+                    <th>Dieta</th>
+                    <th>Alkohol</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (item of history(); track item.id; let rowIdx = $index) {
                     <tr [class.selected]="rowIdx === selectedIndex()" (click)="selectMeasurement(rowIdx)">
-                      <td class="font-mono text-cyan font-semibold">{{ item.date }}</td>
-                      <td class="font-mono">{{ item.time }}</td>
-                      <td class="font-mono font-bold">{{ item.weight }} kg</td>
-                      <td class="font-mono">{{ item.totalBodyWater }}%</td>
-                      <td class="font-mono text-orange">{{ item.overfat }}%</td>
-                      <td class="font-mono text-emerald">{{ item.muscleMass }}%</td>
+                      <td class="font-mono text-primary font-semibold">{{ item.date }}</td>
+                      <td class="font-mono text-muted">{{ item.time }}</td>
+                      <td class="font-mono text-cyan font-bold">{{ item.weight }} kg</td>
+                      <td class="font-mono text-blue">{{ item.totalBodyWater }}%</td>
+                      <td class="font-mono text-amber">{{ item.overfat }}%</td>
+                      <td class="font-mono text-stat-muscle">{{ item.muscleMass }}%</td>
                       <td class="font-mono text-purple">{{ item.boneMass }}%</td>
-                      <td class="font-mono text-cyan">{{ item.bmi }}</td>
-                      <td class="font-mono text-amber">{{ item.kcal }}</td>
+                      <td class="font-mono text-sky">{{ item.bmi }}</td>
+                      <td class="font-mono text-orange">{{ item.kcal }}</td>
                       <td class="font-mono text-pink">{{ item.urineKetones }}</td>
+                      <td>
+                        <span class="tag-status" [ngClass]="'diet-' + (item.diet || 'keto')">
+                          {{ item.diet === 'keto' ? 'Keto' : item.diet === 'light' ? 'Lekka' : 'Zła' }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="tag-status" [ngClass]="'alcohol-' + (item.alcohol || 'none')">
+                          {{ item.alcohol === 'none' ? 'Brak' : item.alcohol === 'light' ? 'Lekko' : 'Ciężko' }}
+                        </span>
+                      </td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="10" class="empty-table-msg font-mono text-muted text-center">
+                      <td colspan="12" class="empty-table-msg font-mono text-muted text-center">
                         Brak zarejestrowanych pomiarów. Kliknij "+ Dodaj pomiar" powyżej, aby wprowadzić pierwszy wpis.
                       </td>
                     </tr>
@@ -878,14 +855,14 @@
               </div>
 
               <!-- Mięśnie -->
-              <div class="form-group highlight-emerald">
+              <div class="form-group highlight-rose">
                 <label class="form-label" for="m-muscle">Masa mięśniowa (%)</label>
                 <div class="input-wrap with-suffix">
                   <input 
                     id="m-muscle" 
                     type="number" 
                     step="0.1" 
-                    class="form-input font-mono text-emerald" 
+                    class="form-input font-mono text-stat-muscle" 
                     [ngModel]="newEntryMuscle()" 
                     (ngModelChange)="newEntryMuscle.set($event)" 
                     name="mMuscle" 
@@ -912,14 +889,14 @@
               </div>
 
               <!-- BMI -->
-              <div class="form-group">
+              <div class="form-group highlight-sky">
                 <label class="form-label" for="m-bmi">Wskaźnik BMI</label>
                 <div class="input-wrap">
                   <input 
                     id="m-bmi" 
                     type="number" 
                     step="0.1" 
-                    class="form-input font-mono text-cyan" 
+                    class="form-input font-mono text-sky" 
                     [ngModel]="newEntryBmi()" 
                     (ngModelChange)="newEntryBmi.set($event)" 
                     name="mBmi" 
@@ -928,14 +905,14 @@
               </div>
 
               <!-- Kcal (BMR) -->
-              <div class="form-group">
+              <div class="form-group highlight-orange">
                 <label class="form-label" for="m-kcal">Zapotrzebowanie BMR (Kcal)</label>
                 <div class="input-wrap with-suffix">
                   <input 
                     id="m-kcal" 
                     type="number" 
                     step="1" 
-                    class="form-input font-mono text-amber" 
+                    class="form-input font-mono text-orange" 
                     [ngModel]="newEntryKcal()" 
                     (ngModelChange)="newEntryKcal.set($event)" 
                     name="mKcal" 
@@ -958,6 +935,44 @@
                       <span class="pill-dot" [style.background-color]="opt.color"></span>
                       <span class="pill-title">{{ opt.label }}</span>
                       <span class="pill-val font-mono">{{ opt.value > 0 ? opt.value + ' mmol/L' : 'Brak pomiaru' }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Utrzymanie diety -->
+              <div class="form-group diet-select-group">
+                <label class="form-label">Utrzymanie diety</label>
+                <div class="lifestyle-pills-row">
+                  @for (opt of dietOptions; track opt.type) {
+                    <button 
+                      type="button" 
+                      class="lifestyle-pill-btn"
+                      [class.active]="newEntryDiet() === opt.type"
+                      [style.--pill-color]="opt.color"
+                      (click)="newEntryDiet.set(opt.type)">
+                      <span class="pill-dot" [style.background-color]="opt.color"></span>
+                      <span class="pill-title">{{ opt.label }}</span>
+                      <span class="pill-val font-mono">{{ opt.subLabel }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Spożycie alkoholu -->
+              <div class="form-group alcohol-select-group">
+                <label class="form-label">Spożycie alkoholu</label>
+                <div class="lifestyle-pills-row">
+                  @for (opt of alcoholOptions; track opt.level) {
+                    <button 
+                      type="button" 
+                      class="lifestyle-pill-btn"
+                      [class.active]="newEntryAlcohol() === opt.level"
+                      [style.--pill-color]="opt.color"
+                      (click)="newEntryAlcohol.set(opt.level)">
+                      <span class="pill-dot" [style.background-color]="opt.color"></span>
+                      <span class="pill-title">{{ opt.label }}</span>
+                      <span class="pill-val font-mono">{{ opt.subLabel }}</span>
                     </button>
                   }
                 </div>
@@ -1022,6 +1037,8 @@
                 <th>BMI</th>
                 <th>BMR (kcal)</th>
                 <th>Ketony</th>
+                <th>Dieta</th>
+                <th>Alkohol</th>
                 <th>Notatki</th>
                 <th class="text-right">Akcje</th>
               </tr>
@@ -1030,18 +1047,28 @@
               @for (item of history(); track item.id; let idx = $index) {
                 <tr [class.selected]="idx === selectedIndex()" [class.row-editing]="editingRecordId() === item.id">
                   <td class="font-mono text-muted">#{{ history().length - idx }}</td>
-                  <td class="font-mono text-cyan font-bold">{{ item.date }}</td>
-                  <td class="font-mono text-secondary">{{ item.time }}</td>
-                  <td class="font-mono font-bold text-primary">{{ item.weight }} kg</td>
+                  <td class="font-mono text-primary font-bold">{{ item.date }}</td>
+                  <td class="font-mono text-muted">{{ item.time }}</td>
+                  <td class="font-mono font-bold text-cyan">{{ item.weight }} kg</td>
                   <td class="font-mono text-blue">{{ item.totalBodyWater }}%</td>
-                  <td class="font-mono text-orange">{{ item.overfat }}%</td>
-                  <td class="font-mono text-emerald">{{ item.muscleMass }}%</td>
+                  <td class="font-mono text-amber">{{ item.overfat }}%</td>
+                  <td class="font-mono text-stat-muscle">{{ item.muscleMass }}%</td>
                   <td class="font-mono text-purple">{{ item.boneMass }}%</td>
-                  <td class="font-mono text-cyan">{{ item.bmi }}</td>
-                  <td class="font-mono text-amber">{{ item.kcal }}</td>
+                  <td class="font-mono text-sky">{{ item.bmi }}</td>
+                  <td class="font-mono text-orange">{{ item.kcal }}</td>
                   <td>
                     <span class="ketone-tag" [class]="'level-' + (item.ketoneLevel || 'none')">
                       {{ item.urineKetones || 'Brak pomiaru' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="tag-status" [ngClass]="'diet-' + (item.diet || 'keto')">
+                      {{ item.diet === 'keto' ? 'Keto' : item.diet === 'light' ? 'Lekka' : 'Zła' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="tag-status" [ngClass]="'alcohol-' + (item.alcohol || 'none')">
+                      {{ item.alcohol === 'none' ? 'Brak' : item.alcohol === 'light' ? 'Lekko' : 'Ciężko' }}
                     </span>
                   </td>
                   <td class="notes-cell text-muted">{{ item.notes || '-' }}</td>
@@ -1081,7 +1108,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="13" class="empty-table-msg font-mono text-muted text-center">
+                  <td colspan="15" class="empty-table-msg font-mono text-muted text-center">
                     Brak zarejestrowanych pomiarów w bazie danych. Wprowadź dane w formularzu powyżej i kliknij "Zapisz pomiar".
                   </td>
                 </tr>

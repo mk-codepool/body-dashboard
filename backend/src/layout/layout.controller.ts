@@ -4,7 +4,7 @@ import type { DashboardWidgetConfig } from '../storage/storage.service.js';
 
 @Controller('api/layout')
 export class LayoutController {
-  constructor(private readonly layoutService: LayoutService) {}
+  constructor(private readonly layoutService: LayoutService) { }
 
   @Get()
   async getLayout(): Promise<DashboardWidgetConfig[]> {

@@ -59,13 +59,13 @@ node start
   - **Zestaw parametrów biometrycznych**:
     1. Data i Godzina (`2x1`)
     2. Waga w kg (`2x1`) z automatyczną deltą
-    3. Total Body Water TBW (`1x2`) z estymacją w litrach, wykresem trendu i normą komórkową (55–65%), bez sztucznej grafiki zbiornika
-    4. Overfat / Tkanka tłuszczowa (`1x1`) z dynamicznym selektorem płci (Kobiety: 14–20% / 21–31% / 32–38% / >38%; Mężczyźni: 6–13% / 14–24% / 25–30% / >30%)
+    3. Total Body Water TBW (`1x2`) z symulacją zbiornika wody
+    4. Overfat / Tkanka tłuszczowa (`1x1`)
     5. Mięśnie (% / kg) (`1x1`) z dynamicznym przeliczeniem na kg
     6. Kości / Masa mineralna (% / kg) (`1x1`) z dynamicznym przeliczeniem na kg
-    7. BMI (`1x1`) ze szczegółową klasyfikacją kliniczną (<16.0 Wyczerpanie, 16.0–16.9 Wychudzenie, 17.0–18.4 Lekka niedowaga, 18.5–24.9 Norma, 25.0–29.9 Nadwaga, 30.0–34.9 Otyłość I st., 35.0–39.9 Otyłość II st., ≥40.0 Otyłość III st.)
+    7. BMI (`1x1`)
     8. Kcal / BMR (`1x1`)
-    9. Ketony w moczu (`2x1`) z ewaluacją stanu (`BRAK POMIARU` dla stanu `none`, `BRAK KETOZY` dla `negative`, `KETOZA AKTYWNA` dla `trace`/`low`/`moderate`/`high`) i 6-stopniowym testem paskowym
+    9. Ketony w moczu (`2x1`) z 6-stopniowym testem paskowym (w tym stan `Brak pomiaru`)
     10. Główny Panel Trendów (`5x2`) z przełącznikiem zakładek (Pill Tabs)
     11. Kształt i Skład Ciała (`3x2`) po prawej stronie wykresu – koncentryczne fizyczne otoczki (Kości: biały rdzeń 2px + pełna kropka głowy, Mięśnie: czerwona otoczka, Tłuszcz: żółta otoczka, Woda: niebieska otoczka) z dynamicznym skalowaniem grubości 1:1
     12. Historia Pomiarów (`8x2`) z przyciskiem "+ Dodaj pomiar" otwierającym modal

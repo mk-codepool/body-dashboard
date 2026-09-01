@@ -3,7 +3,7 @@ import { StorageService, DashboardWidgetConfig } from '../storage/storage.servic
 
 @Injectable()
 export class LayoutService {
-  constructor(private readonly storageService: StorageService) {}
+  constructor(private readonly storageService: StorageService) { }
 
   async getLayout(): Promise<DashboardWidgetConfig[]> {
     return this.storageService.getLayout();

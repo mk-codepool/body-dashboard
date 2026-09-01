@@ -81,23 +81,13 @@ body-dashboard/
 Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/measurements.json` poprzez serwis `MeasurementsService` i endpointy `/api/measurements`:
 1. **Data i Godzina pomiaru** (`colSpan: 2, rowSpan: 1`)
 2. **Waga (kg)** (`colSpan: 2, rowSpan: 1`) z trendem vs poprzedni pomiar
-3. **Total Body Water (TBW % / L)** (`colSpan: 1, rowSpan: 2`) z estymacją litrów, wykresem trendu i normą komórkową (55–65%), bez zbędnego sztucznego zbiornika
-4. **Overfat (Tkanka tłuszczowa %)** (`colSpan: 1, rowSpan: 1`) z dynamicznym przełącznikiem płci (`M` / `K`), zapamiętywanym w `localStorage`, i precyzyjną klasyfikacją:
-   - **Kobiety**: Niska (14–20%), W normie fit (21–31%), Overfat nadmiar (32–38%), Obese otyłość (> 38%)
-   - **Mężczyźni**: Niska (6–13%), W normie fit (14–24%), Overfat nadmiar (25–30%), Obese otyłość (> 30%)
+3. **Total Body Water (TBW % / L)** (`colSpan: 1, rowSpan: 2`) ze zbiornikiem poziomu
+4. **Overfat (Tkanka tłuszczowa %)** (`colSpan: 1, rowSpan: 1`) z zakresem normy
 5. **Mięśnie (% / kg)** (`colSpan: 1, rowSpan: 1`) z przeliczeniem na kg
 6. **Kości (Minerały % / kg)** (`colSpan: 1, rowSpan: 1`) z przeliczeniem na kg
-7. **BMI** (`colSpan: 1, rowSpan: 1`) ze szczegółową klasyfikacją kliniczną:
-   - `< 16,0` – Wyczerpanie (wygłodzenie)
-   - `16,0 – 16,9` – Wychudzenie
-   - `17,0 – 18,4` – Lekka niedowaga
-   - `18,5 – 24,9` – Waga prawidłowa
-   - `25,0 – 29,9` – Nadwaga
-   - `30,0 – 34,9` – Otyłość I stopnia
-   - `35,0 – 39,9` – Otyłość II stopnia (kliniczna)
-   - `≥ 40,0` – Otyłość III stopnia (skrajna)
+7. **BMI** (`colSpan: 1, rowSpan: 1`)
 8. **Kcal (BMR)** (`colSpan: 1, rowSpan: 1`)
-9. **Ketony w moczu (mmol/L)** (`colSpan: 2, rowSpan: 1`) z poprawną logiką stanów: `BRAK POMIARU` (dla `none`), `BRAK KETOZY` (dla `negative`), `KETOZA AKTYWNA` (dla `trace`, `low`, `moderate`, `high`) oraz 6-stopniowym testem paskowym
+9. **Ketony w moczu (mmol/L)** (`colSpan: 2, rowSpan: 1`) z 6-stopniowym selektorem (w tym stan `Brak pomiaru` / `none`)
 10. **Główny Panel Wykresów Trendu** (`colSpan: 5, rowSpan: 2`) z przełącznikiem parametrów (Pill Tabs)
 11. **Wizualizacja Sylwetki i Składu Ciała** (`colSpan: 3, rowSpan: 2`) po prawej stronie wykresu – wielowarstwowy wektorowy model koncentrycznych otoczek (Painter's Algorithm):
     - ⚪ **Kości (Minerały)**: Cienki biały rdzeń szkieletu (`2.0px`, `#ffffff`) z pełną, jednolitą kropką głowy w środku (brak wewnętrznych pustych warstw).

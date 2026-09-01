@@ -24,7 +24,21 @@
   --accent-indigo: #6366f1;
   --accent-emerald: #10b981;
   --accent-amber: #f59e0b;
+  --accent-orange: #f97316;
+  --accent-purple: #a855f7;
+  --accent-sky: #0ea5e9;
+  --accent-pink: #ec4899;
   --accent-rose: #f43f5e;
+
+  /* Biometric Statistics Unified Palette */
+  --stat-weight: #06b6d4;      /* Waga - Cyan */
+  --stat-water: #3b82f6;       /* Total Body Water - Blue */
+  --stat-fat: #f59e0b;         /* Overfat / Tłuszcz - Amber */
+  --stat-muscle: #f43f5e;      /* Mięśnie - Stonowana Czerwień / Rose */
+  --stat-bones: #a855f7;       /* Kości - Purple */
+  --stat-bmi: #0ea5e9;         /* BMI - Sky Blue */
+  --stat-kcal: #f97316;        /* Kcal / BMR - Orange */
+  --stat-ketones: #ec4899;     /* Ketony - Pink */
 
   /* Layout Constants */
   --header-height: 56px;

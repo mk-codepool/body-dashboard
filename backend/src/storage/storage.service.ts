@@ -19,6 +19,9 @@ export interface DashboardWidgetConfig {
   defaultRowSpan: number;
 }
 
+export type AlcoholLevel = 'none' | 'light' | 'heavy';
+export type DietType = 'light' | 'keto' | 'bad';
+
 export interface MeasurementRecord {
   id: string;
   date: string;
@@ -33,6 +36,8 @@ export interface MeasurementRecord {
   urineKetones: string;
   ketoneValue: number;
   ketoneLevel: 'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high';
+  alcohol?: AlcoholLevel;
+  diet?: DietType;
   notes?: string;
 }
 
@@ -185,6 +190,38 @@ export const DEFAULT_WIDGETS: DashboardWidgetConfig[] = [
     defaultRowSpan: 1,
   },
   {
+    id: 'diet',
+    title: 'Utrzymanie Diety',
+    col: 6,
+    row: 2,
+    colSpan: 1,
+    rowSpan: 1,
+    minColSpan: 1,
+    maxColSpan: GRID_TOTAL_COLS,
+    minRowSpan: 1,
+    maxRowSpan: 6,
+    defaultCol: 6,
+    defaultRow: 2,
+    defaultColSpan: 1,
+    defaultRowSpan: 1,
+  },
+  {
+    id: 'alcohol',
+    title: 'Spożycie Alkoholu',
+    col: 7,
+    row: 2,
+    colSpan: 2,
+    rowSpan: 1,
+    minColSpan: 1,
+    maxColSpan: GRID_TOTAL_COLS,
+    minRowSpan: 1,
+    maxRowSpan: 6,
+    defaultCol: 7,
+    defaultRow: 2,
+    defaultColSpan: 2,
+    defaultRowSpan: 1,
+  },
+  {
     id: 'mainChart',
     title: 'Analiza Trendu',
     col: 1,
@@ -249,6 +286,8 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     urineKetones: '0.5 mmol/L (Ślad)',
     ketoneValue: 0.5,
     ketoneLevel: 'trace',
+    alcohol: 'none',
+    diet: 'keto',
     notes: 'Pomiar na czczo po przebudzeniu',
   },
   {
@@ -265,6 +304,8 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.1,
     ketoneLevel: 'negative',
+    alcohol: 'light',
+    diet: 'light',
   },
   {
     id: 'm3',
@@ -280,6 +321,8 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.1,
     ketoneLevel: 'negative',
+    alcohol: 'none',
+    diet: 'keto',
   },
   {
     id: 'm4',
@@ -295,6 +338,8 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.0,
     ketoneLevel: 'negative',
+    alcohol: 'none',
+    diet: 'light',
   },
   {
     id: 'm5',
@@ -310,6 +355,8 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     urineKetones: '1.5 mmol/L (Lekka)',
     ketoneValue: 1.5,
     ketoneLevel: 'low',
+    alcohol: 'heavy',
+    diet: 'bad',
   },
   {
     id: 'm6',
@@ -325,6 +372,8 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.1,
     ketoneLevel: 'negative',
+    alcohol: 'none',
+    diet: 'keto',
   },
   {
     id: 'm7',
@@ -340,6 +389,8 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.0,
     ketoneLevel: 'negative',
+    alcohol: 'none',
+    diet: 'keto',
   },
 ];
 

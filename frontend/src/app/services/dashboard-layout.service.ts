@@ -169,6 +169,38 @@ export const DEFAULT_WIDGETS: DashboardWidgetConfig[] = [
     defaultRowSpan: 1
   },
   {
+    id: 'diet',
+    title: 'Utrzymanie Diety',
+    col: 6,
+    row: 2,
+    colSpan: 1,
+    rowSpan: 1,
+    minColSpan: 1,
+    maxColSpan: GRID_TOTAL_COLS,
+    minRowSpan: 1,
+    maxRowSpan: 6,
+    defaultCol: 6,
+    defaultRow: 2,
+    defaultColSpan: 1,
+    defaultRowSpan: 1
+  },
+  {
+    id: 'alcohol',
+    title: 'Spożycie Alkoholu',
+    col: 7,
+    row: 2,
+    colSpan: 2,
+    rowSpan: 1,
+    minColSpan: 1,
+    maxColSpan: GRID_TOTAL_COLS,
+    minRowSpan: 1,
+    maxRowSpan: 6,
+    defaultCol: 7,
+    defaultRow: 2,
+    defaultColSpan: 2,
+    defaultRowSpan: 1
+  },
+  {
     id: 'mainChart',
     title: 'Analiza Trendu',
     col: 1,
@@ -218,7 +250,7 @@ export const DEFAULT_WIDGETS: DashboardWidgetConfig[] = [
   }
 ];
 
-const STORAGE_KEY = 'body_dashboard_layout_v3';
+const STORAGE_KEY = 'body_dashboard_layout_v4';
 
 @Injectable({
   providedIn: 'root'

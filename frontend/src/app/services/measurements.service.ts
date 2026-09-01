@@ -3,6 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+export type AlcoholLevel = 'none' | 'light' | 'heavy';
+export type DietType = 'light' | 'keto' | 'bad';
+
 export interface MeasurementRecord {
   id: string;
   date: string;
@@ -17,6 +20,8 @@ export interface MeasurementRecord {
   urineKetones: string;
   ketoneValue: number;
   ketoneLevel?: 'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high';
+  alcohol?: AlcoholLevel;
+  diet?: DietType;
   notes?: string;
 }
 
@@ -35,6 +40,8 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     urineKetones: '0.5 mmol/L (Ślad)',
     ketoneValue: 0.5,
     ketoneLevel: 'trace',
+    alcohol: 'none',
+    diet: 'keto',
     notes: 'Pomiar na czczo po przebudzeniu'
   },
   {
@@ -50,7 +57,9 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     kcal: 1840,
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.1,
-    ketoneLevel: 'negative'
+    ketoneLevel: 'negative',
+    alcohol: 'light',
+    diet: 'light'
   },
   {
     id: 'm3',
@@ -65,7 +74,9 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     kcal: 1835,
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.1,
-    ketoneLevel: 'negative'
+    ketoneLevel: 'negative',
+    alcohol: 'none',
+    diet: 'keto'
   },
   {
     id: 'm4',
@@ -80,7 +91,9 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     kcal: 1830,
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.0,
-    ketoneLevel: 'negative'
+    ketoneLevel: 'negative',
+    alcohol: 'none',
+    diet: 'light'
   },
   {
     id: 'm5',
@@ -95,7 +108,9 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     kcal: 1828,
     urineKetones: '1.5 mmol/L (Lekka)',
     ketoneValue: 1.5,
-    ketoneLevel: 'low'
+    ketoneLevel: 'low',
+    alcohol: 'heavy',
+    diet: 'bad'
   },
   {
     id: 'm6',
@@ -110,7 +125,9 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     kcal: 1825,
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.1,
-    ketoneLevel: 'negative'
+    ketoneLevel: 'negative',
+    alcohol: 'none',
+    diet: 'keto'
   },
   {
     id: 'm7',
@@ -125,7 +142,9 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
     kcal: 1820,
     urineKetones: 'Negatywny (< 0.5 mmol/L)',
     ketoneValue: 0.0,
-    ketoneLevel: 'negative'
+    ketoneLevel: 'negative',
+    alcohol: 'none',
+    diet: 'keto'
   }
 ];
 

@@ -23,6 +23,6 @@ describe('LayoutController', () => {
   it('should return widgets layout array', async () => {
     const layout = await controller.getLayout();
     expect(Array.isArray(layout)).toBe(true);
-    expect(layout.length).toBe(12);
+    expect(layout.length).toBe(14);
   });
 });

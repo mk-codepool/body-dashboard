@@ -4,7 +4,7 @@ import type { MeasurementRecord } from '../storage/storage.service.js';
 
 @Controller('api/measurements')
 export class MeasurementsController {
-  constructor(private readonly measurementsService: MeasurementsService) {}
+  constructor(private readonly measurementsService: MeasurementsService) { }
 
   @Get()
   async getAll(): Promise<MeasurementRecord[]> {

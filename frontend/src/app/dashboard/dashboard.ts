@@ -2,7 +2,7 @@ import { Component, signal, computed, inject, HostListener } from '@angular/core
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardLayoutService, DashboardWidgetConfig } from '../services/dashboard-layout.service';
-import { MeasurementsService, MeasurementRecord } from '../services/measurements.service';
+import { MeasurementsService, MeasurementRecord, AlcoholLevel, DietType } from '../services/measurements.service';
 import { ModalComponent } from '../components/modal/modal';
 
 export type ChartParamKey = 
@@ -54,6 +54,22 @@ export interface SilhouetteLayerData {
   layerThickness: number;
 }
 
+export interface DietOption {
+  type: DietType;
+  label: string;
+  subLabel: string;
+  color: string;
+  badgeClass: string;
+}
+
+export interface AlcoholOption {
+  level: AlcoholLevel;
+  label: string;
+  subLabel: string;
+  color: string;
+  badgeClass: string;
+}
+
 export const EMPTY_MEASUREMENT: MeasurementRecord = {
   id: '',
   date: '-',
@@ -68,6 +84,8 @@ export const EMPTY_MEASUREMENT: MeasurementRecord = {
   urineKetones: 'Brak danych',
   ketoneValue: 0,
   ketoneLevel: 'none',
+  alcohol: 'none',
+  diet: 'keto',
   notes: 'Brak danych pomiarowych'
 };
 
@@ -104,7 +122,7 @@ export class DashboardComponent {
     { key: 'weight', label: 'Waga', unit: 'kg', color: '#06b6d4', gradientId: 'grad-weight' },
     { key: 'totalBodyWater', label: 'Total Body Water', unit: '%', color: '#3b82f6', gradientId: 'grad-tbw' },
     { key: 'overfat', label: 'Overfat (Tłuszcz)', unit: '%', color: '#f59e0b', gradientId: 'grad-fat' },
-    { key: 'muscleMass', label: 'Mięśnie', unit: '%', color: '#10b981', gradientId: 'grad-muscle' },
+    { key: 'muscleMass', label: 'Mięśnie', unit: '%', color: '#f43f5e', gradientId: 'grad-muscle' },
     { key: 'boneMass', label: 'Kości', unit: '%', color: '#a855f7', gradientId: 'grad-bones' },
     { key: 'bmi', label: 'BMI', unit: '', color: '#0ea5e9', gradientId: 'grad-bmi' },
     { key: 'kcal', label: 'Kcal (BMR)', unit: 'kcal', color: '#f97316', gradientId: 'grad-kcal' },
@@ -259,10 +277,10 @@ export class DashboardComponent {
     const w = m.weight;
     if (!w || w === 0) {
       return [
-        { id: 'bones', label: 'Kości (Minerały)', percent: 0, kg: 0, color: '#ffffff' },
-        { id: 'muscle', label: 'Mięśnie & Białko', percent: 0, kg: 0, color: '#ef4444' },
+        { id: 'bones', label: 'Kości (Minerały)', percent: 0, kg: 0, color: '#a855f7' },
+        { id: 'muscle', label: 'Mięśnie & Białko', percent: 0, kg: 0, color: '#f43f5e' },
         { id: 'fat', label: 'Tłuszcz (Fat)', percent: 0, kg: 0, color: '#f59e0b' },
-        { id: 'water', label: 'Woda (TBW)', percent: 0, kg: 0, color: '#06b6d4' }
+        { id: 'water', label: 'Woda (TBW)', percent: 0, kg: 0, color: '#3b82f6' }
       ];
     }
 
@@ -279,10 +297,10 @@ export class DashboardComponent {
     const muscleKg = Math.round((w * (musclePct / 100)) * 10) / 10;
 
     return [
-      { id: 'bones', label: 'Kości (Minerały)', percent: bonePct, kg: boneKg, color: '#ffffff' },
-      { id: 'muscle', label: 'Mięśnie & Białko', percent: musclePct, kg: muscleKg, color: '#ef4444' },
+      { id: 'bones', label: 'Kości (Minerały)', percent: bonePct, kg: boneKg, color: '#a855f7' },
+      { id: 'muscle', label: 'Mięśnie & Białko', percent: musclePct, kg: muscleKg, color: '#f43f5e' },
       { id: 'fat', label: 'Tłuszcz (Fat)', percent: fatPct, kg: fatKg, color: '#f59e0b' },
-      { id: 'water', label: 'Woda (TBW)', percent: waterPct, kg: waterKg, color: '#06b6d4' }
+      { id: 'water', label: 'Woda (TBW)', percent: waterPct, kg: waterKg, color: '#3b82f6' }
     ];
   });
 
@@ -511,6 +529,41 @@ export class DashboardComponent {
     return idx !== -1 ? this.history().length - idx : null;
   });
 
+  readonly ketoneOptions: { level: 'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high'; label: string; text: string; value: number; color: string }[] = [
+    { level: 'none', label: 'Brak pomiaru', text: 'Brak pomiaru', value: 0, color: '#64748b' },
+    { level: 'negative', label: 'Negatywny', text: 'Negatywny (< 0.5 mmol/L)', value: 0.1, color: '#94a3b8' },
+    { level: 'trace', label: 'Ślad', text: '0.5 mmol/L (Ślad)', value: 0.5, color: '#ec4899' },
+    { level: 'low', label: 'Lekka', text: '1.5 mmol/L (Lekka)', value: 1.5, color: '#f43f5e' },
+    { level: 'moderate', label: 'Umiarkowana', text: '4.0 mmol/L (Umiarkowana)', value: 4.0, color: '#e11d48' },
+    { level: 'high', label: 'Wysoka', text: '8.0+ mmol/L (Wysoka)', value: 8.0, color: '#be123c' }
+  ];
+
+  // Opcje rejestru diety
+  readonly dietOptions: DietOption[] = [
+    { type: 'keto', label: 'Keto', subLabel: 'Ketoza / Tłuszcze', color: '#10b981', badgeClass: 'badge-diet-keto' },
+    { type: 'light', label: 'Lekka', subLabel: 'Zbilansowana / Lekka', color: '#06b6d4', badgeClass: 'badge-diet-light' },
+    { type: 'bad', label: 'Zła', subLabel: 'Cukry / Fast Food', color: '#f43f5e', badgeClass: 'badge-diet-bad' }
+  ];
+
+  // Opcje rejestru alkoholu
+  readonly alcoholOptions: AlcoholOption[] = [
+    { level: 'none', label: 'Brak', subLabel: 'Zero alkoholu (100% czysto)', color: '#10b981', badgeClass: 'badge-alcohol-none' },
+    { level: 'light', label: 'Lekko', subLabel: '1–2 piwa / kieliszek wina', color: '#f59e0b', badgeClass: 'badge-alcohol-light' },
+    { level: 'heavy', label: 'Ciężko', subLabel: 'Mocny alkohol / Impreza', color: '#f43f5e', badgeClass: 'badge-alcohol-heavy' }
+  ];
+
+  // Ewaluacja diety dla aktywnego rekordu
+  readonly currentDiet = computed(() => {
+    const d = this.current().diet || 'keto';
+    return this.dietOptions.find(opt => opt.type === d) || this.dietOptions[0];
+  });
+
+  // Ewaluacja alkoholu dla aktywnego rekordu
+  readonly currentAlcohol = computed(() => {
+    const a = this.current().alcohol || 'none';
+    return this.alcoholOptions.find(opt => opt.level === a) || this.alcoholOptions[0];
+  });
+
   // Pola formularza pomiaru
   readonly newEntryDate = signal<string>('');
   readonly newEntryTime = signal<string>('');
@@ -522,16 +575,9 @@ export class DashboardComponent {
   readonly newEntryBmi = signal<number>(23.7);
   readonly newEntryKcal = signal<number>(1845);
   readonly newEntryKetoneLevel = signal<'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high'>('none');
+  readonly newEntryAlcohol = signal<AlcoholLevel>('none');
+  readonly newEntryDiet = signal<DietType>('keto');
   readonly newEntryNotes = signal<string>('');
-
-  readonly ketoneOptions: { level: 'none' | 'negative' | 'trace' | 'low' | 'moderate' | 'high'; label: string; text: string; value: number; color: string }[] = [
-    { level: 'none', label: 'Brak pomiaru', text: 'Brak pomiaru', value: 0, color: '#64748b' },
-    { level: 'negative', label: 'Negatywny', text: 'Negatywny (< 0.5 mmol/L)', value: 0.1, color: '#94a3b8' },
-    { level: 'trace', label: 'Ślad', text: '0.5 mmol/L (Ślad)', value: 0.5, color: '#ec4899' },
-    { level: 'low', label: 'Lekka', text: '1.5 mmol/L (Lekka)', value: 1.5, color: '#f43f5e' },
-    { level: 'moderate', label: 'Umiarkowana', text: '4.0 mmol/L (Umiarkowana)', value: 4.0, color: '#e11d48' },
-    { level: 'high', label: 'Wysoka', text: '8.0+ mmol/L (Wysoka)', value: 8.0, color: '#be123c' }
-  ];
 
   openAddMeasurementModal(): void {
     this.resetToNewEntry();
@@ -572,6 +618,8 @@ export class DashboardComponent {
       this.newEntryBmi.set(latest.bmi);
       this.newEntryKcal.set(latest.kcal);
       this.newEntryKetoneLevel.set(latest.ketoneLevel || 'none');
+      this.newEntryAlcohol.set(latest.alcohol || 'none');
+      this.newEntryDiet.set(latest.diet || 'keto');
       this.newEntryNotes.set('');
     } else {
       this.newEntryWeight.set(75.0);
@@ -582,6 +630,8 @@ export class DashboardComponent {
       this.newEntryBmi.set(22.6);
       this.newEntryKcal.set(1800);
       this.newEntryKetoneLevel.set('none');
+      this.newEntryAlcohol.set('none');
+      this.newEntryDiet.set('keto');
       this.newEntryNotes.set('');
     }
 
@@ -606,6 +656,8 @@ export class DashboardComponent {
     this.newEntryBmi.set(record.bmi);
     this.newEntryKcal.set(record.kcal);
     this.newEntryKetoneLevel.set(record.ketoneLevel || 'none');
+    this.newEntryAlcohol.set(record.alcohol || 'none');
+    this.newEntryDiet.set(record.diet || 'keto');
     this.newEntryNotes.set(record.notes || '');
 
     this.formSuccessMessage.set('');
@@ -635,6 +687,8 @@ export class DashboardComponent {
       urineKetones: selectedKetone.text,
       ketoneValue: selectedKetone.value,
       ketoneLevel: selectedKetone.level,
+      alcohol: this.newEntryAlcohol(),
+      diet: this.newEntryDiet(),
       notes: this.newEntryNotes()
     };
 

@@ -3,7 +3,7 @@ import { StorageService, MeasurementRecord } from '../storage/storage.service.js
 
 @Injectable()
 export class MeasurementsService {
-  constructor(private readonly storageService: StorageService) {}
+  constructor(private readonly storageService: StorageService) { }
 
   async getAll(): Promise<MeasurementRecord[]> {
     return this.storageService.getMeasurements();

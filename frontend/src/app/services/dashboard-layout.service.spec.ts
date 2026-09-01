@@ -21,9 +21,9 @@ describe('DashboardLayoutService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should initialize with 12 default widgets', () => {
+  it('should initialize with 14 default widgets', () => {
     const widgets = service.widgets();
-    expect(widgets.length).toBe(12);
+    expect(widgets.length).toBe(14);
   });
 
   it('should toggle edit mode', () => {
