@@ -3,17 +3,20 @@ import { StorageService, DashboardWidgetConfig } from '../storage/storage.servic
 
 @Injectable()
 export class LayoutService {
-  constructor(private readonly storageService: StorageService) { }
+  constructor(private readonly storageService: StorageService) {}
 
-  async getLayout(): Promise<DashboardWidgetConfig[]> {
-    return this.storageService.getLayout();
+  async getLayout(userId?: string): Promise<DashboardWidgetConfig[]> {
+    return this.storageService.getLayout(userId);
   }
 
-  async updateLayout(layout: DashboardWidgetConfig[]): Promise<DashboardWidgetConfig[]> {
-    return this.storageService.saveLayout(layout);
+  async updateLayout(
+    layout: DashboardWidgetConfig[],
+    userId?: string,
+  ): Promise<DashboardWidgetConfig[]> {
+    return this.storageService.saveLayout(layout, userId);
   }
 
-  async resetLayout(): Promise<DashboardWidgetConfig[]> {
-    return this.storageService.resetLayout();
+  async resetLayout(userId?: string): Promise<DashboardWidgetConfig[]> {
+    return this.storageService.resetLayout(userId);
   }
 }

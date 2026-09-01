@@ -1,7 +1,8 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal, effect } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { AuthService } from './auth.service';
 
 export type AlcoholLevel = 'none' | 'light' | 'heavy';
 export type DietType = 'light' | 'keto' | 'bad';
@@ -153,22 +154,40 @@ export const DEFAULT_MEASUREMENTS: MeasurementRecord[] = [
 })
 export class MeasurementsService {
   private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
   private readonly apiUrl = 'http://localhost:3000/api/measurements';
 
-  readonly history = signal<MeasurementRecord[]>(DEFAULT_MEASUREMENTS);
+  readonly history = signal<MeasurementRecord[]>(
+    this.authService.isLoggedIn() ? [] : DEFAULT_MEASUREMENTS
+  );
   readonly isLoading = signal<boolean>(false);
   readonly isSyncing = signal<boolean>(false);
 
   constructor() {
     this.loadFromBackend();
+
+    // Auto reload when user switches
+    effect(() => {
+      const userId = this.authService.currentUserId();
+      if (userId) {
+        this.loadFromBackend();
+      }
+    });
+  }
+
+  private getHeaders(): HttpHeaders {
+    return new HttpHeaders({
+      'x-user-id': this.authService.currentUserId()
+    });
   }
 
   async loadFromBackend(): Promise<void> {
     this.isLoading.set(true);
     try {
+      const fallback = this.authService.isLoggedIn() ? [] : DEFAULT_MEASUREMENTS;
       const records = await firstValueFrom(
-        this.http.get<MeasurementRecord[]>(this.apiUrl).pipe(
-          catchError(() => of(DEFAULT_MEASUREMENTS))
+        this.http.get<MeasurementRecord[]>(this.apiUrl, { headers: this.getHeaders() }).pipe(
+          catchError(() => of(fallback))
         )
       );
       if (Array.isArray(records)) {
@@ -185,7 +204,7 @@ export class MeasurementsService {
     this.isSyncing.set(true);
     try {
       const saved = await firstValueFrom(
-        this.http.post<MeasurementRecord>(this.apiUrl, record).pipe(
+        this.http.post<MeasurementRecord>(this.apiUrl, record, { headers: this.getHeaders() }).pipe(
           catchError(() => of({ ...record, id: record.id || `local_${Date.now()}` } as MeasurementRecord))
         )
       );
@@ -200,7 +219,7 @@ export class MeasurementsService {
     this.isSyncing.set(true);
     try {
       const updated = await firstValueFrom(
-        this.http.put<MeasurementRecord>(`${this.apiUrl}/${id}`, updateData).pipe(
+        this.http.put<MeasurementRecord>(`${this.apiUrl}/${id}`, updateData, { headers: this.getHeaders() }).pipe(
           catchError(() => of(null))
         )
       );
@@ -214,7 +233,7 @@ export class MeasurementsService {
     this.isSyncing.set(true);
     try {
       await firstValueFrom(
-        this.http.delete(`${this.apiUrl}/${id}`).pipe(
+        this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() }).pipe(
           catchError(() => of(null))
         )
       );
@@ -227,9 +246,10 @@ export class MeasurementsService {
   async resetToDefault(): Promise<void> {
     this.isSyncing.set(true);
     try {
+      const fallback = this.authService.isLoggedIn() ? [] : DEFAULT_MEASUREMENTS;
       const defaults = await firstValueFrom(
-        this.http.post<MeasurementRecord[]>(`${this.apiUrl}/reset`, {}).pipe(
-          catchError(() => of(DEFAULT_MEASUREMENTS))
+        this.http.post<MeasurementRecord[]>(`${this.apiUrl}/reset`, {}, { headers: this.getHeaders() }).pipe(
+          catchError(() => of(fallback))
         )
       );
       this.history.set(defaults);

@@ -17,6 +17,7 @@ bazel-out/
 tmp/
 **/tmp/
 data/
+data_buckup/
 
 # TypeScript & Angular caches
 *.tsbuildinfo

@@ -1,7 +1,8 @@
 import { Injectable, signal, effect, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { AuthService } from './auth.service';
 
 export interface DashboardWidgetConfig {
   id: string;
@@ -250,13 +251,12 @@ export const DEFAULT_WIDGETS: DashboardWidgetConfig[] = [
   }
 ];
 
-const STORAGE_KEY = 'body_dashboard_layout_v4';
-
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardLayoutService {
   private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
   private readonly apiUrl = 'http://localhost:3000/api/layout';
 
   readonly isEditMode = signal<boolean>(false);
@@ -268,6 +268,14 @@ export class DashboardLayoutService {
   constructor() {
     this.loadFromBackend();
 
+    // Auto reload when user switches
+    effect(() => {
+      const userId = this.authService.currentUserId();
+      if (userId) {
+        this.loadFromBackend();
+      }
+    });
+
     effect(() => {
       const currentWidgets = this.widgets();
       this.saveToStorage(currentWidgets);
@@ -275,10 +283,20 @@ export class DashboardLayoutService {
     });
   }
 
+  private getStorageKey(): string {
+    return `body_dashboard_layout_v4_${this.authService.currentUserId()}`;
+  }
+
+  private getHeaders(): HttpHeaders {
+    return new HttpHeaders({
+      'x-user-id': this.authService.currentUserId()
+    });
+  }
+
   async loadFromBackend(): Promise<void> {
     try {
       const remoteWidgets = await firstValueFrom(
-        this.http.get<DashboardWidgetConfig[]>(this.apiUrl).pipe(
+        this.http.get<DashboardWidgetConfig[]>(this.apiUrl, { headers: this.getHeaders() }).pipe(
           catchError(() => of(null))
         )
       );
@@ -299,7 +317,7 @@ export class DashboardLayoutService {
       try {
         this.isSyncing.set(true);
         await firstValueFrom(
-          this.http.put<DashboardWidgetConfig[]>(this.apiUrl, widgets).pipe(
+          this.http.put<DashboardWidgetConfig[]>(this.apiUrl, widgets, { headers: this.getHeaders() }).pipe(
             catchError(() => of(null))
           )
         );
@@ -317,9 +335,6 @@ export class DashboardLayoutService {
     this.isEditMode.set(enabled);
   }
 
-  /**
-   * Sprawdza czy dany prostokąt w siatce koliduje z innymi widgetami
-   */
   canPlaceWidget(
     widgetId: string,
     targetCol: number,
@@ -341,9 +356,6 @@ export class DashboardLayoutService {
     return true;
   }
 
-  /**
-   * Przesuwa widget na konkretną pozycję (col, row) jeśli jest tam wolne miejsce
-   */
   setWidgetPosition(widgetId: string, col: number, row: number): boolean {
     const current = this.widgets().find(w => w.id === widgetId);
     if (!current) return false;
@@ -358,9 +370,6 @@ export class DashboardLayoutService {
     return true;
   }
 
-  /**
-   * Zmienia rozmiar widgetu (colSpan, rowSpan) tylko jeśli nie koliduje z sąsiadami
-   */
   setWidgetSpanWithSpaceCheck(
     widgetId: string,
     colSpan: number,
@@ -372,7 +381,6 @@ export class DashboardLayoutService {
     const clampedCol = Math.max(current.minColSpan, Math.min(GRID_TOTAL_COLS - current.col + 1, colSpan));
     const clampedRow = Math.max(current.minRowSpan, Math.min(current.maxRowSpan, rowSpan));
 
-    // Sprawdź czy po powiększeniu mieści się w pustej przestrzeni
     if (this.canPlaceWidget(widgetId, current.col, current.row, clampedCol, clampedRow)) {
       this.widgets.update(list =>
         list.map(w =>
@@ -395,7 +403,7 @@ export class DashboardLayoutService {
 
     this.widgets.set(defaults);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(this.getStorageKey());
     } catch {
       // ignore
     }
@@ -403,7 +411,7 @@ export class DashboardLayoutService {
     try {
       this.isSyncing.set(true);
       await firstValueFrom(
-        this.http.post<DashboardWidgetConfig[]>(`${this.apiUrl}/reset`, {}).pipe(
+        this.http.post<DashboardWidgetConfig[]>(`${this.apiUrl}/reset`, {}, { headers: this.getHeaders() }).pipe(
           catchError(() => of(null))
         )
       );
@@ -414,7 +422,7 @@ export class DashboardLayoutService {
 
   private loadInitialWidgets(): DashboardWidgetConfig[] {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(this.getStorageKey());
       if (stored) {
         const parsed = JSON.parse(stored) as Array<Partial<DashboardWidgetConfig> & { id: string }>;
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -463,7 +471,7 @@ export class DashboardLayoutService {
         colSpan: w.colSpan,
         rowSpan: w.rowSpan
       }));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      localStorage.setItem(this.getStorageKey(), JSON.stringify(toSave));
     } catch {
       // ignore storage errors
     }

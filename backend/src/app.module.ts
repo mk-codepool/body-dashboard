@@ -6,9 +6,10 @@ import { LayoutController } from './layout/layout.controller.js';
 import { LayoutService } from './layout/layout.service.js';
 import { MeasurementsController } from './measurements/measurements.controller.js';
 import { MeasurementsService } from './measurements/measurements.service.js';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
-  imports: [],
+  imports: [AuthModule],
   controllers: [AppController, LayoutController, MeasurementsController],
   providers: [AppService, StorageService, LayoutService, MeasurementsService],
 })

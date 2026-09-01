@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import type { UserDto } from '../auth/dto/user.dto.js';
 
 export interface DashboardWidgetConfig {
   id: string;
@@ -400,82 +401,209 @@ export class StorageService implements OnModuleInit {
   private readonly dataDir = process.cwd().endsWith('backend')
     ? path.resolve(process.cwd(), 'data')
     : path.resolve(process.cwd(), 'backend', 'data');
-  private readonly layoutFile = path.join(this.dataDir, 'layout.json');
-  private readonly measurementsFile = path.join(this.dataDir, 'measurements.json');
+  private readonly usersDir = path.join(this.dataDir, 'users');
+  private readonly legacyLayoutFile = path.join(this.dataDir, 'layout.json');
+  private readonly legacyMeasurementsFile = path.join(this.dataDir, 'measurements.json');
 
   async onModuleInit() {
     await this.initStorage();
   }
 
+  private sanitizeUserId(userId?: string): string {
+    if (!userId || userId.trim() === '' || userId === 'default' || userId === 'undefined' || userId === 'null') {
+      return 'guest';
+    }
+    return userId.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+  }
+
+  private getUserDir(userId?: string): string {
+    const safeId = this.sanitizeUserId(userId);
+    return path.join(this.usersDir, safeId);
+  }
+
+  private getUserLayoutPath(userId?: string): string {
+    return path.join(this.getUserDir(userId), 'layout.json');
+  }
+
+  private getUserMeasurementsPath(userId?: string): string {
+    return path.join(this.getUserDir(userId), 'measurements.json');
+  }
+
+  private getUserProfilePath(userId?: string): string {
+    return path.join(this.getUserDir(userId), 'user.json');
+  }
+
   private async initStorage(): Promise<void> {
     try {
       await fs.mkdir(this.dataDir, { recursive: true });
+      await fs.mkdir(this.usersDir, { recursive: true });
 
-      // Layout file check
-      try {
-        await fs.access(this.layoutFile);
-      } catch {
-        this.logger.log(`Inicjalizowanie pliku układu kafelków: ${this.layoutFile}`);
-        await this.saveLayout(DEFAULT_WIDGETS);
-      }
+      // Init default guest storage
+      await this.ensureUserStorage('guest', {
+        id: 'guest',
+        name: 'Gość',
+        email: 'guest@body-dashboard.local',
+        provider: 'guest',
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      });
 
-      // Measurements file check
-      try {
-        await fs.access(this.measurementsFile);
-      } catch {
-        this.logger.log(`Inicjalizowanie pliku pomiarów biometrii: ${this.measurementsFile}`);
-        await this.saveMeasurements(DEFAULT_MEASUREMENTS);
-      }
+      this.logger.log(`Storage per-user zainicjalizowany w: ${this.usersDir}`);
     } catch (err) {
       this.logger.error('Błąd podczas inicjalizacji katalogu storage:', err);
     }
   }
 
-  async getLayout(): Promise<DashboardWidgetConfig[]> {
+  async ensureUserStorage(userId: string, defaultUser?: Partial<UserDto>): Promise<void> {
+    const userDir = this.getUserDir(userId);
+    await fs.mkdir(userDir, { recursive: true });
+
+    const layoutPath = this.getUserLayoutPath(userId);
+    const measurementsPath = this.getUserMeasurementsPath(userId);
+    const profilePath = this.getUserProfilePath(userId);
+
+    // Profile init
     try {
-      const data = await fs.readFile(this.layoutFile, 'utf-8');
+      await fs.access(profilePath);
+    } catch {
+      const initialUser: UserDto = {
+        id: userId,
+        name: defaultUser?.name || 'Użytkownik',
+        email: defaultUser?.email || `${userId}@body-dashboard.local`,
+        picture: defaultUser?.picture,
+        provider: defaultUser?.provider || 'guest',
+        gender: defaultUser?.gender || 'male',
+        createdAt: defaultUser?.createdAt || new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      };
+      await fs.writeFile(profilePath, JSON.stringify(initialUser, null, 2), 'utf-8');
+    }
+
+    // Layout init
+    try {
+      await fs.access(layoutPath);
+    } catch {
+      // Check legacy root layout
+      let initialLayout = DEFAULT_WIDGETS;
+      try {
+        const legacyData = await fs.readFile(this.legacyLayoutFile, 'utf-8');
+        const parsed = JSON.parse(legacyData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          initialLayout = parsed;
+        }
+      } catch {
+        // use default
+      }
+      await fs.writeFile(layoutPath, JSON.stringify(initialLayout, null, 2), 'utf-8');
+    }
+
+    // Measurements init
+    try {
+      await fs.access(measurementsPath);
+    } catch {
+      const initialMeasurements: MeasurementRecord[] = (userId === 'guest') ? DEFAULT_MEASUREMENTS : [];
+      await fs.writeFile(measurementsPath, JSON.stringify(initialMeasurements, null, 2), 'utf-8');
+    }
+  }
+
+  // --- USER PROFILE METHODS ---
+
+  async getUser(userId: string): Promise<UserDto | null> {
+    try {
+      const profilePath = this.getUserProfilePath(userId);
+      const data = await fs.readFile(profilePath, 'utf-8');
+      return JSON.parse(data) as UserDto;
+    } catch {
+      return null;
+    }
+  }
+
+  async saveUser(user: UserDto): Promise<UserDto> {
+    await this.ensureUserStorage(user.id, user);
+    const profilePath = this.getUserProfilePath(user.id);
+    await fs.writeFile(profilePath, JSON.stringify(user, null, 2), 'utf-8');
+    return user;
+  }
+
+  async getAllUsers(): Promise<UserDto[]> {
+    try {
+      const entries = await fs.readdir(this.usersDir, { withFileTypes: true });
+      const users: UserDto[] = [];
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const profilePath = path.join(this.usersDir, entry.name, 'user.json');
+          try {
+            const data = await fs.readFile(profilePath, 'utf-8');
+            const user = JSON.parse(data) as UserDto;
+            users.push(user);
+          } catch {
+            // ignore folders without valid profile
+          }
+        }
+      }
+      return users;
+    } catch (err) {
+      this.logger.warn('Błąd podczas pobierania listy użytkowników:', err);
+      return [];
+    }
+  }
+
+  // --- LAYOUT METHODS ---
+
+  async getLayout(userId?: string): Promise<DashboardWidgetConfig[]> {
+    const layoutPath = this.getUserLayoutPath(userId);
+    try {
+      const data = await fs.readFile(layoutPath, 'utf-8');
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
     } catch (err) {
-      this.logger.warn(`Nie udało się odczytać pliku ${this.layoutFile}, zwracam domyślny układ:`, err);
+      this.logger.warn(`Nie udało się odczytać pliku ${layoutPath}, próbuję fallback:`, err);
     }
     return DEFAULT_WIDGETS;
   }
 
-  async saveLayout(layout: DashboardWidgetConfig[]): Promise<DashboardWidgetConfig[]> {
-    await fs.mkdir(this.dataDir, { recursive: true });
-    await fs.writeFile(this.layoutFile, JSON.stringify(layout, null, 2), 'utf-8');
-    this.logger.log(`Zapisano układ kafelków do ${this.layoutFile}`);
+  async saveLayout(layout: DashboardWidgetConfig[], userId?: string): Promise<DashboardWidgetConfig[]> {
+    const safeId = this.sanitizeUserId(userId);
+    await this.ensureUserStorage(safeId);
+    const layoutPath = this.getUserLayoutPath(safeId);
+    await fs.writeFile(layoutPath, JSON.stringify(layout, null, 2), 'utf-8');
+    this.logger.log(`Zapisano układ kafelków dla usera [${safeId}] w ${layoutPath}`);
     return layout;
   }
 
-  async resetLayout(): Promise<DashboardWidgetConfig[]> {
-    return this.saveLayout(DEFAULT_WIDGETS);
+  async resetLayout(userId?: string): Promise<DashboardWidgetConfig[]> {
+    return this.saveLayout(DEFAULT_WIDGETS, userId);
   }
 
-  async getMeasurements(): Promise<MeasurementRecord[]> {
+  // --- MEASUREMENTS METHODS ---
+
+  async getMeasurements(userId?: string): Promise<MeasurementRecord[]> {
+    const measurementsPath = this.getUserMeasurementsPath(userId);
     try {
-      const data = await fs.readFile(this.measurementsFile, 'utf-8');
+      const data = await fs.readFile(measurementsPath, 'utf-8');
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed)) {
         return parsed;
       }
     } catch (err) {
-      this.logger.warn(`Nie udało się odczytać pliku ${this.measurementsFile}, zwracam domyślne pomiary:`, err);
+      this.logger.warn(`Nie udało się odczytać pliku ${measurementsPath}, zwracam puste/domyślne:`, err);
     }
-    return DEFAULT_MEASUREMENTS;
+    return (!userId || userId === 'guest') ? DEFAULT_MEASUREMENTS : [];
   }
 
-  async saveMeasurements(records: MeasurementRecord[]): Promise<MeasurementRecord[]> {
-    await fs.mkdir(this.dataDir, { recursive: true });
-    await fs.writeFile(this.measurementsFile, JSON.stringify(records, null, 2), 'utf-8');
-    this.logger.log(`Zapisano ${records.length} pomiarów do ${this.measurementsFile}`);
+  async saveMeasurements(records: MeasurementRecord[], userId?: string): Promise<MeasurementRecord[]> {
+    const safeId = this.sanitizeUserId(userId);
+    await this.ensureUserStorage(safeId);
+    const measurementsPath = this.getUserMeasurementsPath(safeId);
+    await fs.writeFile(measurementsPath, JSON.stringify(records, null, 2), 'utf-8');
+    this.logger.log(`Zapisano ${records.length} pomiarów dla usera [${safeId}] w ${measurementsPath}`);
     return records;
   }
 
-  async resetMeasurements(): Promise<MeasurementRecord[]> {
-    return this.saveMeasurements(DEFAULT_MEASUREMENTS);
+  async resetMeasurements(userId?: string): Promise<MeasurementRecord[]> {
+    const defaults = (!userId || userId === 'guest') ? DEFAULT_MEASUREMENTS : [];
+    return this.saveMeasurements(defaults, userId);
   }
 }

@@ -3,8 +3,6 @@
   <header class="top-bar">
     <div class="top-bar-left"></div>
 
-
-
     <div class="top-bar-right">
       <!-- Przełącznik trybu edycji dashboardu -->
       <div class="layout-controls">
@@ -39,6 +37,38 @@
 
       <div class="divider"></div>
 
+      <!-- Przycisk Konta / Logowania Google w prawym górnym rogu -->
+      <button type="button" class="user-account-btn" [class.logged-in]="authService.isLoggedIn()"
+        (click)="authService.openAuthModal()"
+        [title]="authService.isLoggedIn() ? 'Profil użytkownika: ' + authService.userDisplayName() : 'Zaloguj się kontem Google'">
+        @if (authService.isLoggedIn()) {
+        <div class="user-avatar-wrap">
+          @if (authService.currentUser()?.picture) {
+          <img [src]="authService.currentUser()?.picture" alt="Avatar" class="user-avatar-img" />
+          } @else {
+          <div class="user-avatar-initials">{{ authService.userInitials() }}</div>
+          }
+          <span class="user-online-dot"></span>
+        </div>
+        <div class="user-info-text">
+          <span class="user-name">{{ authService.userDisplayName() }}</span>
+          <span class="user-badge font-mono">GOOGLE</span>
+        </div>
+        } @else {
+        <div class="google-icon-circle">
+          <svg class="google-svg" viewBox="0 0 24 24" width="16" height="16">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.37 7.31 24 12 24Z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15Z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.63 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/>
+          </svg>
+        </div>
+        <span class="btn-text">Zaloguj przez Google</span>
+        }
+      </button>
+
+      <div class="divider"></div>
+
       <div class="time-widget">
         <span class="time-value">{{ currentTime() }}</span>
         <span class="date-value">{{ currentDate() }}</span>
@@ -51,3 +81,224 @@
     <router-outlet />
   </main>
 </div>
+
+<!-- ========================================================================= -->
+<!-- PEŁNOEKRANOWY MODAL: PROFIL UŻYTKOWNIKA / LOGOWANIE GOOGLE -->
+<!-- ========================================================================= -->
+<app-modal [isOpen]="authService.isAuthModalOpen()"
+  [title]="modalTitle()"
+  [subtitle]="modalSubtitle()"
+  [badge]="modalBadge()"
+  (closed)="authService.closeAuthModal()">
+
+  <!-- Akcje w nagłówku modala -->
+  <div modal-actions class="auth-modal-header-actions">
+    @if (authService.isLoggedIn()) {
+    <button type="button" class="btn-modal-action btn-logout" (click)="logout()" title="Wyloguj się z konta Google">
+      <svg class="action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
+      </svg>
+      <span>Wyloguj się</span>
+    </button>
+    }
+  </div>
+
+  <!-- Ciało Modala -->
+  <div class="auth-modal-content">
+    @if (googleLoginSuccessMsg()) {
+    <div class="auth-alert alert-success">
+      <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+      </svg>
+      <span>{{ googleLoginSuccessMsg() }}</span>
+    </div>
+    }
+
+    @if (authService.errorMessage()) {
+    <div class="auth-alert alert-danger">
+      <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      <span>{{ authService.errorMessage() }}</span>
+    </div>
+    }
+
+    <!-- WIDOK DLA UŻYTKOWNIKA ZALOGOWANEGO -->
+    @if (authService.isLoggedIn() && authService.currentUser(); as user) {
+    <div class="profile-container">
+      <!-- Główna karta tożsamości Google -->
+      <div class="profile-hero-card">
+        <div class="hero-left">
+          <div class="profile-avatar-box">
+            @if (user.picture) {
+            <img [src]="user.picture" alt="Google Avatar" class="hero-avatar-img" />
+            } @else {
+            <div class="hero-avatar-initials">{{ authService.userInitials() }}</div>
+            }
+            <span class="hero-google-badge">
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.37 7.31 24 12 24Z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15Z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.63 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/>
+              </svg>
+            </span>
+          </div>
+          <div class="hero-identity">
+            <h2 class="hero-name">{{ user.name }}</h2>
+            <div class="hero-email-row">
+              <span class="hero-email font-mono">{{ user.email }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <button type="button" class="btn-hero-logout" (click)="logout()">
+            <svg class="action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span>Wyloguj się</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Szczegółowe dane pobrane z konta Google -->
+      <div class="google-data-section">
+        <div class="section-title-bar">
+          <div class="title-with-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <h3 class="data-section-title">Dane Profilowe Google OAuth</h3>
+          </div>
+        </div>
+
+        <div class="google-attributes-grid">
+          <!-- Imię i nazwisko -->
+          <div class="attr-box">
+            <span class="attr-label">Imię i nazwisko</span>
+            <span class="attr-value">{{ user.name || '-' }}</span>
+          </div>
+
+          <!-- Imię -->
+          <div class="attr-box">
+            <span class="attr-label">Imię</span>
+            <span class="attr-value">{{ user.givenName || user.name.split(' ')[0] || '-' }}</span>
+          </div>
+
+          <!-- Nazwisko -->
+          <div class="attr-box">
+            <span class="attr-label">Nazwisko</span>
+            <span class="attr-value">{{ user.familyName || user.name.split(' ')[1] || '-' }}</span>
+          </div>
+
+          <!-- E-mail -->
+          <div class="attr-box">
+            <span class="attr-label">Adres e-mail</span>
+            <span class="attr-value font-mono">{{ user.email }}</span>
+          </div>
+
+          <!-- Język i region -->
+          <div class="attr-box">
+            <span class="attr-label">Język i region</span>
+            <span class="attr-value font-mono">{{ user.locale || 'pl' }}</span>
+          </div>
+
+          <!-- Data rejestracji -->
+          <div class="attr-box">
+            <span class="attr-label">Data pierwszego logowania</span>
+            <span class="attr-value font-mono">{{ user.createdAt | date:'medium' }}</span>
+          </div>
+
+          <!-- Ostatnie logowanie -->
+          <div class="attr-box">
+            <span class="attr-label">Ostatnie logowanie</span>
+            <span class="attr-value font-mono">{{ user.lastLoginAt | date:'medium' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wszystkie parametry tokena Google -->
+      @if (user.googleRawClaims) {
+      <div class="raw-claims-section">
+        <button type="button" class="raw-claims-toggle" (click)="toggleRawClaims()">
+          <div class="toggle-left">
+            <svg class="toggle-icon" [class.rotated]="isRawClaimsExpanded()" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            <span>Wszystkie parametry przekazane przez Google</span>
+          </div>
+          <span class="claims-count font-mono">{{ isRawClaimsExpanded() ? 'Zwiń' : 'Rozwiń' }}</span>
+        </button>
+
+        @if (isRawClaimsExpanded()) {
+        <div class="raw-claims-table-wrap">
+          <table class="raw-claims-table font-mono">
+            <thead>
+              <tr>
+                <th>Parametr</th>
+                <th>Wartość</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of user.googleRawClaims | keyvalue; track item.key) {
+              <tr>
+                <td class="claim-key">{{ item.key }}</td>
+                <td class="claim-val">{{ item.value }}</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        }
+      </div>
+      }
+    </div>
+    }
+
+    <!-- WIDOK DLA UŻYTKOWNIKA NIEZALOGOWANEGO -->
+    @else {
+    <div class="login-prompt-container">
+      <div class="login-prompt-card">
+        <div class="google-big-logo">
+          <svg viewBox="0 0 24 24" width="48" height="48">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.37 7.31 24 12 24Z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15Z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.63 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/>
+          </svg>
+        </div>
+
+        <h2 class="login-title">Zaloguj się kontem Google</h2>
+        <p class="login-subtitle">
+          Uwierzytelnij się, aby połączyć swoje konto Google i zsynchronizować statystyki biometrii.
+        </p>
+
+        <!-- Kontener przycisku Google Identity Services -->
+        <div class="gsi-button-wrapper">
+          <div id="gsi-button-container"></div>
+        </div>
+
+        @if (!authService.isGoogleConfigured()) {
+        <div class="login-notice-box">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>Wymagana konfiguracja kluczy Google OAuth w pliku środowiskowym.</span>
+        </div>
+        }
+      </div>
+    </div>
+    }
+  </div>
+</app-modal>

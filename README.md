@@ -1,6 +1,6 @@
 # Body Dashboard
 
-Zintegrowane środowisko dla aplikacji **Angular (frontend)**, **NestJS (backend)** oraz **Launchera (orchestrator)** z modularnym gridem biometrii ciała i trwałym zapisem danych w plikach JSON.
+Zintegrowane środowisko dla aplikacji **Angular (frontend)**, **NestJS (backend)** oraz **Launchera (orchestrator)** z modularnym gridem biometrii ciała, uwierzytelnianiem **Google OAuth**, widokiem **Profilu Użytkownika** i trwałym zapisem danych w plikach JSON per-user.
 
 ---
 
@@ -11,24 +11,28 @@ body-dashboard/
 ├── start.js               # Główny punkt startowy - uruchamia Launcher (`node start`)
 ├── package.json           # Skrypty pomocnicze całego projektu
 ├── AGENTS.md              # Wytyczne deweloperskie i architektoniczne
+├── .env.example           # Wzorzec konfiguracji zmiennych środowiskowych
+├── .env                   # Lokalne klucze Google OAuth i konfiguracja
 │
-├── frontend/              # Aplikacja frontendowa Angular v22
+├── frontend/              # Aplikacja frontendowa Angular v22 (SPA)
 │   ├── src/
 │   │   ├── app/           # Komponenty Standalone, Signal API, Grid 2D
-│   │   │   ├── services/  # DashboardLayoutService, MeasurementsService
+│   │   │   ├── services/  # AuthService, DashboardLayoutService, MeasurementsService
+│   │   │   ├── components/# Reużywalny ModalComponent
 │   │   │   └── dashboard/ # Modularny Grid Biometrii, Wykresy SVG Bezier
 │   │   └── ...
 │   └── package.json
 │
-├── backend/               # Aplikacja backendowa NestJS
-│   ├── data/              # Trwałe pliki JSON (layout.json, measurements.json)
+├── backend/               # Aplikacja backendowa NestJS (REST API)
+│   ├── data/
+│   │   └── users/         # Izolowane magazyny JSON per-user (<userId>/user.json, layout.json, measurements.json)
 │   ├── src/
-│   │   ├── storage/       # StorageService (zarządzanie plikami JSON)
+│   │   ├── auth/          # Moduł Auth: AuthService, AuthController, Google GIS JWT decoding, .env config
+│   │   ├── storage/       # StorageService (zarządzanie danymi JSON per-user)
 │   │   ├── layout/        # Endpointy /api/layout (GET, PUT, POST /reset)
 │   │   ├── measurements/  # Endpointy /api/measurements (CRUD pomiarów)
 │   │   ├── app.controller.ts  # Endpointy /, /api/health, /api/info
-│   │   ├── app.service.ts
-│   │   └── main.ts        # Konfiguracja CORS i serwera
+│   │   └── main.ts        # Bootstrap z obsługą .env i CORS
 │   └── package.json
 │
 └── launcher/              # Moduł Launchera i Dashboardu
@@ -60,13 +64,27 @@ npm start
 
 ---
 
+## 🔐 Konfiguracja Google OAuth 2.0 (.env)
+
+Aby włączyć logowanie przez konto Google:
+1. Skopiuj plik `.env.example` do pliku `.env`.
+2. Wpisz swój identyfikator z Google Cloud Console:
+   ```env
+   GOOGLE_CLIENT_ID=twoj-klient-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=twoj-klient-secret
+   PORT=3000
+   ```
+3. Zrestartuj backend (klawisz `b` w konsoli launchera lub ponowne uruchomienie `node start`).
+
+---
+
 ## 🌐 Dostępne Porty i Usługi
 
 | Usługa | URL | Opis |
 |---|---|---|
 | **Launcher Web Dashboard** | [http://localhost:4000](http://localhost:4000) | Panel kontrolny, metryki, logi na żywo (SSE), restartowanie usług |
-| **Angular Frontend** | [http://localhost:4200](http://localhost:4200) | Interfejs użytkownika z modularną siatką 2D, trybem edycji i wykresem biometrii |
-| **NestJS Backend** | [http://localhost:3000](http://localhost:3000) | REST API z endpointami `/api/layout`, `/api/measurements`, `/api/health`, `/api/info` |
+| **Angular Frontend** | [http://localhost:4200](http://localhost:4200) | Interfejs użytkownika z modularną siatką 2D, trybem edycji, wykresem biometrii i panelem profilu Google |
+| **NestJS Backend** | [http://localhost:3000](http://localhost:3000) | REST API z endpointami `/api/auth`, `/api/layout`, `/api/measurements`, `/api/health`, `/api/info` |
 
 ---
 

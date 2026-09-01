@@ -118,6 +118,26 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
   - **1 pomiar (Stan Bazowy)**: Pojedynczy punkt jest estetycznie wyśrodkowany (50%, 50%) z pulsującym radarem, wartością w dymku, poziomą linią referencyjną `stroke-dasharray="6,6"`, automatyczną osią referencyjną Y (±10%) oraz wskaźnikiem `PUNKT BAZOWY (1 POMIAR)`.
   - **2+ pomiary (Trend)**: Płynna krzywa sklejania sześciennego Beziera, wypełnienie gradientowe i kalkulacja zmiany `delta` (7D).
 
+### 8. Uwierzytelnianie Google OAuth, Izolacja JSON Per-User & Profil Użytkownika
+- **Struktura Katalogów Danych Per-User**:
+  - Pliki każdego użytkownika zapisywane są w dedykowanym katalogu `backend/data/users/<userId>/` (`user.json`, `layout.json`, `measurements.json`).
+  - Domyślny profil gościa / bez logowania: `backend/data/users/guest/` (zasilany danymi demonstracyjnymi).
+  - **Zasada Zero Statystyk**: Każde nowo zarejestrowane konto Google otrzymuje **pustą tablicę pomiarów (`[]`)** w pliku `measurements.json` – brak sztucznych danych dla zalogowanych użytkowników.
+- **Konfiguracja Środowiskowa (.env)**:
+  - Zmienne `GOOGLE_CLIENT_ID` i `GOOGLE_CLIENT_SECRET` przechowywane są w pliku `.env` w głównym katalogu.
+  - Backend wczytuje je automatycznie przez `process.loadEnvFile()` i wystawia `GET /api/auth/config` bez ujawniania sekretów.
+  - Brak wzmianek o `.env` lub formularzy wklejania kluczy w interfejsie użytkownika.
+- **Backend DTO & Moduł Uwierzytelniania**:
+  - `UserDto` (`backend/src/auth/dto/user.dto.ts`): `id`, `sub`, `email`, `name`, `givenName`, `familyName`, `emailVerified`, `picture`, `locale`, `provider`, `createdAt`, `lastLoginAt`, `googleRawClaims`.
+  - `AuthService` & `AuthController` (`/api/auth/google`, `/api/auth/config`, `/api/auth/me`).
+  - Przekazywanie kontekstu użytkownika nagłówkiem HTTP `x-user-id` we wszystkich serwisach biometrii i layoutu.
+- **Frontend Uwierzytelnianie, Top Bar & Modal Profilu**:
+  - `AuthService` (`frontend/src/app/services/auth.service.ts`) zarządzający stanem `currentUser`, `isLoggedIn`, `isGoogleConfigured` i auto-synchronizacją.
+  - Przycisk profilu w prawym górnym rogu górnej belki (`top-bar`): wyświetla awatar Google i imię użytkownika lub przycisk logowania Google.
+  - Pełnoekranowy modal:
+    - **Dla niezalogowanego**: Oficjalne logowanie Google Identity Services (GIS).
+    - **Dla zalogowanego ("Profil użytkownika")**: Karta tożsamości z awatarem, imieniem i e-mailem, siatka parametrów udostępnionych przez Google oraz rozwijana sekcja parametrów tokena bez jakichkolwiek technicznych szczegółów backendu.
+
 ---
 
 ## 🚀 Standardy Uruchamiania i Zarządzania
@@ -142,8 +162,9 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
 - **Komponenty**: Wyłącznie Standalone Components (brak `NgModule`).
 - **Stan reaktywny**: Używaj `signal()`, `computed()`, `effect()` zamiast klasycznych `BehaviorSubject`.
 - **Serwisy Danych**:
-  - `DashboardLayoutService`: zarządza siatką, trybem edycji i synchronizacją z `/api/layout`.
-  - `MeasurementsService`: zarządza danymi biometrycznymi i synchronizacją z `/api/measurements` (w tym pełna obsługa dodawania, usuwania i pustej bazy `[]`).
+  - `AuthService`: zarządza kontami, uwierzytelnianiem Google i modalem logowania.
+  - `DashboardLayoutService`: zarządza siatką, trybem edycji i synchronizacją z `/api/layout` per user (`x-user-id`).
+  - `MeasurementsService`: zarządza danymi biometrycznymi i synchronizacją z `/api/measurements` per user (`x-user-id`).
 - **Wykresy i Wizualizacje**: Wykresy wektorowe SVG z krzywymi Beziera i gradientami (brak ciężkich zewnętrznych bibliotek).
 - **Komunikacja HTTP**: Konfiguracja przez `provideHttpClient()` w `app.config.ts`, obsługa błędów za pomocą operatora `catchError` z biblioteki RxJS.
 - **CORS**: NestJS jest skonfigurowany pod kątem zapytań z portu `4200` i `4000`.
@@ -151,8 +172,8 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
 ### Backend (NestJS)
 - **Moduły i importy**: Projekt korzysta z ESM (`"type": "module"`), importy relatywne w TypeScript muszą posiadać rozszerzenie `.js` (np. `import { AppModule } from './app.module.js'`).
 - **Persystencja JSON**:
-  - Dane przechowywane są w plikach JSON w `backend/data/` (`layout.json`, `measurements.json`).
-  - `StorageService` automatycznie tworzy katalog i inicjalizuje pliki danymi domyślnymi, jeśli jeszcze nie istnieją.
+  - Dane przechowywane są w podfolderach `backend/data/users/<userId>/` (`user.json`, `layout.json`, `measurements.json`).
+  - `StorageService` automatycznie tworzy katalog usera i inicjalizuje pliki. Nowi użytkownicy Google startują z pustą tablicą pomiarów (`[]`).
 - **Dekoratory i Isolated Modules**: Przy wstrzykiwaniu obiektów w `@Body()` należy stosować odpowiednie DTO lub `any` i importować interfejsy z `import type`, aby uniknąć błędów metadanych w trybie ESM (`TS1272`).
 - **Health Checks**: Każdy nowy kluczowy serwis powinien być uwzględniony w sondzie `/api/health`.
 - **CORS**: W `main.ts` zawsze musi być włączony `app.enableCors()`.
@@ -160,3 +181,5 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
 ### Launcher
 - **Zero zewnętrznych zależności**: Launcher opiera się na wbudowanych modułach Node.js (`node:http`, `node:child_process`, `node:fs`, `node:events`).
 - **Graceful Shutdown**: Launcher zamyka procesy potomne na Windows przez `taskkill /pid <PID> /T /F`.
+
+
