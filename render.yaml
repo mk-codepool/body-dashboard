@@ -10,6 +10,8 @@ services:
     buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start:prod
     envVars:
+      - key: NODE_VERSION
+        value: 22
       - key: NODE_ENV
         value: production
       - key: PORT
@@ -29,6 +31,9 @@ services:
     rootDir: frontend
     buildCommand: npm install --include=dev && npm run build
     staticPublishPath: dist/frontend/browser
+    envVars:
+      - key: NODE_VERSION
+        value: 22
     routes:
       # Obsługa routingu Angular Single Page Application
       - type: rewrite
