@@ -6,6 +6,7 @@ import { AuthService } from './services/auth.service';
 import { MeasurementsService } from './services/measurements.service';
 import { NotificationService } from './services/notification.service';
 import { ModalComponent } from './components/modal/modal';
+import { BackupService, type BackupPreview } from './services/backup.service';
 
 declare const google: any;
 
@@ -21,6 +22,21 @@ export class App implements OnInit, OnDestroy {
   readonly authService = inject(AuthService);
   readonly measurementsService = inject(MeasurementsService);
   readonly notificationService = inject(NotificationService);
+  readonly backupService = inject(BackupService);
+
+  // Opcje eksportu danych
+  readonly exportMeasurements = signal<boolean>(true);
+  readonly exportLayout = signal<boolean>(true);
+  readonly exportUser = signal<boolean>(true);
+
+  // Stan importu danych
+  readonly selectedBackupFile = signal<File | null>(null);
+  readonly backupPreview = signal<BackupPreview | null>(null);
+  readonly importError = signal<string>('');
+  readonly isDragOver = signal<boolean>(false);
+
+  // Potwierdzenie czyszczenia pomiarów
+  readonly showClearConfirm = signal<boolean>(false);
 
   openMeasurementsModal(): void {
     this.measurementsService.openModal();
@@ -31,6 +47,7 @@ export class App implements OnInit, OnDestroy {
   private timerInterval?: ReturnType<typeof setInterval>;
 
   readonly googleLoginSuccessMsg = signal<string>('');
+
 
   readonly modalTitle = computed(() => {
     return this.authService.isLoggedIn() ? 'Profil użytkownika' : 'Logowanie Google';
@@ -137,6 +154,86 @@ export class App implements OnInit, OnDestroy {
     this.showSuccess('Wylogowano pomyślnie.');
   }
 
+  // --- OBSŁUGA KOPII ZAPASOWEJ (EKSPORT / IMPORT JSON) ---
+
+  async executeExport(): Promise<void> {
+    await this.backupService.exportBackup({
+      measurements: this.exportMeasurements(),
+      layout: this.exportLayout(),
+      user: this.exportUser()
+    });
+  }
+
+  async onBackupFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      await this.processSelectedFile(input.files[0]);
+    }
+    input.value = '';
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(false);
+  }
+
+  async onFileDropped(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(false);
+    if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
+      await this.processSelectedFile(event.dataTransfer.files[0]);
+    }
+  }
+
+  private async processSelectedFile(file: File): Promise<void> {
+    this.importError.set('');
+    this.selectedBackupFile.set(file);
+    try {
+      const preview = await this.backupService.parseBackupFile(file);
+      this.backupPreview.set(preview);
+    } catch (err: any) {
+      this.importError.set(err?.message || 'Niepoprawny plik kopii.');
+      this.backupPreview.set(null);
+    }
+  }
+
+  cancelImport(): void {
+    this.selectedBackupFile.set(null);
+    this.backupPreview.set(null);
+    this.importError.set('');
+  }
+
+  async executeImport(): Promise<void> {
+    const preview = this.backupPreview();
+    if (!preview) return;
+
+    const ok = await this.backupService.importBackup(preview.rawPayload);
+    if (ok) {
+      this.cancelImport();
+    }
+  }
+
+  openClearConfirm(): void {
+    this.showClearConfirm.set(true);
+  }
+
+  closeClearConfirm(): void {
+    this.showClearConfirm.set(false);
+  }
+
+  async confirmClearMeasurements(): Promise<void> {
+    this.closeClearConfirm();
+    await this.backupService.clearMeasurements();
+  }
+
   private showSuccess(msg: string): void {
     this.googleLoginSuccessMsg.set(msg);
     setTimeout(() => {
@@ -144,3 +241,4 @@ export class App implements OnInit, OnDestroy {
     }, 4000);
   }
 }
+

@@ -69,7 +69,9 @@ node start
   - `frontend/src/app/services/auth.service.ts`: zarządzanie stanem uwierzytelnienia (`currentUser`, `isLoggedIn`), integracja z Google OAuth (GIS), persystencja w `localStorage`.
   - `frontend/src/app/services/dashboard-layout.service.ts`: reaktywne pozycjonowanie 2D, tryb edycji, sprawdzanie kolizji `canPlaceWidget`, auto-sync z `PUT /api/layout` z nagłówkiem `x-user-id`.
   - `frontend/src/app/services/measurements.service.ts`: pobieranie i modyfikacja pomiarów biometrii (`history`), integracja z `/api/measurements` z nagłówkiem `x-user-id`.
+  - `frontend/src/app/services/backup.service.ts`: eksport i import danych JSON, inspekcja plików, walidacja oraz bezpieczne czyszczenie pomiarów.
 - **Główny kontener widoku**: `frontend/src/app/dashboard/dashboard.ts`
+
 - **Konwencje Grida 2D, Responsywności RWD i Parametrów**:
   - **Siatka Desktop**: 8 kolumn `repeat(8, minmax(120px, 1fr))`, stała wysokość wiersza `135px`.
   - **Siatka Mobile (<= 768px)**: Maksymalnie 2 kolumny `repeat(2, minmax(0, 1fr)) !important`, `grid-auto-rows: minmax(125px, auto) !important`, `gap: 8px !important`. Kafelki 1-kolumnowe (`span 1`) i 2-kolumnowe (`span 2`).
@@ -116,10 +118,15 @@ node start
     - `GET /api/layout`, `PUT /api/layout`, `POST /api/layout/reset` (z obsługą nagłówka `x-user-id`)
   - `backend/src/measurements/` (`MeasurementsController`, `MeasurementsService`):
     - `GET /api/measurements`, `POST /api/measurements`, `GET /:id`, `PUT /:id`, `DELETE /:id`, `POST /reset` (z obsługą nagłówka `x-user-id`)
+  - `backend/src/backup/` (`BackupController`, `BackupService`):
+    - `GET /api/backup/export` – eksport wybranych danych do JSON (`types=measurements,layout,user`)
+    - `POST /api/backup/import` – import i atomowe scalanie danych w MongoDB/JSON (upsert po ID)
+    - `POST /api/backup/clear` – wyczyszczenie pomiarów danego użytkownika
   - `backend/src/storage/` (`StorageService`):
     - Centralne zarządzanie odczytem/zapisem w MongoDB / JSON per user z sanityzacją zapytań i maskowaniem sekretów.
 - **Konwencja importów ESM**: Wszystkie importy relatywne w TypeScript muszą posiadać rozszerzenie `.js` (np. `import { AuthService } from './auth.service.js'`).
 - **Stabilność Sieciowa**: Nasłuchiwanie na `await app.listen(port, '0.0.0.0')`.
+
 
 ---
 
@@ -139,6 +146,42 @@ node start
      - `staticPublishPath: dist/frontend/browser`
      - Reguła Rewrite: `/* -> /index.html` dla obsługi Angular Router.
 - **Launcher**: Wykluczony z procesu wdrażania (służy tylko do lokalnego developmentu).
+
+### Procedura Krok Po Kroku: Konfiguracja MongoDB Atlas i Render.com
+
+1. **Konfiguracja Klastra w MongoDB Atlas**:
+   - Zaloguj się na [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas) i kliknij **`+ Create`**.
+   - Wybierz plan darmowy **M0 Free** oraz region (np. AWS Frankfurt `eu-central-1`).
+   - W sekcji **Security ➔ Database Access**: utwórz użytkownika bazy (np. `body_admin`) z hasłem i rolą zapisu/odczytu.
+   - W sekcji **Security ➔ Network Access**: kliknij **`Add IP Address`** ➔ **`Allow Access from Anywhere`** (`0.0.0.0/0`) ➔ **`Confirm`**.
+   - W zakładce **Database ➔ Connect ➔ Drivers (Node.js)** skopiuj ciąg połączeniowy i uzupełnij hasło oraz nazwę bazy:
+     ```text
+     mongodb+srv://body_admin:<twoje_haslo>@cluster0.xxxxx.mongodb.net/body_dashboard?retryWrites=true&w=majority
+     ```
+
+2. **Konfiguracja Usługi w Render.com**:
+   - W panelu Render otwórz usługę **`body-dashboard-backend`**.
+   - Przejdź do zakładki **Environment** i dodaj zmienną:
+     - **Key**: `MONGODB_URI`
+     - **Value**: ciąg połączeniowy z klastra MongoDB Atlas.
+   - Kliknij **`Save Changes`** — Render automatycznie zrestartuje backend z nową konfiguracją.
+
+3. **Weryfikacja Połączenia**:
+   - Otwórz w przeglądarce endpoint: `https://twoj-backend.onrender.com/api/health`.
+   - Zweryfikuj pole `storage`:
+     ```json
+     {
+       "status": "ok",
+       "service": "backend",
+       "storage": {
+         "type": "mongodb",
+         "connected": true,
+         "database": "body_dashboard",
+         "uriMasked": "mongodb+srv://body_admin:****@cluster0..."
+       }
+     }
+     ```
+   - Każde kolejne wdrożenie zachowuje stan danych i eliminuje problem utraty plików w ulotnym systemie plików kontenera.
 
 ---
 

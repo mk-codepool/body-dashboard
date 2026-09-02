@@ -7,10 +7,12 @@ import { LayoutService } from './layout/layout.service.js';
 import { MeasurementsController } from './measurements/measurements.controller.js';
 import { MeasurementsService } from './measurements/measurements.service.js';
 import { AuthModule } from './auth/auth.module.js';
+import { BackupModule } from './backup/backup.module.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, BackupModule],
   controllers: [AppController, LayoutController, MeasurementsController],
   providers: [AppService, StorageService, LayoutService, MeasurementsService],
 })
 export class AppModule {}
+

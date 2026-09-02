@@ -153,7 +153,23 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
     - **Dla zalogowanego ("Profil użytkownika")**: Karta tożsamości z awatarem, przyciskiem **Wyloguj bezpośrednio pod awatarem**, imieniem i e-mailem, interaktywnym selektorem płci biologicznej (`♂ Mężczyzna` / `♀ Kobieta` – zasilającym normy biometrii) oraz siatką bezpiecznych parametrów użytkownika (Imię, Nazwisko, E-mail, Język, Data rejestracji, Ostatnie logowanie).
     - **Zasada Bezpieczeństwa**: Brak surowych zrzutów tokenów JWT / parametrów technicznych w interfejsie użytkownika.
 
-### 9. Wdrożenie Produkcyjne na Render.com & Dynamiczny Resolver API
+### 9. Kopia Zapasowa Danych (Eksport / Import JSON & Czyszczenie Danych)
+- **Dostępność**: Pełnoekranowy modal profilu użytkownika (dostępny zarówno dla konta zalogowanego Google, jak i profilu gościa).
+- **Backend (`/api/backup`)**:
+  - `GET /api/backup/export?types=measurements,layout,user`: generuje kompletny plik JSON z metadanymi (`version: 1`, `app: 'body-dashboard'`, `exportedAt`, `userId`, `data`).
+  - `POST /api/backup/import`: przyjmuje plik kopii zapasowej, dokonuje walidacji i atomowo utrwala dane (MongoDB / pliki JSON per-user).
+    - **Układ pulpitu (Layout)**: Zaimportowany układ kafelków całkowicie nadpisuje bieżący pulpit.
+    - **Pomiary (Measurements)**: Rekordy o istniejących `id` są aktualizowane, nowe `id` dopisywane; w przypadku wcześniejszego wyczyszczenia historii wszystkie rekordy są w całości przywracane w porządku chronologicznym.
+    - **Profil/Preferencje (User)**: Aktualizuje płeć biologiczną użytkownika (`gender`).
+  - `POST /api/backup/clear`: czyści wszystkie rekordy pomiarów danego użytkownika (tablica `[]`).
+- **Frontend (`BackupService`)**:
+  - Selektywny wybór kategorii danych do wyeksportowania (checkboxy z licznikami wpisów i kafelków).
+  - Strefa Drag & Drop oraz tradycyjny wybór pliku `.json`.
+  - Natychmiastowa inspekcja pliku w przeglądarce przed importem z podglądem liczby pomiarów, układu i profilu.
+  - Bezpieczne czyszczenie pomiarów z oknem potwierdzenia (`clear-confirm-dialog`).
+
+### 10. Wdrożenie Produkcyjne na Render.com & Dynamiczny Resolver API
+
 - **Render Blueprint (`render.yaml`)**:
   - Projekt zawiera zadeklarowaną infrastrukturę IaC w głównym pliku `render.yaml`.
   - **Backend Web Service (`body-dashboard-backend`)**:
@@ -174,6 +190,19 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
     - `localhost` / `127.0.0.1` ➔ `http://localhost:3000`
     - Domeny Render (`*-frontend.onrender.com`) ➔ `https://*-backend.onrender.com`
     - Opcjonalne nadpisanie przez `localStorage.getItem('BODY_DASHBOARD_API_URL')`.
+
+#### Procedura Konfiguracji MongoDB Atlas i Render.com Krok Po Kroku:
+1. **MongoDB Atlas**:
+   - Utwórz darmowy klaster M0 Free Tier (np. AWS Frankfurt `eu-central-1`).
+   - W **Database Access** utwórz użytkownika (np. `body_admin`) z hasłem i uprawnieniami zapisu/odczytu.
+   - W **Network Access** dodaj wpis `0.0.0.0/0` (**Allow Access from Anywhere**).
+   - W **Database ➔ Connect ➔ Drivers** skopiuj ciąg połączeniowy i uzupełnij hasło oraz bazę:
+     `mongodb+srv://body_admin:<haslo>@cluster0.xxxxx.mongodb.net/body_dashboard?retryWrites=true&w=majority`
+2. **Render.com**:
+   - W usłudze `body-dashboard-backend` przejdź do zakładki **Environment**.
+   - Dodaj zmienną `MONGODB_URI` z wartością ciągu połączeniowego z klastra Atlas.
+   - Zapisz zmiany (**Save Changes**) — nastąpi automatyczny redeploy.
+   - Sprawdź endpoint `https://twoj-backend.onrender.com/api/health` — w sekcji `storage` status powinien wskazywać `connected: true, type: 'mongodb'`.
 
 ---
 

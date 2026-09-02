@@ -910,4 +910,9 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     const defaults = (!userId || userId === 'guest') ? DEFAULT_MEASUREMENTS : [];
     return this.saveMeasurements(defaults, userId);
   }
+
+  async clearMeasurements(userId?: string): Promise<MeasurementRecord[]> {
+    return this.saveMeasurements([], userId);
+  }
 }
+

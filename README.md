@@ -66,13 +66,29 @@ npm start
 
 ---
 
-## ☁️ Wdrożenie Produkcyjne (Render.com)
+## ☁️ Wdrożenie Produkcyjne (Render.com + MongoDB Atlas)
 
-Projekt posiada gotowy plik **Render Blueprint (`render.yaml`)**:
+System plików na darmowym planie Render.com jest ulotny (**ephemeral**). Aby dane pomiarów biometrii, profile i układ kafelków nie znikały po każdym deployu lub restarcie instancji, projekt korzysta z bezpiecznej, darmowej bazy **MongoDB Atlas** (M0 Free Tier).
+
+### 1. Przygotowanie Darmowej Bazy w MongoDB Atlas:
+1. Zarejestruj się / zaloguj na [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas).
+2. Utwórz darmowy klaster: **`+ Create`** ➔ plan **M0 Free** ➔ region (np. Frankfurt `eu-central-1`) ➔ **`Create Deployment`**.
+3. Utwórz użytkownika bazy (**Security ➔ Database Access**): login np. `body_admin`, wygeneruj bezpieczne hasło i zapisz je.
+4. Zezwól na dostęp sieciowy (**Security ➔ Network Access**): kliknij **`Add IP Address`** ➔ wybierz **`Allow Access from Anywhere`** (`0.0.0.0/0`) ➔ **`Confirm`**.
+5. Pobierz ciąg połączeniowy (**Database ➔ Connect ➔ Drivers**):
+   ```text
+   mongodb+srv://body_admin:<haslo>@cluster0.xxxxx.mongodb.net/body_dashboard?retryWrites=true&w=majority
+   ```
+
+### 2. Wdrożenie na Render.com:
 1. Na [dashboard.render.com](https://dashboard.render.com) kliknij **New +** ➔ **Blueprint**.
 2. Wybierz to repozytorium z GitHuba.
-3. W formularzu podaj wartości dla kluczy Google OAuth (`GOOGLE_CLIENT_ID` oraz `GOOGLE_CLIENT_SECRET`).
+3. W formularzu zmiennych środowiskowych podaj:
+   - `GOOGLE_CLIENT_ID` oraz `GOOGLE_CLIENT_SECRET` (dla logowania Google OAuth).
+   - `MONGODB_URI`: wklej przygotowany ciąg połączeniowy z Twoim hasłem i bazą `/body_dashboard`.
 4. Kliknij **Apply** — Render automatycznie wdroży i połączy Frontend (Static Site) oraz Backend (Web Service).
+5. Stan połączenia możesz zweryfikować wchodząc pod adres:
+   `https://twoj-backend.onrender.com/api/health` — w polu `storage` pojawi się `"type": "mongodb", "connected": true`.
 
 ---
 

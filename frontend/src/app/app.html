@@ -283,6 +283,9 @@
           </div>
         </div>
       </div>
+
+      <!-- SEKCJA KOPII ZAPASOWEJ (EKSPORT / IMPORT JSON) DLA ZALOGOWANEGO UŻYTKOWNIKA -->
+      <ng-container [ngTemplateOutlet]="backupSectionTemplate" />
     </div>
     }
 
@@ -320,7 +323,227 @@
         </div>
         }
       </div>
+
+      <!-- SEKCJA KOPII ZAPASOWEJ DLA PROFILU GOŚCIA -->
+      <div class="guest-backup-wrapper">
+        <ng-container [ngTemplateOutlet]="backupSectionTemplate" />
+      </div>
     </div>
     }
+
+    <!-- REUŻYWALNY SZABLON: ZARZĄDZANIE KOPIĄ ZAPASOWĄ (EKSPORT / IMPORT JSON) -->
+    <ng-template #backupSectionTemplate>
+      <div class="backup-data-section">
+        <div class="section-title-bar">
+          <div class="title-with-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <h3 class="data-section-title">Kopia Zapasowa Danych (Eksport / Import JSON)</h3>
+          </div>
+          <span class="backup-badge font-mono">JSON BACKUP</span>
+        </div>
+
+        <div class="backup-cards-grid">
+          <!-- KARTA EKSPORTU -->
+          <div class="backup-card export-card">
+            <div class="card-header-mini">
+              <div class="card-icon-pill icon-cyan">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </div>
+              <div class="card-header-text">
+                <h4 class="card-mini-title">Eksport Danych</h4>
+                <p class="card-mini-desc">Wybierz rodzaje danych do pobrania w pliku JSON</p>
+              </div>
+            </div>
+
+            <div class="export-options-list">
+              <label class="backup-checkbox-row" (click)="$event.preventDefault(); exportMeasurements.set(!exportMeasurements())">
+                <input type="checkbox" [checked]="exportMeasurements()" />
+                <div class="checkbox-custom" [class.checked]="exportMeasurements()">
+                  @if (exportMeasurements()) {
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  }
+                </div>
+                <div class="option-info">
+                  <span class="option-name">Pomiary biometryczne</span>
+                  <span class="option-meta font-mono">{{ measurementsService.history().length }} wpisów</span>
+                </div>
+              </label>
+
+              <label class="backup-checkbox-row" (click)="$event.preventDefault(); exportLayout.set(!exportLayout())">
+                <input type="checkbox" [checked]="exportLayout()" />
+                <div class="checkbox-custom" [class.checked]="exportLayout()">
+                  @if (exportLayout()) {
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  }
+                </div>
+                <div class="option-info">
+                  <span class="option-name">Układ i siatka pulpitu</span>
+                  <span class="option-meta font-mono">{{ layoutService.widgets().length }} kafelków</span>
+                </div>
+              </label>
+
+              <label class="backup-checkbox-row" (click)="$event.preventDefault(); exportUser.set(!exportUser())">
+                <input type="checkbox" [checked]="exportUser()" />
+                <div class="checkbox-custom" [class.checked]="exportUser()">
+                  @if (exportUser()) {
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  }
+                </div>
+                <div class="option-info">
+                  <span class="option-name">Profil i preferencje</span>
+                  <span class="option-meta font-mono">Płeć: {{ authService.userGender() === 'female' ? 'Kobieta' : 'Mężczyzna' }}</span>
+                </div>
+              </label>
+            </div>
+
+            <button type="button" class="btn-backup-action btn-export" (click)="executeExport()"
+              [disabled]="backupService.isExporting() || (!exportMeasurements() && !exportLayout() && !exportUser())">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span>{{ backupService.isExporting() ? 'Generowanie...' : 'Pobierz kopię JSON' }}</span>
+            </button>
+          </div>
+
+          <!-- KARTA IMPORTU -->
+          <div class="backup-card import-card">
+            <div class="card-header-mini">
+              <div class="card-icon-pill icon-emerald">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+                  <path d="M12 12v9" />
+                  <path d="m8 17 4 4 4-4" />
+                </svg>
+              </div>
+              <div class="card-header-text">
+                <h4 class="card-mini-title">Import Danych</h4>
+                <p class="card-mini-desc">Wczytaj plik JSON i przywróć stan aplikacji</p>
+              </div>
+            </div>
+
+            @if (!backupPreview()) {
+            <div class="dropzone-box"
+              [class.drag-over]="isDragOver()"
+              (dragover)="onDragOver($event)"
+              (dragleave)="onDragLeave($event)"
+              (drop)="onFileDropped($event)"
+              (click)="backupFileInput.click()">
+              <input #backupFileInput type="file" accept=".json,application/json" class="hidden-file-input" (change)="onBackupFileSelected($event)" />
+              <div class="dropzone-icon">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </div>
+              <span class="dropzone-text">Upuść plik JSON lub <span class="dropzone-highlight">kliknij, aby wybrać</span></span>
+              <span class="dropzone-hint font-mono">Format: .json (backup Body Dashboard)</span>
+            </div>
+
+            @if (importError()) {
+            <div class="import-alert-error">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{{ importError() }}</span>
+            </div>
+            }
+            } @else {
+            <!-- PODGLĄD ZAWARTOŚCI PLIKU PRZED ZATWIERDZENIEM -->
+            <div class="import-preview-box">
+              <div class="preview-header">
+                <div class="file-name-row">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  <span class="file-name font-mono">{{ backupPreview()?.fileName }}</span>
+                </div>
+                <span class="file-size font-mono">{{ backupPreview()?.fileSizeText }}</span>
+              </div>
+
+              <div class="preview-items-grid">
+                <div class="preview-badge-item" [class.badge-active]="(backupPreview()?.measurementsCount || 0) > 0">
+                  <span class="preview-badge-label">Pomiary</span>
+                  <span class="preview-badge-val font-mono">{{ backupPreview()?.measurementsCount }} wpisów</span>
+                </div>
+                <div class="preview-badge-item" [class.badge-active]="(backupPreview()?.layoutCount || 0) > 0">
+                  <span class="preview-badge-label">Układ pulpitu</span>
+                  <span class="preview-badge-val font-mono">{{ backupPreview()?.layoutCount }} kafelków</span>
+                </div>
+                <div class="preview-badge-item" [class.badge-active]="backupPreview()?.userGender !== undefined">
+                  <span class="preview-badge-label">Profil / Płeć</span>
+                  <span class="preview-badge-val font-mono">{{ backupPreview()?.userGender ? (backupPreview()?.userGender === 'female' ? 'Kobieta' : 'Mężczyzna') : 'Brak' }}</span>
+                </div>
+              </div>
+
+              <div class="preview-notice-text">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                <span>Układ pulpitu zostanie nadpisany. Wpisy pomiarów o pasujących ID zostaną zaktualizowane, a nowe dodane.</span>
+              </div>
+
+              <div class="preview-actions-row">
+                <button type="button" class="btn-preview-cancel" (click)="cancelImport()" [disabled]="backupService.isImporting()">
+                  Anuluj
+                </button>
+                <button type="button" class="btn-backup-action btn-import-confirm" (click)="executeImport()" [disabled]="backupService.isImporting()">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>{{ backupService.isImporting() ? 'Importowanie...' : 'Zatwierdź i zaimportuj' }}</span>
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+
+        <!-- STREFA CZYSZCZENIA DANYCH -->
+        <div class="backup-danger-zone">
+          <div class="danger-info">
+            <h4 class="danger-title">Wyczyść historię pomiarów</h4>
+            <p class="danger-desc">Usuwa wszystkie wpisy pomiarów z bazy. Przed czyszczeniem pobierz kopię JSON, aby móc w każdej chwili przywrócić dane.</p>
+          </div>
+
+          @if (!showClearConfirm()) {
+          <button type="button" class="btn-danger-clear" (click)="openClearConfirm()" [disabled]="backupService.isClearing()">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+            <span>Wyczyść pomiary</span>
+          </button>
+          } @else {
+          <div class="clear-confirm-dialog">
+            <span class="confirm-prompt-text font-mono">Czy na pewno usunąć wszystkie pomiary?</span>
+            <div class="confirm-btn-group">
+              <button type="button" class="btn-confirm-cancel" (click)="closeClearConfirm()">Anuluj</button>
+              <button type="button" class="btn-confirm-exec" (click)="confirmClearMeasurements()" [disabled]="backupService.isClearing()">
+                {{ backupService.isClearing() ? 'Usuwanie...' : 'Tak, wyczyść wszystko' }}
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    </ng-template>
   </div>
 </app-modal>
