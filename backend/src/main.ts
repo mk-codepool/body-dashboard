@@ -31,10 +31,19 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   await app.listen(port, '0.0.0.0');
   console.log(`[NestJS Backend] Application is running on: http://localhost:${port}`);
+
   if (process.env.GOOGLE_CLIENT_ID) {
     console.log(`[NestJS Backend] Google OAuth Client ID załadowany z .env: ${process.env.GOOGLE_CLIENT_ID.slice(0, 12)}...`);
   } else {
     console.log(`[NestJS Backend] Brak GOOGLE_CLIENT_ID w .env (możesz dodać go w pliku .env)`);
+  }
+
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+  if (mongoUri) {
+    const masked = mongoUri.replace(/(mongodb(?:\+srv)?:\/\/[^:]+:)([^@]+)(@)/, '$1****$3');
+    console.log(`[NestJS Backend] Konfiguracja MongoDB załadowana: ${masked}`);
+  } else {
+    console.log(`[NestJS Backend] Brak MONGODB_URI w środowisku (aktywny lokalny magazyn JSON w data/users/)`);
   }
 }
 await bootstrap();

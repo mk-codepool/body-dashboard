@@ -126,14 +126,20 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
   - **1 pomiar (Stan Bazowy)**: Pojedynczy punkt jest estetycznie wyśrodkowany (50%, 50%) z pulsującym radarem, wartością w dymku, poziomą linią referencyjną `stroke-dasharray="6,6"`, automatyczną osią referencyjną Y (±10%) oraz wskaźnikiem `PUNKT BAZOWY (1 POMIAR)`.
   - **2+ pomiary (Trend)**: Płynna krzywa sklejania sześciennego Beziera, wypełnienie gradientowe i kalkulacja zmiany `delta` (7D).
 
-### 8. Uwierzytelnianie Google OAuth, Izolacja JSON Per-User & Profil Użytkownika
-- **Struktura Katalogów Danych Per-User**:
-  - Pliki każdego użytkownika zapisywane są w dedykowanym katalogu `backend/data/users/<userId>/` (`user.json`, `layout.json`, `measurements.json`).
-  - Domyślny profil gościa / bez logowania: `backend/data/users/guest/` (zasilany danymi demonstracyjnymi).
-  - **Zasada Zero Statystyk**: Każde nowo zarejestrowane konto Google otrzymuje **pustą tablicę pomiarów (`[]`)** w pliku `measurements.json` – brak sztucznych danych dla zalogowanych użytkowników.
+### 8. Uwierzytelnianie Google OAuth, Izolacja JSON Per-User, MongoDB & Profil Użytkownika
+- **Struktura Trwałego Magazynu Danych (MongoDB Atlas + Fallback JSON)**:
+  - **Tryb Chmurowy (MongoDB)**: Aktywowany po podaniu `MONGODB_URI` w `.env` lub w panelu Render.com.
+    - Kolekcje: `users`, `layouts`, `measurements` z dokumentami JSON per-user (`_id: safeId`).
+    - Bezpieczeństwo: Wymuszone szyfrowanie TLS/SSL, rygorystyczna sanityzacja identyfikatora użytkownika (`sanitizeUserId()`) zabezpieczająca przed NoSQL injection, automatyczne maskowanie haseł/sekretów w logach, connection pooling i bezpieczne zamykanie połączenia (`onModuleDestroy`).
+    - **Auto-migracja**: Przy pierwszym podłączeniu usera do bazy MongoDB, jeśli w bazie nie ma jego rekordu, ale na dysku istnieją lokalne pliki JSON (`backend/data/users/<userId>/`), system automatycznie migruje je do kolekcji MongoDB.
+  - **Tryb Lokalny (Fallback JSON)**: Gdy zmienna `MONGODB_URI` nie jest podana, dane zapisywane są w dedykowanych podfolderach `backend/data/users/<userId>/` (`user.json`, `layout.json`, `measurements.json`). Zapewnia to 100% sprawność testów jednostkowych i pracy offline.
+  - Domyślny profil gościa / bez logowania: `guest` (zasilany danymi demonstracyjnymi).
+  - **Zasada Zero Statystyk**: Każde nowo zarejestrowane konto Google otrzymuje **pustą tablicę pomiarów (`[]`)** w bazie/pliku `measurements.json` – brak sztucznych danych dla zalogowanych użytkowników.
+  - **Sonda Zdrowia**: Endpoint `/api/health` raportuje aktualny stan i typ magazynu (`storage: { type: 'mongodb' | 'file-json', connected: boolean, database?: string }`).
 - **Konfiguracja Środowiskowa (.env)**:
-  - Zmienne `GOOGLE_CLIENT_ID` i `GOOGLE_CLIENT_SECRET` przechowywane są w pliku `.env` w głównym katalogu.
+  - Zmienne `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MONGODB_URI`, `MONGODB_DB_NAME` przechowywane są w pliku `.env` w głównym katalogu.
   - Backend wczytuje je automatycznie przez `process.loadEnvFile()` i wystawia `GET /api/auth/config` bez ujawniania sekretów.
+  - Wzorzec konfiguracji dostępny w pliku `.env.example`.
   - Brak wzmianek o `.env` lub formularzy wklejania kluczy w interfejsie użytkownika.
 - **Backend DTO & Moduł Uwierzytelniania**:
   - `UserDto` (`backend/src/auth/dto/user.dto.ts`): `id`, `sub`, `email`, `name`, `givenName`, `familyName`, `emailVerified`, `picture`, `locale`, `gender`, `provider`, `createdAt`, `lastLoginAt`, `googleRawClaims`.
@@ -154,7 +160,8 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
     - `rootDir: backend`
     - `buildCommand: npm install --include=dev && npm run build` (flaga `--include=dev` zapewnia dostępność `@nestjs/cli` w trakcie budowania)
     - `startCommand: npm run start:prod`
-    - Sekrety OAuth (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) oznaczone jako `sync: false` – wartości podawane są wyłącznie w panelu Render, co chroni je w publicznym repozytorium.
+    - Sekrety OAuth (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) oraz baza danych (`MONGODB_URI`) oznaczone jako `sync: false` – wartości podawane są wyłącznie w panelu Render, co chroni je w publicznym repozytorium.
+    - Zmienna `MONGODB_DB_NAME: body_dashboard` predefiniowana w szablonie.
   - **Frontend Static Site (`body-dashboard-frontend`)**:
     - `rootDir: frontend`
     - `buildCommand: npm install --include=dev && npm run build`

@@ -43,7 +43,10 @@ node start
 1. **Plik `.env` w głównym katalogu**:
    - `GOOGLE_CLIENT_ID`: identyfikator klienta aplikacji internetowej z Google Cloud Console (`*.apps.googleusercontent.com`).
    - `GOOGLE_CLIENT_SECRET`: sekret klienta OAuth.
+   - `MONGODB_URI`: ciąg połączeniowy do MongoDB Atlas (`mongodb+srv://...`). W przypadku braku backend automatycznie używa lokalnych plików JSON w `data/users/`.
+   - `MONGODB_DB_NAME`: nazwa bazy (domyślnie `body_dashboard`).
    - `PORT`: port backendu (domyślnie `3000` lokalnie, `10000` na Renderze).
+   - Szablon referencyjny: `.env.example`.
 2. **Backend**:
    - Automatycznie wczytuje `.env` przy starcie za pomocą natywnego mechanizmu Node.js `process.loadEnvFile()`.
    - Udostępnia endpoint `GET /api/auth/config` dostarczający Client ID frontendowi.
@@ -98,24 +101,23 @@ node start
 ## 4. Rozwijanie Backendu (NestJS) & Persystencji JSON Per-User
 
 - **Katalog**: `backend/`
-- **Katalog danych per-user**: `backend/data/users/<userId>/`
-  - `user.json` – pełne dane profilowe Google (`id`, `sub`, `name`, `givenName`, `familyName`, `email`, `emailVerified`, `picture`, `locale`, `gender`, `createdAt`, `lastLoginAt`, `googleRawClaims`).
-  - `layout.json` – spersonalizowany układ modularnego grida kafelków.
-  - `measurements.json` – dedykowany rejestr pomiarów biometrii.
+- **Persystencja Danych (MongoDB Atlas + Fallback JSON)**:
+  - Przy zdefiniowanym `MONGODB_URI`: bezpieczny zapis i odczyt z bazy MongoDB (kolekcje `users`, `layouts`, `measurements`), connection pooling, auto-migracja z lokalnych plików JSON.
+  - Przy braku `MONGODB_URI`: lokalny fallback do podfolderów `backend/data/users/<userId>/` (`user.json`, `layout.json`, `measurements.json`).
 - **Zasada Zero Statystyk dla Nowych Kont**:
-  - Nowo utworzone konto Google otrzymuje **pustą tablicę pomiarów (`[]`)** w pliku `measurements.json`.
+  - Nowo utworzone konto Google otrzymuje **pustą tablicę pomiarów (`[]`)** w bazie / pliku `measurements.json`.
   - Profil gościa (`guest`) inicjalizowany jest z przykładowymi danymi demonstracyjnymi.
 - **Moduły i Endpointy**:
   - `backend/src/auth/` (`AuthModule`, `AuthController`, `AuthService`, `UserDto`):
     - `GET /api/auth/config` – pobranie konfiguracji Google Client ID z `.env`
-    - `POST /api/auth/google` – logowanie tokenem Google JWT, upsert i auto-inicjalizacja katalogu usera
+    - `POST /api/auth/google` – logowanie tokenem Google JWT, upsert i auto-inicjalizacja profilu
     - `GET /api/auth/me` – odczyt aktywnego profilu
   - `backend/src/layout/` (`LayoutController`, `LayoutService`):
     - `GET /api/layout`, `PUT /api/layout`, `POST /api/layout/reset` (z obsługą nagłówka `x-user-id`)
   - `backend/src/measurements/` (`MeasurementsController`, `MeasurementsService`):
     - `GET /api/measurements`, `POST /api/measurements`, `GET /:id`, `PUT /:id`, `DELETE /:id`, `POST /reset` (z obsługą nagłówka `x-user-id`)
   - `backend/src/storage/` (`StorageService`):
-    - Centralne zarządzanie odczytem/zapisem plików w podfolderach `data/users/<userId>/`.
+    - Centralne zarządzanie odczytem/zapisem w MongoDB / JSON per user z sanityzacją zapytań i maskowaniem sekretów.
 - **Konwencja importów ESM**: Wszystkie importy relatywne w TypeScript muszą posiadać rozszerzenie `.js` (np. `import { AuthService } from './auth.service.js'`).
 - **Stabilność Sieciowa**: Nasłuchiwanie na `await app.listen(port, '0.0.0.0')`.
 
@@ -130,7 +132,7 @@ node start
      - `rootDir: backend`
      - `buildCommand: npm install --include=dev && npm run build` (flaga `--include=dev` zapewnia instalację `@nestjs/cli`)
      - `startCommand: npm run start:prod`
-     - Zmienne środowiskowe: `NODE_ENV=production`, `PORT=10000`, sekrety OAuth `GOOGLE_CLIENT_ID` i `GOOGLE_CLIENT_SECRET` z oznaczeniem `sync: false` (zarządzane wyłącznie w panelu Render).
+     - Zmienne środowiskowe: `NODE_ENV=production`, `PORT=10000`, sekrety OAuth `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` oraz `MONGODB_URI` z oznaczeniem `sync: false` (zarządzane wyłącznie w panelu Render). Predefiniowana baza `MONGODB_DB_NAME: body_dashboard`.
   2. **`body-dashboard-frontend` (Static Site)**:
      - `rootDir: frontend`
      - `buildCommand: npm install --include=dev && npm run build`
