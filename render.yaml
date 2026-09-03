@@ -31,7 +31,7 @@ services:
   # 2. FRONTEND SPA (Angular Static Site)
   # =======================================================
   - type: web
-    name: body-dashboard-frontend
+    name: body-dashboard
     runtime: static
     rootDir: frontend
     buildCommand: npm install --include=dev && npm run build

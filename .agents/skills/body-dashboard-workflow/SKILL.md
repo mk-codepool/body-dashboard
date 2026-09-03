@@ -59,18 +59,26 @@ node start
 ## 3. Rozwijanie Frontendu (Angular) & Modularnego Grida 2D
 
 - **Katalog**: `frontend/`
-- **Root komponent**: `frontend/src/app/app.ts` (górna belka z przyciskiem "Dostosuj pulpit", przyciskiem profilu Google, zegarem czasu rzeczywistego i `<router-outlet />`).
+- **Root komponent**: `frontend/src/app/app.ts` (górna belka z brandingiem, wskaźnikiem stanu serwera `ApiHealthService`, przyciskiem "Dostosuj pulpit", przyciskiem profilu Google, zegarem czasu rzeczywistego i `<router-outlet />`).
 - **Dynamiczny Resolver API (`frontend/src/app/services/api.config.ts`)**:
   - `getApiBaseUrl()`: automatycznie rozpoznaje środowisko.
   - Lokalnie (`localhost` / `127.0.0.1`) ➔ `http://localhost:3000`.
-  - Na Renderze (`*-frontend.onrender.com`) ➔ `https://*-backend.onrender.com`.
+  - Na Renderze (`body-dashboard.onrender.com` / `*-frontend.onrender.com`) ➔ `https://*-backend.onrender.com`.
   - Możliwość nadpisania przez `localStorage.getItem('BODY_DASHBOARD_API_URL')`.
 - **Serwisy Danych**:
   - `frontend/src/app/services/auth.service.ts`: zarządzanie stanem uwierzytelnienia (`currentUser`, `isLoggedIn`), integracja z Google OAuth (GIS), persystencja w `localStorage`.
   - `frontend/src/app/services/dashboard-layout.service.ts`: reaktywne pozycjonowanie 2D, tryb edycji, sprawdzanie kolizji `canPlaceWidget`, auto-sync z `PUT /api/layout` z nagłówkiem `x-user-id`.
-  - `frontend/src/app/services/measurements.service.ts`: pobieranie i modyfikacja pomiarów biometrii (`history`), integracja z `/api/measurements` z nagłówkiem `x-user-id`.
+  - `frontend/src/app/services/measurements.service.ts`: natychmiastowy odczyt i zapis w `localStorage` per-user (`body_dashboard_measurements_v1_${userId}`), brak opóźnienia przy starcie (0 ms), odporność na rozruch kontenera Render za pomocą `retry({ count: 3, delay: 2500 })`.
+  - `frontend/src/app/services/pwa.service.ts`: obsługa zdarzenia `beforeinstallprompt`, instalacja na pulpicie (`installApp()`), stan instalacji `isInstalled`, tryb standalone oraz wsparcie dla iOS Safari.
+  - `frontend/src/app/services/api-health.service.ts`: pre-warming backendu przy starcie, wykrywanie wybudzania serwera Render (`status: 'waking_up'`), pomiar czasu odpowiedzi (ping ms) oraz podtrzymywanie keep-alive co 10 min.
   - `frontend/src/app/services/backup.service.ts`: eksport i import danych JSON, inspekcja plików, walidacja oraz bezpieczne czyszczenie pomiarów.
 - **Główny kontener widoku**: `frontend/src/app/dashboard/dashboard.ts`
+
+- **Architektura PWA & Rozwiązywanie Cold-Startu na Renderze**:
+  - **Ikona aplikacji**: `frontend/src/app/assets/favicon.ico` propagowana do `public/icons/` (`icon-192x192.png`, `icon-512x512.png`, `icon-maskable.png`, `apple-touch-icon.png`).
+  - **Manifest**: `frontend/public/manifest.webmanifest` (`theme_color: #08090d`, `display: standalone`).
+  - **Service Worker**: `frontend/public/sw.js` realizujący pre-cache powłoki aplikacji (App Shell), natychmiastowe ładowanie offline oraz transparentne omijanie endpointów `/api/*`.
+  - **Górna belka (Top Bar)**: Branding z logo i interaktywną plakietką stanu (`ONLINE` / `⚡ WYBUDZANIE SERWERA` / `OFFLINE`).
 
 - **Konwencje Grida 2D, Responsywności RWD i Parametrów**:
   - **Siatka Desktop**: 8 kolumn `repeat(8, minmax(120px, 1fr))`, stała wysokość wiersza `135px`.
@@ -96,7 +104,9 @@ node start
 - **Modal Profilu Użytkownika & Rejestr Pomiarów**:
   - Pełnoekranowy `ModalComponent` z obsługą `100dvh` i klawisza `Escape`.
   - **Przyciski akcji na mobile (`<= 768px`)**: Wyświetlają wyłącznie ikony SVG w kwadratowych polach dotykowych (`34×34px`).
-  - **Profil użytkownika**: Wyświetla bezpieczne dane Google OAuth z przyciskiem **Wyloguj bezpośrednio pod awatarem** tożsamości oraz interaktywnym selektorem płci biologicznej (`♂ Mężczyzna` / `♀ Kobieta`) synchronizowanym z normami biometrii.
+  - **Karta tożsamości profilu**: Wyświetla bezpieczne dane Google OAuth z przyciskiem **Wyloguj bezpośrednio pod awatarem** tożsamości oraz interaktywnym selektorem płci biologicznej (`♂ Mężczyzna` / `♀ Kobieta`) synchronizowanym z normami biometrii.
+  - **Karta Instalacji PWA**: Przycisk "Zapisz / Zainstaluj aplikację na pulpicie" (dostępna dla użytkownika zalogowanego i gościa).
+  - **Karta Diagnostyki Serwera**: Stan serwera Render, pomiar pingu w ms, baza MongoDB Atlas, pamięć podręczna PWA oraz przycisk sprawdzania na żądanie.
 
 ---
 
@@ -104,7 +114,7 @@ node start
 
 - **Katalog**: `backend/`
 - **Persystencja Danych (MongoDB Atlas + Fallback JSON)**:
-  - Przy zdefiniowanym `MONGODB_URI`: bezpieczny zapis i odczyt z bazy MongoDB (kolekcje `users`, `layouts`, `measurements`), connection pooling, auto-migracja z lokalnych plików JSON.
+  - Przy zdefiniowanym `MONGODB_URI`: bezpieczny zapis i odczyt z bazy MongoDB (kolekcje `users`, `layouts`, `measurements`), connection pooling (`maxIdleTimeMS: 60000`, `minPoolSize: 1`, `retryWrites: true`), auto-migracja z lokalnych plików JSON.
   - Przy braku `MONGODB_URI`: lokalny fallback do podfolderów `backend/data/users/<userId>/` (`user.json`, `layout.json`, `measurements.json`).
 - **Zasada Zero Statystyk dla Nowych Kont**:
   - Nowo utworzone konto Google otrzymuje **pustą tablicę pomiarów (`[]`)** w bazie / pliku `measurements.json`.
@@ -123,7 +133,7 @@ node start
     - `POST /api/backup/import` – import i atomowe scalanie danych w MongoDB/JSON (upsert po ID)
     - `POST /api/backup/clear` – wyczyszczenie pomiarów danego użytkownika
   - `backend/src/storage/` (`StorageService`):
-    - Centralne zarządzanie odczytem/zapisem w MongoDB / JSON per user z sanityzacją zapytań i maskowaniem sekretów.
+    - Centralne zarządzanie odczytem/zapisem w MongoDB / JSON per user z sanityzacją zapytań, maskowaniem sekretów i odpornością połączenia.
 - **Konwencja importów ESM**: Wszystkie importy relatywne w TypeScript muszą posiadać rozszerzenie `.js` (np. `import { AuthService } from './auth.service.js'`).
 - **Stabilność Sieciowa**: Nasłuchiwanie na `await app.listen(port, '0.0.0.0')`.
 
@@ -140,7 +150,7 @@ node start
      - `buildCommand: npm install --include=dev && npm run build` (flaga `--include=dev` zapewnia instalację `@nestjs/cli`)
      - `startCommand: npm run start:prod`
      - Zmienne środowiskowe: `NODE_ENV=production`, `PORT=10000`, sekrety OAuth `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` oraz `MONGODB_URI` z oznaczeniem `sync: false` (zarządzane wyłącznie w panelu Render). Predefiniowana baza `MONGODB_DB_NAME: body_dashboard`.
-  2. **`body-dashboard-frontend` (Static Site)**:
+  2. **`body-dashboard` (Static Site)**:
      - `rootDir: frontend`
      - `buildCommand: npm install --include=dev && npm run build`
      - `staticPublishPath: dist/frontend/browser`

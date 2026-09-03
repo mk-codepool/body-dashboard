@@ -5,15 +5,17 @@
  * 1. Wymuszenie przez localStorage (`BODY_DASHBOARD_API_URL`) - przydatne do testów i debugowania
  * 2. Wymuszenie globalne przez obiekt window (`window.__BODY_DASHBOARD_API_URL__`)
  * 3. Środowisko lokalne (`localhost` / `127.0.0.1`) -> `http://localhost:3000`
- * 4. Render.com Auto-Discovery: automatycznie mapuje domenę frontendu `*-frontend.onrender.com` na `*-backend.onrender.com`
+ * 4. Render.com Auto-Discovery: automatycznie mapuje domenę frontendu (`body-dashboard.onrender.com` lub `*-frontend.onrender.com`) na `*-backend.onrender.com`
  * 5. Domyślny fallback produkcyjny: `https://body-dashboard-backend.onrender.com`
  */
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     try {
-      const customUrl = localStorage.getItem('BODY_DASHBOARD_API_URL');
-      if (customUrl && customUrl.trim()) {
-        return customUrl.trim().replace(/\/$/, '');
+      if (typeof localStorage !== 'undefined' && localStorage) {
+        const customUrl = localStorage.getItem('BODY_DASHBOARD_API_URL');
+        if (customUrl && customUrl.trim()) {
+          return customUrl.trim().replace(/\/$/, '');
+        }
       }
     } catch {
       // ignore localStorage errors in restricted contexts
@@ -29,7 +31,13 @@ export function getApiBaseUrl(): string {
     }
 
     if (hostname.includes('.onrender.com')) {
-      return `https://${hostname.replace('-frontend', '-backend')}`;
+      if (hostname.includes('-frontend')) {
+        return `https://${hostname.replace('-frontend', '-backend')}`;
+      }
+      if (hostname.includes('-backend')) {
+        return `https://${hostname}`;
+      }
+      return `https://${hostname.replace('.onrender.com', '-backend.onrender.com')}`;
     }
   }
 

@@ -674,16 +674,15 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
   // --- DIAGNOSTYKA STANU MAGAZYNU ---
 
   getStorageStatus(): {
+    status: 'ok' | 'degraded';
     type: 'mongodb' | 'file-json';
     connected: boolean;
-    database?: string;
-    uriMasked?: string;
   } {
+    const isOk = this.isMongoConnected || !process.env.MONGODB_URI;
     return {
+      status: isOk ? 'ok' : 'degraded',
       type: this.isMongoConnected ? 'mongodb' : 'file-json',
       connected: this.isMongoConnected,
-      database: this.isMongoConnected ? this.dbName : undefined,
-      uriMasked: this.isMongoConnected ? this.maskedUri : undefined,
     };
   }
 

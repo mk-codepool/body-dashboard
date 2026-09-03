@@ -24,11 +24,7 @@ describe('ApiHealthService', () => {
     if (req.length > 0) {
       req[0].flush({
         status: 'ok',
-        service: 'backend',
-        timestamp: new Date().toISOString(),
-        uptimeSeconds: 120,
-        version: '1.0.0',
-        storage: { type: 'mongodb', connected: true }
+        storage: { status: 'ok', type: 'mongodb', connected: true }
       });
     }
   });
@@ -53,11 +49,7 @@ describe('ApiHealthService', () => {
     expect(req.request.method).toBe('GET');
     req.flush({
       status: 'ok',
-      service: 'backend',
-      timestamp: new Date().toISOString(),
-      uptimeSeconds: 300,
-      version: '1.0.0',
-      storage: { type: 'mongodb', connected: true }
+      storage: { status: 'ok', type: 'mongodb', connected: true }
     });
 
     const result = await checkPromise;

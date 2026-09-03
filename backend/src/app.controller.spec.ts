@@ -23,7 +23,8 @@ describe('AppController', () => {
     it('should return health check', () => {
       const health = appController.getHealth();
       expect(health.status).toBe('ok');
-      expect(health.service).toBe('backend');
+      expect(health.storage).toBeDefined();
+      expect(health.storage.status).toBe('ok');
     });
 
     it('should return info with endpoints', () => {

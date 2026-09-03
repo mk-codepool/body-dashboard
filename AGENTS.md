@@ -17,7 +17,7 @@ body-dashboard/
 │   ├── src/app/
 │   │   ├── app.ts         # Root component z <router-outlet /> i górną belką
 │   │   ├── app.routes.ts  # Konfiguracja routingu (trasa domyślna -> Dashboard)
-│   │   ├── services/      # Serwisy: DashboardLayoutService, MeasurementsService
+│   │   ├── services/      # Serwisy: AuthService, DashboardLayoutService, MeasurementsService, PwaService, ApiHealthService, BackupService
 │   │   └── dashboard/     # Główny kontener Modularnego Grida Biometrii
 │   └── package.json       # Port: 4200
 ├── backend/               # Aplikacja NestJS (REST API)
@@ -50,7 +50,8 @@ body-dashboard/
 
 ### 2. Górna Belka (Top Bar)
 - Wysokość stała: `56px`.
-- Zawiera logo "BODY DASHBOARD", wskaźnik stanu systemu ("SYSTEM ONLINE") oraz zegar czasu rzeczywistego oparty o Signals.
+- **Lewa strona**: Branding aplikacji z oficjalną ikoną (`/favicon.ico`), tytuł "BODY DASHBOARD" oraz interaktywny wskaźnik stanu połączenia i serwera (`.server-status-pill` zasilany przez `ApiHealthService`: `ONLINE` w kolorze szmaragdowym `#10b981`, `⚡ WYBUDZANIE SERWERA` w pulsującym bursztynie `#f59e0b` przy Render cold-start, lub `OFFLINE` w różu `#f43f5e`).
+- **Prawa strona**: Przycisk "+ Pomiar", kontrolki dostosowania pulpitu (Dostosuj / Resetuj), przycisk profilu konta Google oraz zegar czasu rzeczywistego z datą.
 - Główna przestrzeń pod belką zajmuje 100% pozostałej wysokości (`height: calc(100vh - 56px)`).
 
 ### 3. Modularny Kwadratowy Grid i Pozycjonowanie 2D (Square Grid System) & Responsywność RWD
@@ -135,7 +136,7 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
   - **Tryb Lokalny (Fallback JSON)**: Gdy zmienna `MONGODB_URI` nie jest podana, dane zapisywane są w dedykowanych podfolderach `backend/data/users/<userId>/` (`user.json`, `layout.json`, `measurements.json`). Zapewnia to 100% sprawność testów jednostkowych i pracy offline.
   - Domyślny profil gościa / bez logowania: `guest` (zasilany danymi demonstracyjnymi).
   - **Zasada Zero Statystyk**: Każde nowo zarejestrowane konto Google otrzymuje **pustą tablicę pomiarów (`[]`)** w bazie/pliku `measurements.json` – brak sztucznych danych dla zalogowanych użytkowników.
-  - **Sonda Zdrowia**: Endpoint `/api/health` raportuje aktualny stan i typ magazynu (`storage: { type: 'mongodb' | 'file-json', connected: boolean, database?: string }`).
+  - **Sonda Zdrowia**: Endpoint `/api/health` raportuje aktualny stan i typ magazynu (`storage: { status: 'ok' | 'degraded', type: 'mongodb' | 'file-json', connected: boolean }`).
 - **Konfiguracja Środowiskowa (.env)**:
   - Zmienne `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MONGODB_URI`, `MONGODB_DB_NAME` przechowywane są w pliku `.env` w głównym katalogu.
   - Backend wczytuje je automatycznie przez `process.loadEnvFile()` i wystawia `GET /api/auth/config` bez ujawniania sekretów.
@@ -178,7 +179,7 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
     - `startCommand: npm run start:prod`
     - Sekrety OAuth (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) oraz baza danych (`MONGODB_URI`) oznaczone jako `sync: false` – wartości podawane są wyłącznie w panelu Render, co chroni je w publicznym repozytorium.
     - Zmienna `MONGODB_DB_NAME: body_dashboard` predefiniowana w szablonie.
-  - **Frontend Static Site (`body-dashboard-frontend`)**:
+  - **Frontend Static Site (`body-dashboard`)**:
     - `rootDir: frontend`
     - `buildCommand: npm install --include=dev && npm run build`
     - `staticPublishPath: dist/frontend/browser`
@@ -188,7 +189,7 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
 - **Dynamiczny Resolver API (`api.config.ts`)**:
   - Funkcja `getApiBaseUrl()` w `frontend/src/app/services/api.config.ts` automatycznie rozpoznaje środowisko:
     - `localhost` / `127.0.0.1` ➔ `http://localhost:3000`
-    - Domeny Render (`*-frontend.onrender.com`) ➔ `https://*-backend.onrender.com`
+    - Domeny Render (`body-dashboard.onrender.com` lub `*-frontend.onrender.com`) ➔ `https://*-backend.onrender.com`
     - Opcjonalne nadpisanie przez `localStorage.getItem('BODY_DASHBOARD_API_URL')`.
 
 #### Procedura Konfiguracji MongoDB Atlas i Render.com Krok Po Kroku:
@@ -203,6 +204,34 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
    - Dodaj zmienną `MONGODB_URI` z wartością ciągu połączeniowego z klastra Atlas.
    - Zapisz zmiany (**Save Changes**) — nastąpi automatyczny redeploy.
    - Sprawdź endpoint `https://twoj-backend.onrender.com/api/health` — w sekcji `storage` status powinien wskazywać `connected: true, type: 'mongodb'`.
+
+### 11. Architektura PWA, Zapisywanie na Pulpicie, Natychmiastowy Cache (0 ms) & Rozwiązywanie Cold Startu (Render)
+- **Web App Manifest (`frontend/public/manifest.webmanifest`)**:
+  - Kolor motywu i tła: `#08090d`.
+  - Tryb wyświetlania: `display: standalone` (samodzielne okno bez pasków przeglądarki).
+  - Ikony biometrii: `frontend/public/icons/` (`icon-192x192.png`, `icon-512x512.png`, `icon-maskable.png`, `apple-touch-icon.png`, `favicon.ico`).
+  - Główna ikona aplikacji pochodzi z pliku `frontend/src/app/assets/favicon.ico`.
+- **Service Worker (`frontend/public/sw.js`)**:
+  - Automatyczny pre-cache powłoki aplikacji (App Shell - HTML, CSS, skrypty JS, czcionki, ikony).
+  - Zapewnia natychmiastowe uruchomienie aplikacji bez połączenia z internetem (Offline First).
+  - Wyklucza z cache'owania endpointy `/api/*` oraz domeny Google GIS, gwarantując zawsze świeżą komunikację i uniemożliwiając powstawanie konfliktów danych.
+- **Instalacja Aplikacji na Pulpicie (`PwaService`)**:
+  - Nasłuchuje zdarzenia przeglądarki `beforeinstallprompt` i zarządza stanem instalacji (`canInstall`, `isInstalled`, `isOnline`).
+  - W pełnoekranowym modalu Profilu Użytkownika udostępnia kartę "Aplikacja na Pulpit i Smartfon (PWA)" z przyciskiem **"Zapisz / Zainstaluj aplikację na pulpicie"**.
+  - Dla systemów iOS/iPadOS wyświetla dedykowaną instrukcję dodawania do ekranu początkowego w Safari.
+- **Natychmiastowy Cache Biometrii (0 ms) w `MeasurementsService`**:
+  - Wszystkie rekordy biometryczne są trwale buforowane w `localStorage` per-user (`body_dashboard_measurements_v1_${userId}`).
+  - Przy starcie aplikacji pulpit ładuje się natychmiastowo z pamięci podręcznej (**0 ms opóźnienia** — brak pustego ekranu, brak zer, brak czekania).
+  - W tle wysyłane jest zapytanie do backendu wyposażone w mechanizm `retry({ count: 3, delay: 2500 })`. Po wybudzeniu serwera w chmurze świeże dane cicho aktualizują widok i lokalną pamięć.
+  - Wszystkie operacje modyfikacji (`addMeasurement`, `updateMeasurement`, `deleteMeasurement`, `resetToDefault`) atomowo aktualizują `localStorage`.
+- **Detekcja Wybudzania Serwera, Pre-Warming & Keep-Alive (`ApiHealthService`)**:
+  - **Pre-warming**: Wywołanie `/api/health` w momencie startu aplikacji — serwer na Renderze zaczyna wstawać w ułamku sekundy po otwarciu karty.
+  - **Detekcja wybudzania**: Gdy serwer nie odpowiada w 2.2 s, status automatycznie przełącza się na `waking_up` (`⚡ WYBUDZANIE SERWERA`), a wskaźnik pulsuje bursztynowym światłem.
+  - **Pomiar latencji**: Dynamiczny pomiar pingu w milisekundach (ms) oraz raportowanie typu bazy (MongoDB Atlas).
+  - **Keep-Alive**: Cykliczny ping co 10 minut, gdy karta jest aktywna, zapobiegający uśpieniu instancji Render podczas pracy.
+  - **Diagnostyka w Profilu**: Karta "Stan Serwera w Chmurze i Magazynu Danych" z przyciskiem "Sprawdź połączenie teraz".
+- **Optymalizacja Połączenia MongoDB na Backendzie (`StorageService`)**:
+  - Konfiguracja `MongoClient` w trybie ciągłym: `maxIdleTimeMS: 60000` (zwalnia nieużywane sockety przed zerwaniem przez Atlas), `minPoolSize: 1`, `serverSelectionTimeoutMS: 8000`, `connectTimeoutMS: 8000`, `retryWrites: true`, `retryReads: true`.
 
 ---
 

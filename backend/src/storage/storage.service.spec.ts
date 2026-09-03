@@ -25,6 +25,7 @@ describe('StorageService', () => {
   it('powinien zwracać status magazynu danych (fallback do JSON bez MONGODB_URI)', () => {
     const status = service.getStorageStatus();
     expect(status).toBeDefined();
+    expect(status.status).toBe('ok');
     expect(status.type).toBe('file-json');
     expect(status.connected).toBe(false);
   });

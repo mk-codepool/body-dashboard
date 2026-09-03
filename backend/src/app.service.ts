@@ -12,13 +12,15 @@ export class AppService {
   }
 
   getHealth() {
+    const storageStatus = this.storageService?.getStorageStatus() ?? {
+      status: 'ok' as const,
+      type: 'file-json' as const,
+      connected: true,
+    };
+
     return {
-      status: 'ok',
-      service: 'backend',
-      timestamp: new Date().toISOString(),
-      uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
-      version: '1.0.0',
-      storage: this.storageService?.getStorageStatus() ?? { type: 'file-json', connected: true },
+      status: storageStatus.status === 'ok' ? 'ok' : 'degraded',
+      storage: storageStatus,
     };
   }
 
@@ -28,7 +30,7 @@ export class AppService {
       status: 'healthy',
       endpoints: [
         { path: '/', method: 'GET', description: 'Greeting endpoint' },
-        { path: '/api/health', method: 'GET', description: 'Health check probe with storage diagnostics' },
+        { path: '/api/health', method: 'GET', description: 'Health check probe with service and storage statuses' },
         { path: '/api/info', method: 'GET', description: 'API service information' },
         { path: '/api/auth/config', method: 'GET', description: 'Google OAuth client configuration' },
         { path: '/api/auth/google', method: 'POST', description: 'Google OAuth GIS authentication' },

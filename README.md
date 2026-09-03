@@ -1,6 +1,6 @@
 # Body Dashboard
 
-Zintegrowane środowisko dla aplikacji **Angular (frontend)**, **NestJS (backend)** oraz **Launchera (orchestrator)** z modularnym gridem biometrii ciała, uwierzytelnianiem **Google OAuth**, widokiem **Profilu Użytkownika** i trwałym zapisem danych w plikach JSON per-user.
+Zintegrowane środowisko dla progresywnej aplikacji internetowej **PWA (Angular 22)**, **NestJS (backend REST API)** oraz **Launchera (orchestrator)** z modularnym gridem biometrii ciała, uwierzytelnianiem **Google OAuth**, instalacją na pulpicie, natychmiastowym cache (0 ms), widokiem **Profilu Użytkownika** i trwałym zapisem danych w **MongoDB Atlas** / JSON per-user.
 
 ---
 
@@ -16,10 +16,14 @@ body-dashboard/
 ├── .env.example           # Wzorzec konfiguracji zmiennych środowiskowych
 ├── .env                   # Lokalne klucze Google OAuth i konfiguracja
 │
-├── frontend/              # Aplikacja frontendowa Angular v22 (SPA)
+├── frontend/              # Aplikacja frontendowa Angular v22 (SPA + PWA)
+│   ├── public/
+│   │   ├── manifest.webmanifest # PWA Manifest z motywem #08090d i trybem standalone
+│   │   ├── sw.js          # Service Worker (pre-cache App Shell, praca offline)
+│   │   └── icons/         # Zestaw ikon aplikacji (PWA, favicon, apple-touch-icon)
 │   ├── src/
 │   │   ├── app/           # Komponenty Standalone, Signal API, Grid 2D
-│   │   │   ├── services/  # AuthService, DashboardLayoutService, MeasurementsService, api.config
+│   │   │   ├── services/  # AuthService, DashboardLayoutService, MeasurementsService, PwaService, ApiHealthService, BackupService, api.config
 │   │   │   ├── components/# Reużywalny ModalComponent
 │   │   │   └── dashboard/ # Modularny Grid Biometrii, Wykresy SVG Bezier
 │   │   └── ...

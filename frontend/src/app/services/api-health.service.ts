@@ -7,6 +7,7 @@ import { getApiBaseUrl } from './api.config';
 export type ServerHealthStatus = 'online' | 'waking_up' | 'offline' | 'checking';
 
 export interface StorageHealthInfo {
+  status?: string;
   type: 'mongodb' | 'file-json';
   connected: boolean;
   database?: string;
@@ -15,10 +16,10 @@ export interface StorageHealthInfo {
 
 export interface HealthResponseDto {
   status: string;
-  service: string;
-  timestamp: string;
-  uptimeSeconds: number;
-  version: string;
+  service?: string;
+  timestamp?: string;
+  uptimeSeconds?: number;
+  version?: string;
   storage?: StorageHealthInfo;
 }
 
