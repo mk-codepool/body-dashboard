@@ -30,15 +30,12 @@ export function getApiBaseUrl(): string {
       return 'http://localhost:3000';
     }
 
-    if (hostname.includes('.onrender.com')) {
-      if (hostname.includes('-frontend')) {
-        return `https://${hostname.replace('-frontend', '-backend')}`;
-      }
-      if (hostname.includes('-backend')) {
-        return `https://${hostname}`;
-      }
-      return `https://${hostname.replace('.onrender.com', '-backend.onrender.com')}`;
+    if (hostname.includes('body-dashboard-backend.onrender.com')) {
+      return `https://${hostname}`;
     }
+
+    // Domyślny stabilny adres backendu API w chmurze Render.com
+    return 'https://body-dashboard-backend.onrender.com';
   }
 
   return 'https://body-dashboard-backend.onrender.com';

@@ -78,6 +78,13 @@ export class App implements OnInit, OnDestroy {
         setTimeout(() => this.initGoogleIdentityServices(), 100);
       }
     });
+
+    // When backend becomes online, reload auth config if not yet configured
+    effect(() => {
+      if (this.apiHealthService.isOnline() && !this.authService.isGoogleConfigured()) {
+        this.authService.loadAuthConfig();
+      }
+    });
   }
 
   ngOnInit(): void {

@@ -100,12 +100,19 @@ export class ApiHealthService {
     }
   }
 
+  private wakingUpPollTimeout: ReturnType<typeof setTimeout> | null = null;
+
   /**
    * Sprawdzenie stanu zdrowia backendu z pomiarem czasu odpowiedzi i detekcją wybudzania
    */
   async checkHealth(manual = true): Promise<boolean> {
     if (manual) {
       this.isChecking.set(true);
+    }
+
+    if (this.wakingUpPollTimeout) {
+      clearTimeout(this.wakingUpPollTimeout);
+      this.wakingUpPollTimeout = null;
     }
 
     const startTime = Date.now();
@@ -128,6 +135,10 @@ export class ApiHealthService {
       const latency = Date.now() - startTime;
 
       if (response && response.status === 'ok') {
+        if (this.wakingUpPollTimeout) {
+          clearTimeout(this.wakingUpPollTimeout);
+          this.wakingUpPollTimeout = null;
+        }
         this.status.set('online');
         this.latencyMs.set(latency);
         this.storageInfo.set(response.storage || null);
@@ -139,19 +150,36 @@ export class ApiHealthService {
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
           this.status.set('offline');
         } else {
-          // Serwer może być w trakcie startu lub zresetowany
+          // Serwer może być w trakcie startu lub zresetowany - aktywnie ponawiaj sprawdzanie co 3 sekundy
           this.status.set('waking_up');
+          this.scheduleWakingUpPoll();
         }
         this.lastChecked.set(new Date());
         return false;
       }
     } catch {
       clearTimeout(wakingUpTimeout);
-      this.status.set(typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'waking_up');
+      const isOff = typeof navigator !== 'undefined' && !navigator.onLine;
+      this.status.set(isOff ? 'offline' : 'waking_up');
+      if (!isOff) {
+        this.scheduleWakingUpPoll();
+      }
       this.lastChecked.set(new Date());
       return false;
     } finally {
       this.isChecking.set(false);
     }
+  }
+
+  private scheduleWakingUpPoll(): void {
+    if (typeof window === 'undefined') return;
+    if (this.wakingUpPollTimeout) {
+      clearTimeout(this.wakingUpPollTimeout);
+    }
+    this.wakingUpPollTimeout = setTimeout(() => {
+      if (this.status() === 'waking_up' || this.status() === 'checking') {
+        this.checkHealth(false);
+      }
+    }, 3000);
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, retry } from 'rxjs/operators';
 
 import { getApiBaseUrl } from './api.config';
 
@@ -130,6 +130,7 @@ export class AuthService {
     try {
       const config = await firstValueFrom(
         this.http.get<AuthConfigDto>(`${this.apiUrl}/config`).pipe(
+          retry({ count: 3, delay: 2000 }),
           catchError(() => of({ googleClientId: '', isGoogleConfigured: false }))
         )
       );
