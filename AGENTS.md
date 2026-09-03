@@ -186,13 +186,13 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
     - `buildCommand: npm install --include=dev && npm run build`
     - `staticPublishPath: dist/frontend/browser`
     - Reguła Rewrite `/* -> /index.html` gwarantująca bezbłędny routing SPA.
-    - Domyślny adres URL: `https://body-dashboard.onrender.com` (bez niepotrzebnego przyrostka `-frontend`).
+    - Domyślny adres URL frontendu: `https://body-dashboard-pdqy.onrender.com` (Render nadaje 4-literowy unikalny sufiks, np. `-pdqy`).
 - **Wymóg Wersji Node.js (Node 22)**:
   - Angular v22 wymaga Node.js 22. Obie usługi mają ustawioną zmienną `NODE_VERSION: 22` w `render.yaml` oraz plik `.node-version`.
 - **Dynamiczny Resolver API (`api.config.ts`)**:
   - Funkcja `getApiBaseUrl()` w `frontend/src/app/services/api.config.ts` automatycznie rozpoznaje środowisko:
     - `localhost` / `127.0.0.1` ➔ `http://localhost:3000`
-    - Domeny Render (`body-dashboard.onrender.com` lub `*-frontend.onrender.com`) ➔ automatycznie mapuje na backend `https://*-backend.onrender.com` (np. `https://body-dashboard-backend.onrender.com`).
+    - Każde środowisko produkcyjne (Render, preview URLs, domeny z sufiksami) ➔ automatycznie i stabilnie kieruje na backend: `https://body-dashboard-backend.onrender.com`.
     - Opcjonalne nadpisanie przez `localStorage.getItem('BODY_DASHBOARD_API_URL')`.
 
 #### Procedura Konfiguracji MongoDB Atlas, Render.com i Google OAuth Krok Po Kroku:
@@ -202,12 +202,8 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
    - W **Network Access** dodaj wpis `0.0.0.0/0` (**Allow Access from Anywhere**).
    - W **Database ➔ Connect ➔ Drivers** skopiuj ciąg połączeniowy i uzupełnij hasło oraz bazę:
      `mongodb+srv://body_admin:<haslo>@cluster0.xxxxx.mongodb.net/body_dashboard?retryWrites=true&w=majority`
-2. **Render.com (Wdrożenie i Zmiana Nazwy Usługi Frontendu)**:
-   - **Nowe wdrożenie przez Blueprint**: W zakładce **Blueprints** wybierz repozytorium — Render utworzy frontend `body-dashboard` oraz backend `body-dashboard-backend`.
-   - **Istniejąca usługa (aktualizacja nazwy z body-dashboard-frontend)**:
-     - W panelu Render wejdź w usługę frontendu ➔ zakładka **Settings**.
-     - W sekcji **Name** zmień wartość na **`body-dashboard`** i kliknij **Save Changes**.
-     - Render zaktualizuje publiczny URL na `https://body-dashboard.onrender.com`.
+2. **Render.com (Wdrożenie przez Blueprint)**:
+   - **Wdrożenie przez Blueprint**: W zakładce **Blueprints** wybierz repozytorium — Render utworzy frontend Static Site (np. `body-dashboard-pdqy.onrender.com`) oraz backend Web Service `body-dashboard-backend`.
    - W usłudze `body-dashboard-backend` przejdź do zakładki **Environment**:
      - Dodaj zmienną `MONGODB_URI` z wartością ciągu połączeniowego z klastra Atlas.
      - Dodaj zmienne `GOOGLE_CLIENT_ID` oraz `GOOGLE_CLIENT_SECRET`.
@@ -218,7 +214,7 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
    - Edytuj identyfikator klienta OAuth 2.0 (**Web client**).
    - W sekcji **Autoryzowane źródła JavaScript (Authorized JavaScript origins)** upewnij się, że dodane są oba adresy:
      - `http://localhost:4200` (lokalny development)
-     - `https://body-dashboard.onrender.com` (produkcyjny frontend na Renderze)
+     - `https://body-dashboard-pdqy.onrender.com` (aktywny produkcyjny frontend na Renderze)
    - Zapisz zmiany (**Save**), aby uniknąć błędów CORS / origin mismatch w bibliotece Google GIS.
 
 ### 11. Architektura PWA, Zapisywanie na Pulpicie, Natychmiastowy Cache (0 ms) & Rozwiązywanie Cold Startu (Render)

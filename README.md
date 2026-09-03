@@ -91,9 +91,8 @@ System plików na darmowym planie Render.com jest ulotny (**ephemeral**). Aby da
    - `GOOGLE_CLIENT_ID` oraz `GOOGLE_CLIENT_SECRET` (dla logowania Google OAuth).
    - `MONGODB_URI`: wklej przygotowany ciąg połączeniowy z Twoim hasłem i bazą `/body_dashboard`.
 4. Kliknij **Apply** — Render automatycznie wdroży:
-   - **Frontend (Static Site)**: `https://body-dashboard.onrender.com`
+   - **Frontend (Static Site)**: `https://body-dashboard-pdqy.onrender.com` (lub unikalny adres nadany przez Render)
    - **Backend (Web Service)**: `https://body-dashboard-backend.onrender.com`
-   *(Jeśli usługa istniała wcześniej jako `body-dashboard-frontend`, wystarczy w jej Settings zmienić Name na `body-dashboard`)*.
 5. Stan połączenia możesz zweryfikować wchodząc pod adres:
    `https://body-dashboard-backend.onrender.com/api/health` — w polu `storage` pojawi się `"type": "mongodb", "connected": true`.
 
@@ -105,7 +104,7 @@ Aby włączyć logowanie przez konto Google:
 1. W [Google Cloud Console ➔ Credentials](https://console.cloud.google.com/apis/credentials) skonfiguruj identyfikator OAuth 2.0 (Web client):
    - W sekcji **Autoryzowane źródła JavaScript (Authorized JavaScript origins)** dodaj:
      - `http://localhost:4200`
-     - `https://body-dashboard.onrender.com`
+     - `https://body-dashboard-pdqy.onrender.com` (oraz Twój aktualny adres frontendu z Rendera)
 2. Skopiuj plik `.env.example` do pliku `.env` lokalnie:
    ```env
    GOOGLE_CLIENT_ID=twoj-klient-id.apps.googleusercontent.com

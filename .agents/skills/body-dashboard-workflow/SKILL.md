@@ -63,7 +63,7 @@ node start
 - **Dynamiczny Resolver API (`frontend/src/app/services/api.config.ts`)**:
   - `getApiBaseUrl()`: automatycznie rozpoznaje środowisko.
   - Lokalnie (`localhost` / `127.0.0.1`) ➔ `http://localhost:3000`.
-  - Na Renderze (`body-dashboard.onrender.com` / `*-frontend.onrender.com`) ➔ `https://*-backend.onrender.com`.
+  - W chmurze produkcyjnej (Render, preview URLs, domeny z sufiksami) ➔ automatycznie i stabilnie kieruje na backend: `https://body-dashboard-backend.onrender.com`.
   - Możliwość nadpisania przez `localStorage.getItem('BODY_DASHBOARD_API_URL')`.
 - **Serwisy Danych**:
   - `frontend/src/app/services/auth.service.ts`: zarządzanie stanem uwierzytelnienia (`currentUser`, `isLoggedIn`), integracja z Google OAuth (GIS), persystencja w `localStorage`.
@@ -155,7 +155,7 @@ node start
      - `buildCommand: npm install --include=dev && npm run build`
      - `staticPublishPath: dist/frontend/browser`
      - Reguła Rewrite: `/* -> /index.html` dla obsługi Angular Router.
-     - Publiczny URL: `https://body-dashboard.onrender.com` (bez członu `-frontend`).
+     - Publiczny URL: `https://body-dashboard-pdqy.onrender.com` (Render nadaje 4-literowy unikalny sufiks, np. `-pdqy`).
 - **Launcher**: Wykluczony z procesu wdrażania (służy tylko do lokalnego developmentu).
 
 ### Procedura Krok Po Kroku: Konfiguracja MongoDB Atlas, Render.com i Google OAuth
@@ -170,24 +170,20 @@ node start
      mongodb+srv://body_admin:<twoje_haslo>@cluster0.xxxxx.mongodb.net/body_dashboard?retryWrites=true&w=majority
      ```
 
-2. **Konfiguracja Usług i Nazewnictwa w Render.com**:
-   - **Frontend**:
-     - Przy nowym wdrożeniu z Blueprint (`render.yaml`) usługa przyjmie nazwę `body-dashboard`.
-     - Jeśli usługa istniała wcześniej jako `body-dashboard-frontend`: przejdź do usługi ➔ **Settings** ➔ zmień **Name** na `body-dashboard` ➔ **Save Changes**. URL zmieni się na `https://body-dashboard.onrender.com`.
-   - **Backend (`body-dashboard-backend`)**:
-     - W panelu Render otwórz usługę **`body-dashboard-backend`**.
-     - Przejdź do zakładki **Environment** i dodaj zmienne:
-       - **Key**: `MONGODB_URI` / **Value**: ciąg połączeniowy z MongoDB Atlas.
-       - **Key**: `GOOGLE_CLIENT_ID` / **Value**: Twoje ID klienta OAuth.
-       - **Key**: `GOOGLE_CLIENT_SECRET` / **Value**: Twój sekret klienta OAuth.
-     - Kliknij **`Save Changes`** — Render zrestartuje backend z nową konfiguracją.
+2. **Konfiguracja Usług w Render.com**:
+   - **Nowe wdrożenie przez Blueprint**: W zakładce **Blueprints** wybierz repozytorium — Render utworzy frontend Static Site (np. `body-dashboard-pdqy.onrender.com`) oraz backend Web Service `body-dashboard-backend`.
+   - W usłudze `body-dashboard-backend` przejdź do zakładki **Environment** i dodaj zmienne:
+     - **Key**: `MONGODB_URI` / **Value**: ciąg połączeniowy z MongoDB Atlas.
+     - **Key**: `GOOGLE_CLIENT_ID` / **Value**: Twoje ID klienta OAuth.
+     - **Key**: `GOOGLE_CLIENT_SECRET` / **Value**: Twój sekret klienta OAuth.
+   - Kliknij **`Save Changes`** — Render zrestartuje backend z nową konfiguracją.
 
 3. **Konfiguracja Google Cloud Console (Autoryzowane Źródła)**:
    - Otwórz [Google Cloud Console ➔ Credentials](https://console.cloud.google.com/apis/credentials).
    - Otwórz identyfikator OAuth 2.0 (**Web client**).
    - W sekcji **Autoryzowane źródła JavaScript (Authorized JavaScript origins)** dodaj:
      - `http://localhost:4200`
-     - `https://body-dashboard.onrender.com`
+     - `https://body-dashboard-pdqy.onrender.com` (aktywny produkcyjny frontend na Renderze)
    - Kliknij **Zapisz** (**Save**).
 
 4. **Weryfikacja Połączenia**:
