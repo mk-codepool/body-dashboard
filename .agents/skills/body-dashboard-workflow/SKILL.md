@@ -155,9 +155,10 @@ node start
      - `buildCommand: npm install --include=dev && npm run build`
      - `staticPublishPath: dist/frontend/browser`
      - Reguła Rewrite: `/* -> /index.html` dla obsługi Angular Router.
+     - Publiczny URL: `https://body-dashboard.onrender.com` (bez członu `-frontend`).
 - **Launcher**: Wykluczony z procesu wdrażania (służy tylko do lokalnego developmentu).
 
-### Procedura Krok Po Kroku: Konfiguracja MongoDB Atlas i Render.com
+### Procedura Krok Po Kroku: Konfiguracja MongoDB Atlas, Render.com i Google OAuth
 
 1. **Konfiguracja Klastra w MongoDB Atlas**:
    - Zaloguj się na [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas) i kliknij **`+ Create`**.
@@ -169,15 +170,28 @@ node start
      mongodb+srv://body_admin:<twoje_haslo>@cluster0.xxxxx.mongodb.net/body_dashboard?retryWrites=true&w=majority
      ```
 
-2. **Konfiguracja Usługi w Render.com**:
-   - W panelu Render otwórz usługę **`body-dashboard-backend`**.
-   - Przejdź do zakładki **Environment** i dodaj zmienną:
-     - **Key**: `MONGODB_URI`
-     - **Value**: ciąg połączeniowy z klastra MongoDB Atlas.
-   - Kliknij **`Save Changes`** — Render automatycznie zrestartuje backend z nową konfiguracją.
+2. **Konfiguracja Usług i Nazewnictwa w Render.com**:
+   - **Frontend**:
+     - Przy nowym wdrożeniu z Blueprint (`render.yaml`) usługa przyjmie nazwę `body-dashboard`.
+     - Jeśli usługa istniała wcześniej jako `body-dashboard-frontend`: przejdź do usługi ➔ **Settings** ➔ zmień **Name** na `body-dashboard` ➔ **Save Changes**. URL zmieni się na `https://body-dashboard.onrender.com`.
+   - **Backend (`body-dashboard-backend`)**:
+     - W panelu Render otwórz usługę **`body-dashboard-backend`**.
+     - Przejdź do zakładki **Environment** i dodaj zmienne:
+       - **Key**: `MONGODB_URI` / **Value**: ciąg połączeniowy z MongoDB Atlas.
+       - **Key**: `GOOGLE_CLIENT_ID` / **Value**: Twoje ID klienta OAuth.
+       - **Key**: `GOOGLE_CLIENT_SECRET` / **Value**: Twój sekret klienta OAuth.
+     - Kliknij **`Save Changes`** — Render zrestartuje backend z nową konfiguracją.
 
-3. **Weryfikacja Połączenia**:
-   - Otwórz w przeglądarce endpoint: `https://twoj-backend.onrender.com/api/health`.
+3. **Konfiguracja Google Cloud Console (Autoryzowane Źródła)**:
+   - Otwórz [Google Cloud Console ➔ Credentials](https://console.cloud.google.com/apis/credentials).
+   - Otwórz identyfikator OAuth 2.0 (**Web client**).
+   - W sekcji **Autoryzowane źródła JavaScript (Authorized JavaScript origins)** dodaj:
+     - `http://localhost:4200`
+     - `https://body-dashboard.onrender.com`
+   - Kliknij **Zapisz** (**Save**).
+
+4. **Weryfikacja Połączenia**:
+   - Otwórz w przeglądarce endpoint: `https://body-dashboard-backend.onrender.com/api/health`.
    - Zweryfikuj pole `storage`:
      ```json
      {

@@ -250,8 +250,42 @@
 }
 
 /* ========================================================================= */
-/* PRZYCISK KONTA / LOGOWANIA GOOGLE W GÓRNEJ BELCE */
+/* PRZYCISK LOGOWANIA (NIEZALOGOWANY) ORAZ KONTA UŻYTKOWNIKA W GÓRNEJ BELCE */
 /* ========================================================================= */
+.topbar-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 16px;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  border-radius: var(--radius-md);
+  color: var(--accent-cyan);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.12);
+}
+
+.topbar-login-btn:hover {
+  background: rgba(6, 182, 212, 0.22);
+  border-color: rgba(6, 182, 212, 0.65);
+  color: #67e8f9;
+  box-shadow: 0 0 18px rgba(6, 182, 212, 0.3);
+  transform: translateY(-1px);
+}
+
+.topbar-login-btn:active {
+  transform: translateY(0);
+}
+
+.topbar-login-btn .btn-icon {
+  width: 14px;
+  height: 14px;
+}
+
 .user-account-btn {
   display: inline-flex;
   align-items: center;
@@ -933,32 +967,41 @@
   word-break: break-all;
 }
 
-/* Widok Niezalogowany */
+/* Widok Niezalogowany: Tylko Logowanie Google */
 .login-prompt-container {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: 40px 0;
+  padding: 48px 16px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: calc(75vh - 64px);
+  min-height: calc(75dvh - 64px);
 }
 
 .login-prompt-card {
-  max-width: 480px;
+  max-width: 440px;
   width: 100%;
-  background: rgba(18, 21, 31, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
+  background: rgba(18, 21, 31, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
-  padding: 36px 32px;
+  padding: 40px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 16px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(16px);
+  gap: 18px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(6, 182, 212, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: fadeIn 0.3s ease-out;
 }
 
 .google-big-logo {
-  width: 72px;
-  height: 72px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   background: #ffffff;
   display: flex;
@@ -980,13 +1023,24 @@
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.5;
+  max-width: 360px;
 }
 
 .gsi-button-wrapper {
   margin-top: 10px;
   display: flex;
   justify-content: center;
+  align-items: center;
   min-height: 48px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+#gsi-button-container {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
 }
 
 .login-notice-box {
@@ -1476,11 +1530,7 @@
   cursor: pointer;
 }
 
-.guest-backup-wrapper {
-  margin-top: 24px;
-  width: 100%;
-  max-width: 800px;
-}
+
 
 /* ========================================================================= */
 /* RESPONSIVE DESIGN (RWD) DLA GÓRNEJ BELKI I WIDOKÓW PROFILU */
@@ -1562,15 +1612,32 @@
     align-items: center;
   }
 
+  .login-prompt-container {
+    padding: 24px 12px;
+    min-height: auto;
+  }
+
   .login-prompt-card {
-    padding: 24px 16px;
+    padding: 28px 16px;
+    max-width: 100%;
+    gap: 14px;
   }
 
   .login-title {
-    font-size: 17px;
+    font-size: 18px;
   }
 
   .login-subtitle {
+    font-size: 12px;
+  }
+
+  .google-big-logo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .topbar-login-btn {
+    padding: 5px 12px;
     font-size: 12px;
   }
 

@@ -51,7 +51,9 @@ body-dashboard/
 ### 2. Górna Belka (Top Bar)
 - Wysokość stała: `56px`.
 - **Lewa strona**: Branding aplikacji z oficjalną ikoną (`/favicon.ico`), tytuł "BODY DASHBOARD" oraz interaktywny wskaźnik stanu połączenia i serwera (`.server-status-pill` zasilany przez `ApiHealthService`: `ONLINE` w kolorze szmaragdowym `#10b981`, `⚡ WYBUDZANIE SERWERA` w pulsującym bursztynie `#f59e0b` przy Render cold-start, lub `OFFLINE` w różu `#f43f5e`).
-- **Prawa strona**: Przycisk "+ Pomiar", kontrolki dostosowania pulpitu (Dostosuj / Resetuj), przycisk profilu konta Google oraz zegar czasu rzeczywistego z datą.
+- **Prawa strona**:
+  - **Dla użytkownika zalogowanego**: Przycisk "+ Pomiar", kontrolki dostosowania pulpitu (Dostosuj / Resetuj), profil konta Google (awatar + imię + plakietka) oraz zegar czasu rzeczywistego z datą.
+  - **Dla użytkownika niezalogowanego**: Przyciski "+ Pomiar" oraz edycja kontenerów są **ukryte**; widoczny jest minimalistyczny przycisk "Loguj" (`.topbar-login-btn`) oraz zegar czasu rzeczywistego.
 - Główna przestrzeń pod belką zajmuje 100% pozostałej wysokości (`height: calc(100vh - 56px)`).
 
 ### 3. Modularny Kwadratowy Grid i Pozycjonowanie 2D (Square Grid System) & Responsywność RWD
@@ -150,8 +152,8 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
   - `AuthService` (`frontend/src/app/services/auth.service.ts`) zarządzający stanem `currentUser`, `isLoggedIn`, `isGoogleConfigured` i auto-synchronizacją.
   - Przycisk profilu w prawym górnym rogu górnej belki (`top-bar`): wyświetla awatar Google i imię użytkownika lub przycisk logowania Google.
   - Pełnoekranowy modal:
-    - **Dla niezalogowanego**: Oficjalne logowanie Google Identity Services (GIS).
-    - **Dla zalogowanego ("Profil użytkownika")**: Karta tożsamości z awatarem, przyciskiem **Wyloguj bezpośrednio pod awatarem**, imieniem i e-mailem, interaktywnym selektorem płci biologicznej (`♂ Mężczyzna` / `♀ Kobieta` – zasilającym normy biometrii) oraz siatką bezpiecznych parametrów użytkownika (Imię, Nazwisko, E-mail, Język, Data rejestracji, Ostatnie logowanie).
+    - **Dla niezalogowanego ("Logowanie")**: Czysty, wycentrowany widok z **wyłącznie opcją logowania** (oficjalny przycisk Google Identity Services - GIS), responsywny layout (RWD) bez ściśniętych sekcji diagnostyki czy kopii zapasowej.
+    - **Dla zalogowanego ("Profil użytkownika")**: Karta tożsamości z awatarem, przyciskiem **Wyloguj bezpośrednio pod awatarem**, imieniem i e-mailem, interaktywnym selektorem płci biologicznej (`♂ Mężczyzna` / `♀ Kobieta` – zasilającym normy biometrii) oraz siatką parametrów użytkownika, sekcją stanu serwera i PWA oraz kopią zapasową.
     - **Zasada Bezpieczeństwa**: Brak surowych zrzutów tokenów JWT / parametrów technicznych w interfejsie użytkownika.
 
 ### 9. Kopia Zapasowa Danych (Eksport / Import JSON & Czyszczenie Danych)
@@ -184,26 +186,40 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
     - `buildCommand: npm install --include=dev && npm run build`
     - `staticPublishPath: dist/frontend/browser`
     - Reguła Rewrite `/* -> /index.html` gwarantująca bezbłędny routing SPA.
+    - Domyślny adres URL: `https://body-dashboard.onrender.com` (bez niepotrzebnego przyrostka `-frontend`).
 - **Wymóg Wersji Node.js (Node 22)**:
   - Angular v22 wymaga Node.js 22. Obie usługi mają ustawioną zmienną `NODE_VERSION: 22` w `render.yaml` oraz plik `.node-version`.
 - **Dynamiczny Resolver API (`api.config.ts`)**:
   - Funkcja `getApiBaseUrl()` w `frontend/src/app/services/api.config.ts` automatycznie rozpoznaje środowisko:
     - `localhost` / `127.0.0.1` ➔ `http://localhost:3000`
-    - Domeny Render (`body-dashboard.onrender.com` lub `*-frontend.onrender.com`) ➔ `https://*-backend.onrender.com`
+    - Domeny Render (`body-dashboard.onrender.com` lub `*-frontend.onrender.com`) ➔ automatycznie mapuje na backend `https://*-backend.onrender.com` (np. `https://body-dashboard-backend.onrender.com`).
     - Opcjonalne nadpisanie przez `localStorage.getItem('BODY_DASHBOARD_API_URL')`.
 
-#### Procedura Konfiguracji MongoDB Atlas i Render.com Krok Po Kroku:
+#### Procedura Konfiguracji MongoDB Atlas, Render.com i Google OAuth Krok Po Kroku:
 1. **MongoDB Atlas**:
    - Utwórz darmowy klaster M0 Free Tier (np. AWS Frankfurt `eu-central-1`).
    - W **Database Access** utwórz użytkownika (np. `body_admin`) z hasłem i uprawnieniami zapisu/odczytu.
    - W **Network Access** dodaj wpis `0.0.0.0/0` (**Allow Access from Anywhere**).
    - W **Database ➔ Connect ➔ Drivers** skopiuj ciąg połączeniowy i uzupełnij hasło oraz bazę:
      `mongodb+srv://body_admin:<haslo>@cluster0.xxxxx.mongodb.net/body_dashboard?retryWrites=true&w=majority`
-2. **Render.com**:
-   - W usłudze `body-dashboard-backend` przejdź do zakładki **Environment**.
-   - Dodaj zmienną `MONGODB_URI` z wartością ciągu połączeniowego z klastra Atlas.
-   - Zapisz zmiany (**Save Changes**) — nastąpi automatyczny redeploy.
-   - Sprawdź endpoint `https://twoj-backend.onrender.com/api/health` — w sekcji `storage` status powinien wskazywać `connected: true, type: 'mongodb'`.
+2. **Render.com (Wdrożenie i Zmiana Nazwy Usługi Frontendu)**:
+   - **Nowe wdrożenie przez Blueprint**: W zakładce **Blueprints** wybierz repozytorium — Render utworzy frontend `body-dashboard` oraz backend `body-dashboard-backend`.
+   - **Istniejąca usługa (aktualizacja nazwy z body-dashboard-frontend)**:
+     - W panelu Render wejdź w usługę frontendu ➔ zakładka **Settings**.
+     - W sekcji **Name** zmień wartość na **`body-dashboard`** i kliknij **Save Changes**.
+     - Render zaktualizuje publiczny URL na `https://body-dashboard.onrender.com`.
+   - W usłudze `body-dashboard-backend` przejdź do zakładki **Environment**:
+     - Dodaj zmienną `MONGODB_URI` z wartością ciągu połączeniowego z klastra Atlas.
+     - Dodaj zmienne `GOOGLE_CLIENT_ID` oraz `GOOGLE_CLIENT_SECRET`.
+     - Zapisz zmiany (**Save Changes**) — nastąpi automatyczny restart/redeploy.
+   - Sprawdź endpoint `https://body-dashboard-backend.onrender.com/api/health` — w sekcji `storage` status powinien wskazywać `connected: true, type: 'mongodb'`.
+3. **Google Cloud Console (Autoryzowane Źródła JavaScript)**:
+   - Przejdź do [Google Cloud Console ➔ Credentials](https://console.cloud.google.com/apis/credentials).
+   - Edytuj identyfikator klienta OAuth 2.0 (**Web client**).
+   - W sekcji **Autoryzowane źródła JavaScript (Authorized JavaScript origins)** upewnij się, że dodane są oba adresy:
+     - `http://localhost:4200` (lokalny development)
+     - `https://body-dashboard.onrender.com` (produkcyjny frontend na Renderze)
+   - Zapisz zmiany (**Save**), aby uniknąć błędów CORS / origin mismatch w bibliotece Google GIS.
 
 ### 11. Architektura PWA, Zapisywanie na Pulpicie, Natychmiastowy Cache (0 ms) & Rozwiązywanie Cold Startu (Render)
 - **Web App Manifest (`frontend/public/manifest.webmanifest`)**:

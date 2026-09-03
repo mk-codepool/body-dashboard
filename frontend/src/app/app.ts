@@ -43,6 +43,10 @@ export class App implements OnInit, OnDestroy {
   readonly showClearConfirm = signal<boolean>(false);
 
   openMeasurementsModal(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.authService.openAuthModal();
+      return;
+    }
     this.measurementsService.openModal();
   }
 
@@ -54,17 +58,17 @@ export class App implements OnInit, OnDestroy {
 
 
   readonly modalTitle = computed(() => {
-    return this.authService.isLoggedIn() ? 'Profil użytkownika' : 'Logowanie Google';
+    return this.authService.isLoggedIn() ? 'Profil użytkownika' : 'Logowanie';
   });
 
   readonly modalSubtitle = computed(() => {
     return this.authService.isLoggedIn()
       ? 'Dane i parametry Twojego profilu użytkownika'
-      : 'Uwierzytelnij się bezpiecznie swoim kontem Google Identity Services';
+      : 'Uwierzytelnij się bezpiecznie swoim kontem Google';
   });
 
   readonly modalBadge = computed(() => {
-    return this.authService.isLoggedIn() ? 'KONTO GOOGLE' : 'GOOGLE OAUTH';
+    return this.authService.isLoggedIn() ? 'KONTO GOOGLE' : 'LOGOWANIE';
   });
 
   constructor() {
@@ -132,13 +136,16 @@ export class App implements OnInit, OnDestroy {
       const container = document.getElementById('gsi-button-container');
       if (container) {
         container.innerHTML = '';
+        const availableWidth = typeof window !== 'undefined'
+          ? Math.min(280, Math.max(210, window.innerWidth - 64))
+          : 280;
         google.accounts.id.renderButton(container, {
           theme: 'filled_black',
           size: 'large',
           shape: 'pill',
           text: 'signin_with',
           logo_alignment: 'left',
-          width: 280,
+          width: availableWidth,
         });
       }
     } catch {
@@ -175,6 +182,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   logout(): void {
+    this.layoutService.setEditMode(false);
     this.authService.logout();
     this.showSuccess('Wylogowano pomyślnie.');
   }
