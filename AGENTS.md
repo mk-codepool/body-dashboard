@@ -230,7 +230,13 @@ Wszystkie rekordy pomiarowe pobierane i utrwalane są w pliku `backend/data/meas
 - **Serwisy Danych**:
   - `AuthService`: zarządza kontami, uwierzytelnianiem Google i modalem logowania.
   - `DashboardLayoutService`: zarządza siatką, trybem edycji i synchronizacją z `/api/layout` per user (`x-user-id`).
-  - `MeasurementsService`: zarządza danymi biometrycznymi i synchronizacją z `/api/measurements` per user (`x-user-id`).
+  - `MeasurementsService`: zarządza danymi biometrycznymi, natychmiastowym cache'owaniem w `localStorage` (0 ms opóźnienia) oraz automatyczną synchronizacją w tle z `/api/measurements` per user (`x-user-id`) z mechanizmem `retry`.
+  - `PwaService`: zarządza instalacją aplikacji PWA na pulpicie (`beforeinstallprompt`), rejestracją Service Workera (`sw.js`) i stanem offline/standalone.
+  - `ApiHealthService`: pre-warming backendu przy starcie, pomiar latencji (ping), detekcja wybudzania serwera na Renderze oraz keep-alive co 10 min.
+- **Architektura PWA & Offline First**:
+  - Web App Manifest (`manifest.webmanifest`) z ikoną biometrii i schematem kolorystycznym `#08090d`.
+  - Service Worker (`sw.js`): pre-cache powłoki aplikacji (App Shell), natychmiastowe ładowanie bez sieci, omijanie cache dla endpointów `/api/*`.
+  - Opcje instalacji na pulpicie i diagnostyka połączenia z serwerem dostępne w pełnoekranowym modalu Profilu Użytkownika.
 - **Wykresy i Wizualizacje**: Wykresy wektorowe SVG z krzywymi Beziera i gradientami (brak ciężkich zewnętrznych bibliotek).
 - **Komunikacja HTTP**: Konfiguracja przez `provideHttpClient()` w `app.config.ts`, dynamiczny adres API z `getApiBaseUrl()`, obsługa błędów za pomocą operatora `catchError` z biblioteki RxJS.
 - **CORS**: NestJS jest skonfigurowany pod kątem zapytań z dowolnego źródła (`origin: '*'`).

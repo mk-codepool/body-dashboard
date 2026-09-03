@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, effect } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, retry } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { getApiBaseUrl } from './api.config';
 
@@ -158,9 +158,8 @@ export class MeasurementsService {
   private readonly authService = inject(AuthService);
   private readonly apiUrl = `${getApiBaseUrl()}/api/measurements`;
 
-  readonly history = signal<MeasurementRecord[]>(
-    this.authService.isLoggedIn() ? [] : DEFAULT_MEASUREMENTS
-  );
+  // Natychmiastowe ładowanie z pamięci lokalnej (0 ms)
+  readonly history = signal<MeasurementRecord[]>(this.loadStoredMeasurements());
   readonly isLoading = signal<boolean>(false);
   readonly isSyncing = signal<boolean>(false);
   readonly isModalOpen = signal<boolean>(false);
@@ -174,15 +173,51 @@ export class MeasurementsService {
   }
 
   constructor() {
-    this.loadFromBackend();
-
-    // Auto reload when user switches
+    // Automatyczna reakcja na przełączenie użytkownika
     effect(() => {
       const userId = this.authService.currentUserId();
-      if (userId) {
-        this.loadFromBackend();
-      }
+      // 1. Błyskawiczny odczyt danych danego użytkownika z localStorage
+      const cached = this.loadStoredMeasurements(userId);
+      this.history.set(cached);
+
+      // 2. Pobranie najnowszych danych z backendu w tle
+      this.loadFromBackend();
     });
+  }
+
+  private getStorageKey(userId?: string): string {
+    const id = userId || this.authService.currentUserId();
+    return `body_dashboard_measurements_v1_${id}`;
+  }
+
+  private loadStoredMeasurements(userId?: string): MeasurementRecord[] {
+    if (typeof localStorage === 'undefined') {
+      return (userId || this.authService.currentUserId()) === 'guest' ? DEFAULT_MEASUREMENTS : [];
+    }
+    const key = this.getStorageKey(userId);
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    const currentId = userId || this.authService.currentUserId();
+    return currentId === 'guest' ? DEFAULT_MEASUREMENTS : [];
+  }
+
+  private saveToStorage(records: MeasurementRecord[], userId?: string): void {
+    if (typeof localStorage === 'undefined') return;
+    const key = this.getStorageKey(userId);
+    try {
+      localStorage.setItem(key, JSON.stringify(records));
+    } catch {
+      // ignore
+    }
   }
 
   private getHeaders(): HttpHeaders {
@@ -193,15 +228,18 @@ export class MeasurementsService {
 
   async loadFromBackend(): Promise<void> {
     this.isLoading.set(true);
+    const userId = this.authService.currentUserId();
     try {
-      const fallback = this.authService.isLoggedIn() ? [] : DEFAULT_MEASUREMENTS;
+      const fallback = this.loadStoredMeasurements(userId);
       const records = await firstValueFrom(
         this.http.get<MeasurementRecord[]>(this.apiUrl, { headers: this.getHeaders() }).pipe(
+          retry({ count: 3, delay: 2500 }),
           catchError(() => of(fallback))
         )
       );
       if (Array.isArray(records)) {
         this.history.set(records);
+        this.saveToStorage(records, userId);
       }
     } catch {
       // ignore
@@ -218,7 +256,11 @@ export class MeasurementsService {
           catchError(() => of({ ...record, id: record.id || `local_${Date.now()}` } as MeasurementRecord))
         )
       );
-      this.history.update(list => [saved, ...list]);
+      this.history.update(list => {
+        const updated = [saved, ...list];
+        this.saveToStorage(updated);
+        return updated;
+      });
       return saved;
     } finally {
       this.isSyncing.set(false);
@@ -233,7 +275,11 @@ export class MeasurementsService {
           catchError(() => of(null))
         )
       );
-      this.history.update(list => list.map(m => (m.id === id ? { ...m, ...(updated || updateData) } : m)));
+      this.history.update(list => {
+        const next = list.map(m => (m.id === id ? { ...m, ...(updated || updateData) } : m));
+        this.saveToStorage(next);
+        return next;
+      });
     } finally {
       this.isSyncing.set(false);
     }
@@ -247,7 +293,11 @@ export class MeasurementsService {
           catchError(() => of(null))
         )
       );
-      this.history.update(list => list.filter(m => m.id !== id));
+      this.history.update(list => {
+        const next = list.filter(m => m.id !== id);
+        this.saveToStorage(next);
+        return next;
+      });
     } finally {
       this.isSyncing.set(false);
     }
@@ -256,15 +306,18 @@ export class MeasurementsService {
   async resetToDefault(): Promise<void> {
     this.isSyncing.set(true);
     try {
-      const fallback = this.authService.isLoggedIn() ? [] : DEFAULT_MEASUREMENTS;
+      const fallback = (this.authService.currentUserId() === 'guest') ? DEFAULT_MEASUREMENTS : [];
       const defaults = await firstValueFrom(
         this.http.post<MeasurementRecord[]>(`${this.apiUrl}/reset`, {}, { headers: this.getHeaders() }).pipe(
           catchError(() => of(fallback))
         )
       );
-      this.history.set(defaults);
+      const toSet = Array.isArray(defaults) ? defaults : fallback;
+      this.history.set(toSet);
+      this.saveToStorage(toSet);
     } finally {
       this.isSyncing.set(false);
     }
   }
 }
+

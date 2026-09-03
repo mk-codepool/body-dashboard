@@ -31,7 +31,109 @@
 .top-bar-left {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
+}
+
+.topbar-branding {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  text-decoration: none;
+  user-select: none;
+  transition: opacity var(--transition-fast);
+}
+
+.topbar-branding:hover {
+  opacity: 0.9;
+}
+
+.topbar-logo-img {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  object-fit: cover;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+}
+
+.topbar-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, #ffffff 40%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.server-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+
+.server-status-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.status-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-online {
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.status-online .status-indicator-dot {
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.status-waking_up {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  animation: pulse-border 1.5s infinite alternate;
+}
+
+.status-waking_up .status-indicator-dot {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  animation: pulse-dot 0.8s infinite alternate;
+}
+
+.status-offline {
+  border-color: rgba(244, 63, 94, 0.35);
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.08);
+}
+
+.status-offline .status-indicator-dot {
+  background-color: #f43f5e;
+}
+
+.status-checking {
+  border-color: rgba(6, 182, 212, 0.35);
+  color: #06b6d4;
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.status-checking .status-indicator-dot {
+  background-color: #06b6d4;
 }
 
 .divider {
@@ -1536,6 +1638,10 @@
     padding: 0 8px;
   }
 
+  .topbar-title {
+    display: none;
+  }
+
   .user-name {
     display: none;
   }
@@ -1543,4 +1649,266 @@
   .user-account-btn {
     padding: 4px 8px;
   }
+}
+
+/* ==========================================================================
+   SEKCJA PWA (INSTALACJA NA PULPICIE) ORAZ DIAGNOSTYKA SERWERA
+   ========================================================================== */
+
+.pwa-install-card {
+  margin-top: 20px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(16, 185, 129, 0.05));
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.pwa-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.pwa-icon-box {
+  flex-shrink: 0;
+}
+
+.pwa-preview-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.35);
+  object-fit: cover;
+}
+
+.pwa-text-info {
+  flex: 1;
+}
+
+.pwa-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+
+.pwa-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.pwa-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+.badge-installed {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.badge-ready {
+  background: rgba(6, 182, 212, 0.2);
+  color: #06b6d4;
+  border: 1px solid rgba(6, 182, 212, 0.4);
+}
+
+.badge-info {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.pwa-card-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pwa-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-pwa-install {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, #06b6d4, #0284c7);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.35);
+  font-family: inherit;
+}
+
+.btn-pwa-install:hover {
+  background: linear-gradient(135deg, #0891b2, #0369a1);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+  transform: translateY(-1px);
+}
+
+.pwa-status-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.pwa-status-box.status-installed {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* KARTA DIAGNOSTYKI SERWERA W CHMURZE */
+.server-diagnostics-card {
+  margin-top: 16px;
+  padding: 18px 20px;
+  background: rgba(18, 21, 31, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.server-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+}
+
+.server-badge.badge-online {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.server-badge.badge-waking_up {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.server-badge.badge-offline {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.35);
+}
+
+.server-badge.badge-checking {
+  background: rgba(6, 182, 212, 0.15);
+  color: #06b6d4;
+  border: 1px solid rgba(6, 182, 212, 0.35);
+}
+
+.server-diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.server-card-bottom {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-check-server {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.btn-check-server:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.server-note {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 200px;
+}
+
+.indicator-text-emerald {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.indicator-text-amber {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.indicator-text-rose {
+  color: #f43f5e;
+  font-weight: 600;
+}
+
+.pulse-anim {
+  animation: pulse-dot 1.2s infinite alternate;
+}
+
+.spin-anim {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-dot {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.1); }
+  100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); }
 }

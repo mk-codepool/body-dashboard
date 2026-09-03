@@ -1,7 +1,18 @@
 <div class="app-layout">
   <!-- Minimalist Top Bar -->
   <header class="top-bar">
-    <div class="top-bar-left"></div>
+    <div class="top-bar-left">
+      <div class="topbar-branding" (click)="authService.openAuthModal()" title="Body Dashboard - Otwórz profil i diagnostykę">
+        <img src="/favicon.ico" alt="Logo" class="topbar-logo-img" />
+        <span class="topbar-title font-mono">BODY DASHBOARD</span>
+      </div>
+
+      <button type="button" class="server-status-pill" [class]="'status-' + apiHealthService.status()"
+        (click)="authService.openAuthModal()" [title]="apiHealthService.statusDescription()">
+        <span class="status-indicator-dot"></span>
+        <span class="status-text font-mono">{{ apiHealthService.statusBadgeText() }}</span>
+      </button>
+    </div>
 
     <div class="top-bar-right">
       <!-- Przycisk + Otwórz pomiary -->
@@ -284,6 +295,9 @@
         </div>
       </div>
 
+      <!-- SEKCJA STANU SERWERA I APLIKACJI PWA DLA ZALOGOWANEGO UŻYTKOWNIKA -->
+      <ng-container [ngTemplateOutlet]="serverAndPwaTemplate" />
+
       <!-- SEKCJA KOPII ZAPASOWEJ (EKSPORT / IMPORT JSON) DLA ZALOGOWANEGO UŻYTKOWNIKA -->
       <ng-container [ngTemplateOutlet]="backupSectionTemplate" />
     </div>
@@ -324,12 +338,144 @@
         }
       </div>
 
+      <!-- SEKCJA STANU SERWERA I APLIKACJI PWA DLA GOŚCIA -->
+      <div class="guest-backup-wrapper">
+        <ng-container [ngTemplateOutlet]="serverAndPwaTemplate" />
+      </div>
+
       <!-- SEKCJA KOPII ZAPASOWEJ DLA PROFILU GOŚCIA -->
       <div class="guest-backup-wrapper">
         <ng-container [ngTemplateOutlet]="backupSectionTemplate" />
       </div>
     </div>
     }
+
+    <!-- REUŻYWALNY SZABLON: APLIKACJA PWA ORAZ STAN SERWERA W CHMURZE -->
+    <ng-template #serverAndPwaTemplate>
+      <!-- KARTA INSTALACJI APLIKACJI PWA NA PULPICIE -->
+      <div class="pwa-install-card">
+        <div class="pwa-card-header">
+          <div class="pwa-icon-box">
+            <img src="/favicon.ico" alt="Ikona Body Dashboard" class="pwa-preview-icon" />
+          </div>
+          <div class="pwa-text-info">
+            <div class="pwa-title-row">
+              <h3 class="pwa-card-title">Aplikacja na Pulpit i Smartfon (PWA)</h3>
+              @if (pwaService.isInstalled()) {
+              <span class="pwa-badge badge-installed font-mono">ZAINSTALOWANA</span>
+              } @else if (pwaService.canInstall()) {
+              <span class="pwa-badge badge-ready font-mono">GOTOWA DO INSTALACJI</span>
+              } @else {
+              <span class="pwa-badge badge-info font-mono">PWA ACTIVE</span>
+              }
+            </div>
+            <p class="pwa-card-desc">
+              Zapisz Body Dashboard bezpośrednio na pulpicie Windows/macOS lub ekranie głównym telefonu. Aplikacja zyskuje własne okno, błyskawiczny start i pełne działanie offline z pamięci lokalnej urządzenia.
+            </p>
+          </div>
+        </div>
+
+        <div class="pwa-actions-row">
+          @if (pwaService.isInstalled()) {
+          <div class="pwa-status-box status-installed font-mono">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>Aplikacja jest uruchomiona jako zainstalowany program pulpitu</span>
+          </div>
+          } @else if (pwaService.canInstall()) {
+          <button type="button" class="btn-pwa-install" (click)="installPwaApp()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Zapisz / Zainstaluj aplikację na pulpicie</span>
+          </button>
+          } @else if (pwaService.isIos()) {
+          <div class="pwa-status-box font-mono">
+            <span>Dotknij przycisku <strong>Udostępnij (Share)</strong> w Safari, a następnie wybierz <strong>Dodaj do ekranu początkowego</strong>.</span>
+          </div>
+          } @else {
+          <div class="pwa-status-box font-mono">
+            <span>Aby zainstalować aplikację na pulpicie, kliknij ikonę instalacji na pasku adresu przeglądarki lub w menu: <em>Więcej narzędzi ➔ Zainstaluj aplikację</em>.</span>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- KARTA DIAGNOSTYKI SERWERA I BAZY DANYCH -->
+      <div class="server-diagnostics-card">
+        <div class="section-title-bar">
+          <div class="title-with-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+              <line x1="6" y1="6" x2="6.01" y2="6" />
+              <line x1="6" y1="18" x2="6.01" y2="18" />
+            </svg>
+            <h3 class="data-section-title">Stan Serwera w Chmurze i Magazynu Danych</h3>
+          </div>
+          <span class="server-badge font-mono" [class]="'badge-' + apiHealthService.status()">
+            {{ apiHealthService.statusBadgeText() }}
+          </span>
+        </div>
+
+        <div class="server-diagnostics-grid">
+          <!-- Status backendu -->
+          <div class="attr-box">
+            <span class="attr-label">Status serwera (Render)</span>
+            <span class="attr-value">
+              @if (apiHealthService.isOnline()) {
+              <span class="indicator-text-emerald">● Serwer Aktywny</span>
+              } @else if (apiHealthService.isWakingUp()) {
+              <span class="indicator-text-amber pulse-anim">⚡ Wybudzanie z uśpienia</span>
+              } @else {
+              <span class="indicator-text-rose">● Tryb Offline</span>
+              }
+            </span>
+          </div>
+
+          <!-- Czas odpowiedzi ping -->
+          <div class="attr-box">
+            <span class="attr-label">Czas odpowiedzi (Ping)</span>
+            <span class="attr-value font-mono">
+              {{ apiHealthService.latencyMs() !== null ? (apiHealthService.latencyMs() + ' ms') : '--' }}
+            </span>
+          </div>
+
+          <!-- Baza danych -->
+          <div class="attr-box">
+            <span class="attr-label">Baza danych</span>
+            <span class="attr-value font-mono">
+              {{ apiHealthService.storageInfo()?.type === 'mongodb' ? 'MongoDB Atlas (Chmura)' : 'Lokalny JSON' }}
+            </span>
+          </div>
+
+          <!-- Lokalny Cache PWA -->
+          <div class="attr-box">
+            <span class="attr-label">Pamięć lokalna PWA</span>
+            <span class="attr-value font-mono indicator-text-emerald">
+              AKTYWNA (0 ms)
+            </span>
+          </div>
+        </div>
+
+        <div class="server-card-bottom">
+          <button type="button" class="btn-check-server" (click)="checkServerHealth()" [disabled]="apiHealthService.isChecking()">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" [class.spin-anim]="apiHealthService.isChecking()">
+              <polyline points="23 4 23 10 17 10" />
+              <polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+            <span>{{ apiHealthService.isChecking() ? 'Sprawdzanie...' : 'Sprawdź połączenie teraz' }}</span>
+          </button>
+          <span class="server-note">
+            Darmowy backend Render po 15 min bezczynności zasypia. Dzięki pamięci podręcznej PWA Twoje dane ładują się natychmiast, a wybudzanie serwera następuje w tle bez blokowania pulpitu.
+          </span>
+        </div>
+      </div>
+    </ng-template>
 
     <!-- REUŻYWALNY SZABLON: ZARZĄDZANIE KOPIĄ ZAPASOWĄ (EKSPORT / IMPORT JSON) -->
     <ng-template #backupSectionTemplate>

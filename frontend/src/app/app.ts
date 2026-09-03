@@ -7,6 +7,8 @@ import { MeasurementsService } from './services/measurements.service';
 import { NotificationService } from './services/notification.service';
 import { ModalComponent } from './components/modal/modal';
 import { BackupService, type BackupPreview } from './services/backup.service';
+import { PwaService } from './services/pwa.service';
+import { ApiHealthService } from './services/api-health.service';
 
 declare const google: any;
 
@@ -23,6 +25,8 @@ export class App implements OnInit, OnDestroy {
   readonly measurementsService = inject(MeasurementsService);
   readonly notificationService = inject(NotificationService);
   readonly backupService = inject(BackupService);
+  readonly pwaService = inject(PwaService);
+  readonly apiHealthService = inject(ApiHealthService);
 
   // Opcje eksportu danych
   readonly exportMeasurements = signal<boolean>(true);
@@ -146,6 +150,27 @@ export class App implements OnInit, OnDestroy {
     const ok = await this.authService.loginWithGoogleToken(credential);
     if (ok) {
       this.showSuccess('Zalogowano pomyślnie przez konto Google!');
+      setTimeout(() => this.authService.closeAuthModal(), 600);
+    }
+  }
+
+  async installPwaApp(): Promise<void> {
+    const res = await this.pwaService.installApp();
+    if (res === 'accepted') {
+      this.showSuccess('Aplikacja Body Dashboard została pomyślnie zainstalowana na pulpicie!');
+    } else if (res === 'unsupported') {
+      this.notificationService.showInfo('Instalacja dostępna jest przez menu przeglądarki (ikona instalacji na pasku adresu).');
+    }
+  }
+
+  async checkServerHealth(): Promise<void> {
+    const ok = await this.apiHealthService.checkHealth(true);
+    if (ok) {
+      this.showSuccess(`Połączono z serwerem (${this.apiHealthService.latencyMs()} ms)!`);
+    } else if (this.apiHealthService.isWakingUp()) {
+      this.notificationService.showInfo('Trwa wybudzanie kontenera backendu na Renderze. Proszę chwilę poczekać.');
+    } else {
+      this.notificationService.showError('Nie udało się nawiązać połączenia z serwerem.');
     }
   }
 

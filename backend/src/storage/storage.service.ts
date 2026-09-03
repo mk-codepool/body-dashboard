@@ -499,9 +499,13 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`Wykryto MONGODB_URI. Inicjalizacja połączenia z MongoDB: ${this.maskedUri}...`);
       try {
         this.mongoClient = new MongoClient(rawUri, {
-          serverSelectionTimeoutMS: 6000,
-          connectTimeoutMS: 6000,
+          serverSelectionTimeoutMS: 8000,
+          connectTimeoutMS: 8000,
           maxPoolSize: 10,
+          minPoolSize: 1,
+          maxIdleTimeMS: 60000,
+          retryWrites: true,
+          retryReads: true,
         });
         await this.mongoClient.connect();
         this.mongoDb = this.mongoClient.db(this.dbName);

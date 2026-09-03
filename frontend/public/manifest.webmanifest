@@ -1,0 +1,33 @@
+{
+  "name": "Body Dashboard - Biometria i Skład Ciała",
+  "short_name": "Body Dashboard",
+  "description": "Nowoczesny pulpit analityczny biometrii i składu ciała",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#08090d",
+  "background_color": "#08090d",
+  "lang": "pl",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
